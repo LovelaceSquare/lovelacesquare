@@ -1,0 +1,35 @@
+Codes/2025-02-14-09-47-whittakerSmoother imputation/
+Codes/2025-02-14-10-08-Kernelize/
+Codes/2025-02-14-15-49-cropBackground/
+Codes/2025-03-06-09-54-BIRFI LS smoothing/
+Codes/2025-03-06-09-55-BIRFI LS/
+Codes/2025-03-06-14-27-unfoldImage/
+Codes/2025-03-06-14-42-normMatrix/
+Codes/2025-03-23-12-37-LALS/
+Codes/2025-03-26-19-02-whittakerSmoother/
+Codes/2025-03-26-19-14-WienerFiltering/
+Codes/2025-03-26-19-22-I-SVD/
+Codes/2025-03-26-19-24-SavGol/
+Codes/2025-03-26-19-28-Fourier filter/
+Codes/2025-03-26-19-29-O ALS (2)/
+Codes/2025-03-26-19-32-AsLs/
+Codes/2025-03-26-19-35-autoscale/
+Codes/2025-03-26-19-38-cosmicpeakcorrection/
+Codes/2025-03-26-19-39-MSC/
+Codes/2025-03-26-19-41-PCA filter/
+Codes/2025-03-26-19-42-EMSC/
+Codes/2025-04-04-12-21-binning v 2.0/
+Codes/2025-04-09-12-24-corr_map/
+Codes/2025-04-11-11-34-simulate_spectra/
+Codes/Classification/
+Codes/Clustering/
+Codes/Data-exploration/
+Codes/Experimental-design/
+Codes/Feature-Selection/
+Codes/Multiblock-Analysis/
+Codes/Other/
+Codes/Preprocessing/
+Codes/Process-Analytical-Technology-(PAT)/
+Codes/Regression/
+Codes/Unmixing/
+Codes/Validation/

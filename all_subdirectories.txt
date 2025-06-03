@@ -1,55 +1,24 @@
 Codes/
-Codes/whittakerSmoother imputation/
-Codes/whittakerSmoother imputation/whittakerSmoother imputation/
-Codes/Kernelize/
-Codes/Kernelize/Kernelize/
-Codes/cropBackground/
-Codes/cropBackground/cropBackground/
-Codes/BIRFI LS smoothing/
-Codes/BIRFI LS smoothing/BIRFI LS smoothing/
-Codes/BIRFI LS/
-Codes/BIRFI LS/BIRFI LS/
-Codes/unfoldImage/
-Codes/normMatrix/
-Codes/LALS/
-Codes/LALS/LALS/
-Codes/whittakerSmoother/
-Codes/whittakerSmoother/whittakerSmoother/
-Codes/WienerFiltering/
-Codes/WienerFiltering/WienerFiltering/
-Codes/I-SVD/
-Codes/I-SVD/I-SVD/
-Codes/SavGol/
-Codes/SavGol/SavGol/
-Codes/Fourier filter/
-Codes/Fourier filter/Fourier filter/
-Codes/O ALS (2)/
-Codes/O ALS (2)/O ALS/
 Codes/AsLs/
-Codes/AsLs/AsLs/
-Codes/autoscale/
-Codes/autoscale/autoscale/
-Codes/cosmicpeakcorrection/
-Codes/cosmicpeakcorrection/cosmicpeakcorrection/
-Codes/MSC/
-Codes/MSC/MSC/
-Codes/PCA filter/
-Codes/PCA filter/PCA filter/
+Codes/BIRFI LS/
+Codes/BIRFI LS smoothing/
 Codes/EMSC/
-Codes/EMSC/EMSC/
+Codes/Fourier filter/
+Codes/I-SVD/
+Codes/Kernelize/
+Codes/LALS/
+Codes/MSC/
+Codes/O ALS (2)/
+Codes/PCA filter/
+Codes/SavGol/
+Codes/WienerFiltering/
+Codes/autoscale/
 Codes/binning v 2.0/
-Codes/binning v 2.0/binning v 2.0/
 Codes/corr_map/
+Codes/cosmicpeakcorrection/
+Codes/cropBackground/
+Codes/normMatrix/
 Codes/simulate_spectra/
-Codes/Classification/
-Codes/Clustering/
-Codes/Data-exploration/
-Codes/Experimental-design/
-Codes/Feature-Selection/
-Codes/Multiblock-Analysis/
-Codes/Other/
-Codes/Preprocessing/
-Codes/Process-Analytical-Technology-(PAT)/
-Codes/Regression/
-Codes/Unmixing/
-Codes/Validation/
+Codes/unfoldImage/
+Codes/whittakerSmoother/
+Codes/whittakerSmoother imputation/

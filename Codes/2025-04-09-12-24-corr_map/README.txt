@@ -1,10 +1,10 @@
 # 2025-04-09-12-24-corr_map
 
 ## What the code does
-(Please describe what the code in this folder does)
+Plot the correlation map   Author: Ruggero Guerrini Mail: gr6898@gmail.com Date Created: 2025-04-08 License: MIT  Description: Plot the correlation map printing the number in each pixel of the map    Arguments: C: Input data, spectrum. n samples x p spectral length  Returns: figure with the correlation map  Disclaimer: Authors and Lovelace's Square are not responsible for any issues, inaccuracies, or data loss arising  from the use of this function.
 
 ## How to use it
-(Please provide instructions on how to use the code)
+[Placeholder: Explain how to use the code, e.g., main function and arguments]
 
 ## Installation/setup instructions
 (Please list any installation or setup steps required)
@@ -16,16 +16,16 @@
 (Please provide contact information for questions or support)
 
 ## Authors
-(List the authors of the code)
+Ruggero Guerrini
 
 ## License
-(Specify the license for the code - refer to lovelace_square_readme.md for acceptable licenses)
+(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
 
 ## Version
-(Specify the version of the code)
+
 
 ## Date Created
-(Specify the date the original code was created)
+2025-04-08
 
 ## Reviewed by Lovelace's Square team
 No

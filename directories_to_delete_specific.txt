@@ -1,0 +1,12 @@
+Codes/Classification/
+Codes/Clustering/
+Codes/Data-exploration/
+Codes/Experimental-design/
+Codes/Feature-Selection/
+Codes/Multiblock-Analysis/
+Codes/Other/
+Codes/Preprocessing/
+Codes/Process-Analytical-Technology-(PAT)/
+Codes/Regression/
+Codes/Unmixing/
+Codes/Validation/

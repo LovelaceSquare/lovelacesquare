@@ -1,10 +1,10 @@
 # 2025-02-14-09-47-whittakerSmoother imputation
 
 ## What the code does
-(Please describe what the code in this folder does)
+[Placeholder: Describe what the code does]
 
 ## How to use it
-(Please provide instructions on how to use the code)
+[Placeholder: Explain how to use the code, e.g., main function and arguments]
 
 ## Installation/setup instructions
 (Please list any installation or setup steps required)
@@ -16,16 +16,13 @@
 (Please provide contact information for questions or support)
 
 ## Authors
-(List the authors of the code)
 
 ## License
-(Specify the license for the code - refer to lovelace_square_readme.md for acceptable licenses)
+(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
 
 ## Version
-(Specify the version of the code)
 
 ## Date Created
-(Specify the date the original code was created)
 
 ## Reviewed by Lovelace's Square team
 No

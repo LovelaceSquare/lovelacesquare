@@ -1,46 +1,46 @@
 Codes/
-Codes/2025-02-14-09-47-whittakerSmoother imputation/
-Codes/2025-02-14-09-47-whittakerSmoother imputation/whittakerSmoother imputation/
-Codes/2025-02-14-10-08-Kernelize/
-Codes/2025-02-14-10-08-Kernelize/Kernelize/
-Codes/2025-02-14-15-49-cropBackground/
-Codes/2025-02-14-15-49-cropBackground/cropBackground/
-Codes/2025-03-06-09-54-BIRFI LS smoothing/
-Codes/2025-03-06-09-54-BIRFI LS smoothing/BIRFI LS smoothing/
-Codes/2025-03-06-09-55-BIRFI LS/
-Codes/2025-03-06-09-55-BIRFI LS/BIRFI LS/
-Codes/2025-03-06-14-27-unfoldImage/
-Codes/2025-03-06-14-42-normMatrix/
-Codes/2025-03-23-12-37-LALS/
-Codes/2025-03-23-12-37-LALS/LALS/
-Codes/2025-03-26-19-02-whittakerSmoother/
-Codes/2025-03-26-19-02-whittakerSmoother/whittakerSmoother/
-Codes/2025-03-26-19-14-WienerFiltering/
-Codes/2025-03-26-19-14-WienerFiltering/WienerFiltering/
-Codes/2025-03-26-19-22-I-SVD/
-Codes/2025-03-26-19-22-I-SVD/I-SVD/
-Codes/2025-03-26-19-24-SavGol/
-Codes/2025-03-26-19-24-SavGol/SavGol/
-Codes/2025-03-26-19-28-Fourier filter/
-Codes/2025-03-26-19-28-Fourier filter/Fourier filter/
-Codes/2025-03-26-19-29-O ALS (2)/
-Codes/2025-03-26-19-29-O ALS (2)/O ALS/
-Codes/2025-03-26-19-32-AsLs/
-Codes/2025-03-26-19-32-AsLs/AsLs/
-Codes/2025-03-26-19-35-autoscale/
-Codes/2025-03-26-19-35-autoscale/autoscale/
-Codes/2025-03-26-19-38-cosmicpeakcorrection/
-Codes/2025-03-26-19-38-cosmicpeakcorrection/cosmicpeakcorrection/
-Codes/2025-03-26-19-39-MSC/
-Codes/2025-03-26-19-39-MSC/MSC/
-Codes/2025-03-26-19-41-PCA filter/
-Codes/2025-03-26-19-41-PCA filter/PCA filter/
-Codes/2025-03-26-19-42-EMSC/
-Codes/2025-03-26-19-42-EMSC/EMSC/
-Codes/2025-04-04-12-21-binning v 2.0/
-Codes/2025-04-04-12-21-binning v 2.0/binning v 2.0/
-Codes/2025-04-09-12-24-corr_map/
-Codes/2025-04-11-11-34-simulate_spectra/
+Codes/whittakerSmoother imputation/
+Codes/whittakerSmoother imputation/whittakerSmoother imputation/
+Codes/Kernelize/
+Codes/Kernelize/Kernelize/
+Codes/cropBackground/
+Codes/cropBackground/cropBackground/
+Codes/BIRFI LS smoothing/
+Codes/BIRFI LS smoothing/BIRFI LS smoothing/
+Codes/BIRFI LS/
+Codes/BIRFI LS/BIRFI LS/
+Codes/unfoldImage/
+Codes/normMatrix/
+Codes/LALS/
+Codes/LALS/LALS/
+Codes/whittakerSmoother/
+Codes/whittakerSmoother/whittakerSmoother/
+Codes/WienerFiltering/
+Codes/WienerFiltering/WienerFiltering/
+Codes/I-SVD/
+Codes/I-SVD/I-SVD/
+Codes/SavGol/
+Codes/SavGol/SavGol/
+Codes/Fourier filter/
+Codes/Fourier filter/Fourier filter/
+Codes/O ALS (2)/
+Codes/O ALS (2)/O ALS/
+Codes/AsLs/
+Codes/AsLs/AsLs/
+Codes/autoscale/
+Codes/autoscale/autoscale/
+Codes/cosmicpeakcorrection/
+Codes/cosmicpeakcorrection/cosmicpeakcorrection/
+Codes/MSC/
+Codes/MSC/MSC/
+Codes/PCA filter/
+Codes/PCA filter/PCA filter/
+Codes/EMSC/
+Codes/EMSC/EMSC/
+Codes/binning v 2.0/
+Codes/binning v 2.0/binning v 2.0/
+Codes/corr_map/
+Codes/simulate_spectra/
 Codes/Classification/
 Codes/Clustering/
 Codes/Data-exploration/

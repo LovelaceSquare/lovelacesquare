@@ -1,19 +1,13 @@
-# 2025-04-11-11-34-simulate_spectra
+# simulate_spectra
 
 ## What the code does
-Author: Ruggero Guerrini Mail: gr6898@gmail.com Data Created: 2025-04-11 Licence: MIT
+Simulate spectra with n gaussian without noise.
+Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test.m`.
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+See `test.m` for a usage example.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
-
-## Installation/setup instructions
-(Please list any installation or setup steps required)
-
-## Usage examples
-(Please provide one or more examples of how to use the code)
-
-## Contact information
-(Please provide contact information for questions or support)
+contact@lovelacesquare.org
+MIT
 
 ## Authors
 Ruggero Guerrini

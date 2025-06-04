@@ -1,28 +1,22 @@
-# 2025-03-26-19-38-cosmicpeakcorrection
+# CosmicPeakCorrection
 
 ## What the code does
-[Placeholder: Describe what the code does]
+COSMICPEAKCORRECTION  Removes cosmic spikes from spectral data by
 
 ## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+Run `CosmicPeakCorrection.m` in MATLAB. A basic demonstration is provided in `test.m`.
 
 ## Installation/setup instructions
-(Please list any installation or setup steps required)
+MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-(Please provide one or more examples of how to use the code)
+See `test.m` for a usage example.
 
 ## Contact information
-(Please provide contact information for questions or support)
+contact@lovelacesquare.org
 
 ## Authors
+% Authors: Adrián Gómez-Sánchez and Rodrigo Rocha de Oliveira
 
 ## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT

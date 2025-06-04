@@ -22,13 +22,13 @@ baseline removal or signal denoising.
 Performs dimensionality reduction by projecting the data matrix onto a selected
 
 ## How to use it
-Run `pcaFilter.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `pcaFilter.m` in MATLAB. A basic demonstration is provided in `test_pcaFilter.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_pcaFilter.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

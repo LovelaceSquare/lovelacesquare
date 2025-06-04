@@ -22,13 +22,13 @@ mean and standard deviation for possible inverse transformation.
 Center and scale a matrix to zero mean and unit variance by rows or columns. The
 
 ## How to use it
-Run `autoscale.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `autoscale.m` in MATLAB. A basic demonstration is provided in `test_autoscale.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_autoscale.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

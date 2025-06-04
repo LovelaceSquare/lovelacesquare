@@ -1,4 +1,4 @@
-%% Test Script for Autoscale Function
+% test_autoscale.m
 % This script tests the functionality of the autoscale function.
 %
 % Author:  Adrián Gómez-Sánchez

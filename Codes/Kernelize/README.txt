@@ -23,13 +23,13 @@ Dk = kernelize(D, 5, 20);
 Convolve each signal in the input matrix with a bank of normalized kernels. Each
 
 ## How to use it
-Run `kernelize.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `kernelize.m` in MATLAB. A basic demonstration is provided in `test_kernelize.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_kernelize.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

@@ -26,13 +26,13 @@ is expected to vary smoothly over the missing regions.
 Iteratively apply the Whittaker smoother to fill missing values (NaNs) in a
 
 ## How to use it
-Run `whittakerSmootherImpute.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `whittakerSmootherImpute.m` in MATLAB. A basic demonstration is provided in `test_whittakerSmootherImpute.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_whittakerSmootherImpute.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

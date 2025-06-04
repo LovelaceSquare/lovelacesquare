@@ -25,13 +25,13 @@ background areas before further analysis.
 Remove pixels from a hyperspectral image cube whose summed intensity lies
 
 ## How to use it
-Run `cropBackground.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `cropBackground.m` in MATLAB. A basic demonstration is provided in `test_cropBackground.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_cropBackground.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

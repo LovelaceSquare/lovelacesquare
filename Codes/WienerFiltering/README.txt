@@ -25,13 +25,13 @@ Xfilt = WienerFiltering(X,0.01,256,128,512);
 Row‑wise Wiener filter using Welch-estimated power spectra. For each signal the
 
 ## How to use it
-Run `WienerFiltering.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `WienerFiltering.m` in MATLAB. A basic demonstration is provided in `test_WienerFiltering.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_WienerFiltering.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

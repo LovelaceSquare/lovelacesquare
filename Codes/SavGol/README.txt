@@ -26,13 +26,13 @@ Xf = SavGol(X,11,3,0,'Reflection');
 Savitzky–Golay smoothing and differentiation for spectral matrices. Within each
 
 ## How to use it
-Run `SavGol.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `SavGol.m` in MATLAB. A basic demonstration is provided in `test_SavGol.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_SavGol.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

@@ -25,13 +25,13 @@ irf = birfi_ls_smoothing(decay, 100, pen);
 Variant of `birfi_ls` that enforces extra smoothness on the recovered IRF. It
 
 ## How to use it
-Run `birfi_ls_smoothing.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `birfi_ls_smoothing.m` in MATLAB. A basic demonstration is provided in `test_BIRFI_LS_smoothing.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_BIRFI_LS_smoothing.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

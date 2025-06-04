@@ -1,4 +1,4 @@
-% testI_SVD_Spectra.m
+% test_I_SVD.m
 %
 % This script generates synthetic spectral data resembling Raman spectra composed
 % of three distinct components, adds low-level Gaussian noise, introduces a specified

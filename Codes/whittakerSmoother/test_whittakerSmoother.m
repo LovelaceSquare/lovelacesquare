@@ -1,4 +1,4 @@
-% test.m
+% test_whittakerSmoother.m
 
 % This script generates synthetic spectral data with noise, applies the
 % Whittaker smoother, and evaluates the results visually and statistically.

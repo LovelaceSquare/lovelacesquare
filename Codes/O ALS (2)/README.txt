@@ -28,13 +28,13 @@ large data sets where SVD may be impractical.
 Orthogonalized Alternating Least Squares for PCA. Scores and loadings are
 
 ## How to use it
-Run `OALS.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `OALS.m` in MATLAB. A basic demonstration is provided in `test_OALS.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_OALS.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

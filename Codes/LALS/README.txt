@@ -29,13 +29,13 @@ remove background around broad peaks while preserving narrow features elsewhere.
 Local Asymmetric Least Squares baseline correction with interval‑dependent
 
 ## How to use it
-Run `LALS.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `LALS.m` in MATLAB. A basic demonstration is provided in `test_LALS.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_LALS.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

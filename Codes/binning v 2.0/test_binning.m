@@ -1,4 +1,4 @@
-% test.m
+% test_binning.m
 %
 % This script loads the default 'cameraman.tif' image, applies binning to
 % reduce its resolution using both 'sum' and 'mean' methods, and visualizes

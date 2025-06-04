@@ -23,13 +23,13 @@ S = whittakerSmoother(X,1e3,2);
 Apply the Whittaker penalized least squares smoother to each row of a matrix.
 
 ## How to use it
-Run `whittakerSmoother.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `whittakerSmoother.m` in MATLAB. A basic demonstration is provided in `test_whittakerSmoother.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_whittakerSmoother.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

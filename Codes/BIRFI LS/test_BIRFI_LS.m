@@ -1,4 +1,4 @@
-% test.m
+% test_BIRFI_LS.m
 %
 % This script generates synthetic decay data with a known instrument
 % response function (IRF) with two shoulders using an exponential decay

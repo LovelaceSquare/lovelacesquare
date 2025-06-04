@@ -1,4 +1,4 @@
-% testl.m
+% test_SavGol.m
 %
 % This script generates synthetic spectral data with noise, applies the
 % Savitzky-Golay filter, and evaluates the results visually and statistically.

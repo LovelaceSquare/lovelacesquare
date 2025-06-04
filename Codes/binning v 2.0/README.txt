@@ -23,13 +23,13 @@ B = binning(rand(100,200),[4 5],'sum');
 Group adjacent elements of an N‑D array and sum or average them according to the
 
 ## How to use it
-Run `binning.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `binning.m` in MATLAB. A basic demonstration is provided in `test_binning.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_binning.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

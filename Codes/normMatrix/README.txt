@@ -19,6 +19,21 @@ N = normMatrix(X,'euclidean','row');
 Normalize a matrix using a variety of norms. Depending on the `normType`
 
 ## How to use it
+Run `normMatrix.m` in MATLAB. A basic demonstration is provided in `test_normMatrix.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test_normMatrix.m` for a usage example.
+
+## Contact information
+contact@lovelacesquare.org
+
+## Authors
+Adrián Gómez-Sánchez
+
+=======
 Run `normMatrix.m` in MATLAB. A basic demonstration is provided in `test.m`.
 
 ## Installation/setup instructions

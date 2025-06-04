@@ -1,4 +1,4 @@
-% testImpute.m
+% test_whittakerSmootherImpute.m
 %
 % This script generates synthetic spectral data with noise and missing values,
 % applies the Whittaker smoother with imputation, and evaluates the results.

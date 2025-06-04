@@ -28,13 +28,13 @@ pVal = 0.001;
 Asymmetric Least Squares (AsLS) baseline correction for spectral data. The
 
 ## How to use it
-Run `AsLS.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `AsLS.m` in MATLAB. A basic demonstration is provided in `test_AsLS.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_AsLS.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

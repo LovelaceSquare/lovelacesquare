@@ -22,6 +22,15 @@ spec = simulate_spectra(10,200,3,5,'same');
 Generate synthetic spectra by summing Gaussian peaks. Peak centers are chosen at
 
 ## How to use it
+Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test_simulate_spectra.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test_simulate_spectra.m` for a usage example.
+
+=======
 Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test.m`.
 
 ## Installation/setup instructions

@@ -29,13 +29,13 @@ approximately low rank.
 Iterative SVD‑based PCA imputation. The algorithm repeatedly fills missing
 
 ## How to use it
-Run `I_SVD.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `I_SVD.m` in MATLAB. A basic demonstration is provided in `test_I_SVD.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_I_SVD.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

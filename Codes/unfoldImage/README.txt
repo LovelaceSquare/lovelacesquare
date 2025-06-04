@@ -17,6 +17,15 @@ M = unfoldImage(imgCube);
 Flatten a 3D image cube into a 2D matrix so that each pixel becomes a row. This
 
 ## How to use it
+Run `unfoldImage.m` in MATLAB. A basic demonstration is provided in `test_unfoldImage.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test_unfoldImage.m` for a usage example.
+
+=======
 Run `unfoldImage.m` in MATLAB. A basic demonstration is provided in `test.m`.
 
 ## Installation/setup instructions

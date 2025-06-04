@@ -1,4 +1,4 @@
-% test.m
+% test_LALS.m
 %
 % This script generates synthetic spectral data with known baselines,
 % applies LALS baseline correction with local multi-interval parameters,

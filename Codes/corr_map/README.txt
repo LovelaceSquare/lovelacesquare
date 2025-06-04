@@ -18,13 +18,14 @@ corr_map(C);
 Display a heatmap of correlation coefficients between spectra. The function
 
 ## How to use it
-Run `corr_map.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `corr_map.m` in MATLAB. A basic demonstration is provided in `test_corr_map.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_corr_map.m` for a usage example.
+
 
 ## Contact information
 contact@lovelacesquare.org

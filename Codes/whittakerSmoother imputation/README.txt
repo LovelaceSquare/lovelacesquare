@@ -1,5 +1,32 @@
 # whittakerSmootherImpute
 
+Iteratively apply the Whittaker smoother to fill missing values (NaNs) in a
+matrix. At each iteration the current estimate is smoothed, and the original
+observed points are reinserted. The routine stops when successive estimates
+change by less than the specified tolerance. Use this when the underlying signal
+is expected to vary smoothly over the missing regions.
+
+## Inputs
+- `inputMatrix` (matrix): data containing NaNs.
+- `lambda` (double): smoothing parameter.
+- `d` (int): difference order.
+- `maxIter` (int): maximum iterations.
+- `tol` (double): convergence tolerance.
+
+## Outputs
+- `smoothedMatrix` (matrix): smoothed result.
+- `imputedMatrix` (matrix): data with NaNs replaced.
+
+## Example
+```matlab
+[S, I] = whittakerSmootherImpute(X,10,2,5,1e-4);
+```
+
+## Author
+Adrián Gómez-Sánchez
+
+MIT License.
+=======
 ## What the code does
 WHITTAKERSMOOTHERIMPUTE  Apply the Whittaker smoother for signal smoothing,
 

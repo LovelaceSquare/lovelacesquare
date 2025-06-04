@@ -1,5 +1,32 @@
 # birfi_ls
 
+Estimate the instrument response function (IRF) of a fluorescence decay. The
+procedure builds a structured Hankel matrix from the decay trace and solves a
+regularized least squares system. A Tikhonov term penalizes large second
+derivatives of the IRF, yielding a smooth estimate even when the signal is
+noisy. This routine is useful when an experimental IRF measurement is not
+available.
+
+## Inputs
+- `decay` (vector): measured decay signal.
+- `irf_size` (int): size of the IRF to recover.
+- `lambda` (double): regularization strength controlling smoothness.
+
+## Output
+- `irf` (vector): estimated instrument response function.
+
+## Example
+```matlab
+irf_len = 50;
+lambdaVal = 1e5;
+irf = birfi_ls(decay_signal, irf_len, lambdaVal);
+```
+
+## Author
+Adrián Gómez-Sánchez
+
+MIT License.
+=======
 ## What the code does
 BIRFI_LS. Perform IRF estimation using Tikhonov regularization.
 

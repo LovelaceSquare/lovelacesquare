@@ -1,7 +1,13 @@
-# 2025-04-09-12-24-corr_map
+# corr_map
 
 ## What the code does
-Plot the correlation map   Author: Ruggero Guerrini Mail: gr6898@gmail.com Date Created: 2025-04-08 License: MIT  Description: Plot the correlation map printing the number in each pixel of the map    Arguments: C: Input data, spectrum. n samples x p spectral length  Returns: figure with the correlation map  Disclaimer: Authors and Lovelace's Square are not responsible for any issues, inaccuracies, or data loss arising  from the use of this function.
+Plot the correlation map
+Run `corr_map.m` in MATLAB. A basic demonstration is provided in `test.m`.
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+See `test.m` for a usage example.
+contact@lovelacesquare.org
+MIT
+ figure with the correlation map  Disclaimer: Authors and Lovelace's Square are not responsible for any issues, inaccuracies, or data loss arising  from the use of this function.
 
 ## How to use it
 [Placeholder: Explain how to use the code, e.g., main function and arguments]

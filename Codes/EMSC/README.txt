@@ -21,13 +21,8 @@ controls how much baseline curvature is removed.
 [XCorr, ref] = EMSC(X, 'Mean', 1);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-EMSC.  Perform Extended Multiplicative Scatter Correction on a 2D data matrix.
+Extended Multiplicative Scatter Correction. The procedure fits each spectrum to
 
 ## How to use it
 Run `EMSC.m` in MATLAB. A basic demonstration is provided in `test.m`.

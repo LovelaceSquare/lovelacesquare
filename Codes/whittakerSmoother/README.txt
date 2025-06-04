@@ -11,7 +11,7 @@ controls which derivative is penalized.
 - `lambda` (double): smoothing parameter.
 - `d` (int): order of the difference operator.
 
-## Output
+## Outputs
 - `smoothedMatrix` (matrix): smoothed signals.
 
 ## Example
@@ -19,13 +19,8 @@ controls which derivative is penalized.
 S = whittakerSmoother(X,1e3,2);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-WhittakerSmoother. Apply the Whittaker smoother for signal smoothing.
+Apply the Whittaker penalized least squares smoother to each row of a matrix.
 
 ## How to use it
 Run `whittakerSmoother.m` in MATLAB. A basic demonstration is provided in `test.m`.

@@ -24,13 +24,8 @@ pVal = 0.001;
 [corrected, base] = AsLS(X, lambdaVal, pVal);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-Licensed under the MIT License.
-=======
 ## What the code does
-AsLS. Perform Asymmetric Least Squares (AsLS) baseline correction on
+Asymmetric Least Squares (AsLS) baseline correction for spectral data. The
 
 ## How to use it
 Run `AsLS.m` in MATLAB. A basic demonstration is provided in `test.m`.

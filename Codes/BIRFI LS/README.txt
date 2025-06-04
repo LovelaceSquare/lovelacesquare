@@ -12,7 +12,7 @@ available.
 - `irf_size` (int): size of the IRF to recover.
 - `lambda` (double): regularization strength controlling smoothness.
 
-## Output
+## Outputs
 - `irf` (vector): estimated instrument response function.
 
 ## Example
@@ -22,13 +22,8 @@ lambdaVal = 1e5;
 irf = birfi_ls(decay_signal, irf_len, lambdaVal);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-BIRFI_LS. Perform IRF estimation using Tikhonov regularization.
+Estimate the instrument response function (IRF) of a fluorescence decay. The
 
 ## How to use it
 Run `birfi_ls.m` in MATLAB. A basic demonstration is provided in `test.m`.

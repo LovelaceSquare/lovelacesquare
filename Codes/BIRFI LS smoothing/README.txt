@@ -12,7 +12,7 @@ smooth.
 - `irf_size` (int): desired IRF length.
 - `penalty` (double): smoothing regularization parameter.
 
-## Output
+## Outputs
 - `irf` (vector): reconstructed instrument response function.
 
 ## Example
@@ -21,13 +21,8 @@ pen = 1e8;
 irf = birfi_ls_smoothing(decay, 100, pen);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-BIRFI_LS_SMOOTHING. Perform IRF estimation with smoothing using Tikhonov regularization.
+Variant of `birfi_ls` that enforces extra smoothness on the recovered IRF. It
 
 ## How to use it
 Run `birfi_ls_smoothing.m` in MATLAB. A basic demonstration is provided in `test.m`.

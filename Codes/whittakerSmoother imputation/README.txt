@@ -22,13 +22,8 @@ is expected to vary smoothly over the missing regions.
 [S, I] = whittakerSmootherImpute(X,10,2,5,1e-4);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-WHITTAKERSMOOTHERIMPUTE  Apply the Whittaker smoother for signal smoothing,
+Iteratively apply the Whittaker smoother to fill missing values (NaNs) in a
 
 ## How to use it
 Run `whittakerSmootherImpute.m` in MATLAB. A basic demonstration is provided in `test.m`.
@@ -43,7 +38,7 @@ See `test.m` for a usage example.
 contact@lovelacesquare.org
 
 ## Authors
-Adrián Gómez-Sánchez (modified by [Your Name])
+Adrián Gómez-Sánchez
 
 ## License
 MIT

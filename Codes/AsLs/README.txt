@@ -1,28 +1,24 @@
-# 2025-03-26-19-32-AsLs
+# AsLS
 
-## What the code does
-[Placeholder: Describe what the code does]
+Asymmetric Least Squares (AsLS) baseline correction for spectral data.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): spectral data with one spectrum per row.
+- `lambda` (double): smoothing parameter controlling baseline smoothness.
+- `p` (double): asymmetry parameter (0 < p < 1) weighting positive/negative residuals.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `correctedData` (matrix): baseline-corrected spectra.
+- `baseline` (matrix): estimated baseline for each row.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+lambdaVal = 1e6;
+pVal = 0.001;
+[corrected, base] = AsLS(X, lambdaVal, pVal);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+Licensed under the MIT License.

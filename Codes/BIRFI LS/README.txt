@@ -1,28 +1,23 @@
-# 2025-03-06-09-55-BIRFI LS
+# birfi_ls
 
-## What the code does
-[Placeholder: Describe what the code does]
+Estimates the instrument response function (IRF) of a fluorescence decay using a Hankel matrix approach with Tikhonov regularization.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `decay` (vector): measured decay signal.
+- `irf_size` (int): size of the IRF to recover.
+- `lambda` (double): regularization strength controlling smoothness.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `irf` (vector): estimated instrument response function.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+irf_len = 50;
+lambdaVal = 1e5;
+irf = birfi_ls(decay_signal, irf_len, lambdaVal);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

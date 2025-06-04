@@ -1,28 +1,23 @@
-# 2025-03-26-19-14-WienerFiltering
+# WienerFiltering
 
-## What the code does
-[Placeholder: Describe what the code does]
+Row-wise Wiener filter using Welch-estimated power spectra.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): spectral data matrix.
+- `noiseVar` (double): estimated noise variance.
+- `segmentLength` (int): segment length for PSD estimation.
+- `overlap` (int): overlap between segments.
+- `nfft` (int): FFT length.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `filteredData` (matrix): Wiener-filtered signals.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+Xfilt = WienerFiltering(X,0.01,256,128,512);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

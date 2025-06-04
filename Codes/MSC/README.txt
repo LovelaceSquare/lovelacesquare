@@ -1,28 +1,22 @@
-# 2025-03-26-19-39-MSC
+# MSC
 
-## What the code does
-[Placeholder: Describe what the code does]
+Classic Multiplicative Scatter Correction using a reference spectrum.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): spectra with one row per sample.
+- `refType` ("Mean Spectrum" or "Reference Index"): how to choose the reference.
+- `refIndex` (int): row index when `refType` is "Reference Index".
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `correctedData` (matrix): MSC‑corrected spectra.
+- `referenceSpec` (row vector): reference spectrum used.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[Xcorr, ref] = MSC(X,'Mean Spectrum',1);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

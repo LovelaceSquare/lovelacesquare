@@ -1,28 +1,26 @@
-# 2025-03-26-19-22-I-SVD
+# I_SVD
 
-## What the code does
-[Placeholder: Describe what the code does]
+Iterative SVD-based PCA imputation. Missing values are replaced by estimates from a low-rank SVD reconstruction until convergence.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `D` (matrix): data matrix possibly containing NaNs.
+- `nComp` (int): number of principal components to retain.
+- `maxIter` (int): maximum number of global iterations.
+- `tol` (double, optional): convergence tolerance.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `Dimp` (matrix): imputed data matrix.
+- `T` (matrix): score matrix.
+- `P` (matrix): loading matrix.
+- `r2` (vector): explained variance per iteration.
+- `lofc` (vector): lack of fit per iteration.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[Dimp,T,P,r2,lof] = I_SVD(D,3,50);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

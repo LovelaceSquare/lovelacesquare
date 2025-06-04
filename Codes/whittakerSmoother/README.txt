@@ -1,28 +1,21 @@
-# 2025-03-26-19-02-whittakerSmoother
+# whittakerSmoother
 
-## What the code does
-[Placeholder: Describe what the code does]
+Apply the Whittaker penalized least squares smoother to each row of a matrix.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `inputMatrix` (matrix): data to smooth.
+- `lambda` (double): smoothing parameter.
+- `d` (int): order of the difference operator.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `smoothedMatrix` (matrix): smoothed signals.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+S = whittakerSmoother(X,1e3,2);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

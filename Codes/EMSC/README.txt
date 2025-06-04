@@ -1,28 +1,23 @@
-# 2025-03-26-19-42-EMSC
+# EMSC
 
-## What the code does
-[Placeholder: Describe what the code does]
+Extended Multiplicative Scatter Correction.
+Removes additive and multiplicative effects by aligning each spectrum to a reference and optional polynomial baseline.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): spectral data with one spectrum per row.
+- `refType` ("Mean" or "Median"): how to compute the reference spectrum.
+- `polyOrder` (int): polynomial order for baseline modeling (0 for none).
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `correctedData` (matrix): EMSC-corrected data.
+- `referenceSpec` (row vector): reference spectrum used.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[XCorr, ref] = EMSC(X, 'Mean', 1);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

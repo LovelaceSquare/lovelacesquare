@@ -1,28 +1,23 @@
-# 2025-03-26-19-28-Fourier filter
+# fourierFilter
 
-## What the code does
-[Placeholder: Describe what the code does]
+Applies frequency-domain filtering to each row of a time-series matrix using FFT.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): signals arranged as rows.
+- `freqIntervals` (Nx2 array): frequency bands [low high] in Hz to keep.
+- `dt` (double, optional): sampling interval in seconds.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `filteredData` (matrix): signals after filtering.
+- `freqVector` (vector): frequencies corresponding to the FFT bins.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+intervals = [0 15; 40 60];
+[Xfilt, f] = fourierFilter(X, intervals, 0.01);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

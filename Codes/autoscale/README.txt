@@ -1,28 +1,21 @@
-# 2025-03-26-19-35-autoscale
+# autoscale
 
-## What the code does
-[Placeholder: Describe what the code does]
+Center and scale a matrix to zero mean and unit variance by rows or columns.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `inputMatrix` (matrix): data to scale.
+- `direction` ("column" or "row", default "column"): orientation of scaling.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `scaledMatrix` (matrix): autoscaled data.
+- `scalingParams` (struct): means and standard deviations used.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[Xs, params] = autoscale(X,'column');
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

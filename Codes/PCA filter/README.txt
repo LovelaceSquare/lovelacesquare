@@ -1,28 +1,20 @@
-# 2025-03-26-19-41-PCA filter
+# pcaFilter
 
-## What the code does
-[Placeholder: Describe what the code does]
+Performs dimensionality reduction by projecting the data matrix onto a specified number of principal components and reconstructing it.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `inputMatrix` (matrix): data to filter.
+- `numComponents` (int): number of principal components to retain.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `filteredMatrix` (matrix): reconstructed data using the selected components.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[Xfilt] = pcaFilter(X,5);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

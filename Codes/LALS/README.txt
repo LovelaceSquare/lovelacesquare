@@ -1,28 +1,27 @@
-# 2025-03-23-12-37-LALS
+# LALS
 
-## What the code does
-[Placeholder: Describe what the code does]
+Local Asymmetric Least Squares baseline correction with interval-specific asymmetry and smoothing parameters.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `y` (vector): 1‑D signal to correct.
+- `intervals` (Mx2 array or cell): index ranges where local parameters apply.
+- `pVals` (vector): asymmetry parameter for each interval.
+- `lambdasAsym` (vector): local smoothing penalties.
+- `lambdaWhit` (scalar): smoothing outside intervals.
+- `mu` (scalar): global first derivative penalty.
+- `maxIter` (int): maximum IRLS iterations.
+- `tol` (double): convergence tolerance.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `baseline` (vector): estimated baseline.
+- `weights` (vector): final IRLS weights.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[b, w] = LALS(y,[10 20;40 50],[0.01;0.001],[1e4;2e5],100,1e3,50,1e-6);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

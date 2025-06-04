@@ -1,28 +1,26 @@
-# 2025-03-26-19-29-O ALS (2)
+# OALS
 
-## What the code does
-[Placeholder: Describe what the code does]
+Orthogonalized Alternating Least Squares for PCA with optional user-supplied loadings.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `D` (matrix): data matrix.
+- `iter` (int): maximum number of iterations.
+- `nPC` (int): number of components.
+- `P` (matrix, optional): initial loadings.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `Dr` (matrix): reconstructed data matrix.
+- `T` (matrix): scores.
+- `P` (matrix): final loadings.
+- `r2` (vector): explained variance per iteration.
+- `lofc` (vector): lack of fit per iteration.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[Dr,T,P,r2,lof] = OALS(D,100,3);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

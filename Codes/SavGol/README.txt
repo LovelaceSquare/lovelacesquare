@@ -1,28 +1,23 @@
-# 2025-03-26-19-24-SavGol
+# SavGol
 
-## What the code does
-[Placeholder: Describe what the code does]
+Savitzky–Golay smoothing and differentiation for spectral matrices.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): spectra arranged row-wise.
+- `windowSize` (odd int): filter window length.
+- `polyOrder` (int): polynomial order of the fit.
+- `derivOrder` (int): derivative order (0=smoothing).
+- `edgeMethod` (string, optional): edge handling mode.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `filteredData` (matrix): smoothed or differentiated spectra.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+Xf = SavGol(X,11,3,0,'Reflection');
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

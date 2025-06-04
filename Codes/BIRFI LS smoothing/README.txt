@@ -1,28 +1,22 @@
-# 2025-03-06-09-54-BIRFI LS smoothing
+# birfi_ls_smoothing
 
-## What the code does
-[Placeholder: Describe what the code does]
+Variant of BIRFI_LS that adds a second-derivative smoothing penalty when estimating the instrument response function.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `decay` (vector): measured decay signal.
+- `irf_size` (int): desired IRF length.
+- `penalty` (double): smoothing regularization parameter.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `irf` (vector): reconstructed instrument response function.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+pen = 1e8;
+irf = birfi_ls_smoothing(decay, 100, pen);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

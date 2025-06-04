@@ -1,28 +1,23 @@
-# 2025-02-14-15-49-cropBackground
+# cropBackground
 
-## What the code does
-[Placeholder: Describe what the code does]
+Remove pixels from an image cube whose summed intensity is outside a given range.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `imageCube` (rows × cols × channels): hyperspectral image.
+- `minThresh` (double): lower intensity bound.
+- `maxThresh` (double): upper intensity bound.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `croppedMatrix` (matrix): retained pixel spectra.
+- `retainedPixelsIdx` (vector): indices of kept pixels.
+- `discardedPixelsIdx` (vector): indices of removed pixels.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[cropData, keepIdx, dropIdx] = cropBackground(img,100,500);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

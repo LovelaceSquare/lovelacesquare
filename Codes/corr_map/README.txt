@@ -1,10 +1,11 @@
-# 2025-04-09-12-24-corr_map
+# corr_map
 
-## What the code does
-Plot the correlation map   Author: Ruggero Guerrini Mail: gr6898@gmail.com Date Created: 2025-04-08 License: MIT  Description: Plot the correlation map printing the number in each pixel of the map    Arguments: C: Input data, spectrum. n samples x p spectral length  Returns: figure with the correlation map  Disclaimer: Authors and Lovelace's Square are not responsible for any issues, inaccuracies, or data loss arising  from the use of this function.
-
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+Display a heatmap of correlation coefficients between spectra.
+## Input
+- `C` (matrix): data matrix with samples in rows.
+The function creates a figure showing the correlation matrix with values annotated.
+## Author
+MIT License.
 
 ## Installation/setup instructions
 (Please list any installation or setup steps required)

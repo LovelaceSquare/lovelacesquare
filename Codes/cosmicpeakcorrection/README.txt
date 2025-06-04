@@ -1,28 +1,23 @@
-# 2025-03-26-19-38-cosmicpeakcorrection
+# CosmicPeakCorrection
 
-## What the code does
-[Placeholder: Describe what the code does]
+Detects abrupt spikes in spectral data (e.g., cosmic rays) using derivatives and replaces affected channels via interpolation.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (matrix): spectral data.
+- `derivativeOrder` (int): derivative order used for spike detection.
+- `channelsToRemove` (int): number of neighboring channels to remove.
+- `threshold` (double): derivative threshold for peak detection.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `correctedData` (matrix): spectra with spikes removed.
+- `peakMask` (matrix): logical mask of corrected points.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
-
-## Contact information
-(Please provide contact information for questions or support)
+## Example
+```matlab
+[cleaned, mask] = CosmicPeakCorrection(X,1,2,5);
+```
 
 ## Authors
+Adrián Gómez-Sánchez and Rodrigo Rocha de Oliveira
 
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

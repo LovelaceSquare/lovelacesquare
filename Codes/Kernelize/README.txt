@@ -1,28 +1,21 @@
-# 2025-02-14-10-08-Kernelize
+# kernelize
 
-## What the code does
-[Placeholder: Describe what the code does]
+Convolve each signal in the input matrix with a set of normalized kernels, producing a 3‑way array of kernelized data.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `D` (matrix): input data (samples × timepoints).
+- `num_kernels` (int): number of kernels to generate.
+- `kernel_width` (int): width of each kernel in points.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `D_kernelized` (3D array): kernelized data [samples × kernels × time].
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+Dk = kernelize(D, 5, 20);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

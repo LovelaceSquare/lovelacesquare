@@ -1,28 +1,21 @@
-# 2025-04-04-12-21-binning v 2.0
+# binning
 
-## What the code does
-[Placeholder: Describe what the code does]
+Group adjacent elements of an N‑D array and sum or average them according to the specified bin sizes.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `data` (array): array to bin.
+- `binVector` (vector): bin size for each dimension.
+- `mode` ("sum" or "mean"): how to combine elements.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Output
+- `dataBinned` (array): binned array with reduced size.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+B = binning(rand(100,200),[4 5],'sum');
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

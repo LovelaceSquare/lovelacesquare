@@ -1,28 +1,24 @@
-# 2025-02-14-09-47-whittakerSmoother imputation
+# whittakerSmootherImpute
 
-## What the code does
-[Placeholder: Describe what the code does]
+Iteratively apply the Whittaker smoother to fill missing values (NaNs) in a matrix.
 
-## How to use it
-[Placeholder: Explain how to use the code, e.g., main function and arguments]
+## Inputs
+- `inputMatrix` (matrix): data containing NaNs.
+- `lambda` (double): smoothing parameter.
+- `d` (int): difference order.
+- `maxIter` (int): maximum iterations.
+- `tol` (double): convergence tolerance.
 
-## Installation/setup instructions
-(Please list any installation or setup steps required)
+## Outputs
+- `smoothedMatrix` (matrix): smoothed result.
+- `imputedMatrix` (matrix): data with NaNs replaced.
 
-## Usage examples
-(Please provide one or more examples of how to use the code)
+## Example
+```matlab
+[S, I] = whittakerSmootherImpute(X,10,2,5,1e-4);
+```
 
-## Contact information
-(Please provide contact information for questions or support)
+## Author
+Adrián Gómez-Sánchez
 
-## Authors
-
-## License
-(Refer to lovelace_square_readme.md for acceptable licenses. Please fill this manually.)
-
-## Version
-
-## Date Created
-
-## Reviewed by Lovelace's Square team
-No
+MIT License.

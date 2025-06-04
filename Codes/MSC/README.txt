@@ -24,3 +24,24 @@ should represent the ideal shape of the data.
 Adrián Gómez-Sánchez
 
 MIT License.
+=======
+## What the code does
+MSC.  Perform Multiplicative Scatter Correction on a 2D data matrix.
+
+## How to use it
+Run `MSC.m` in MATLAB. A basic demonstration is provided in `test.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test.m` for a usage example.
+
+## Contact information
+contact@lovelacesquare.org
+
+## Authors
+Adrián Gómez-Sánchez
+
+## License
+MIT

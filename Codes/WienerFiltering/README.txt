@@ -25,3 +25,24 @@ Xfilt = WienerFiltering(X,0.01,256,128,512);
 Adrián Gómez-Sánchez
 
 MIT License.
+=======
+## What the code does
+WienerFiltering. Apply Wiener filtering to spectral data.
+
+## How to use it
+Run `WienerFiltering.m` in MATLAB. A basic demonstration is provided in `test.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test.m` for a usage example.
+
+## Contact information
+contact@lovelacesquare.org
+
+## Authors
+Adrián Gómez-Sánchez.
+
+## License
+MIT

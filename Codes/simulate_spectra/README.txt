@@ -20,6 +20,22 @@ spec = simulate_spectra(10,200,3,5,'same');
 
 ## Author
 MIT License.
+=======
+## What the code does
+Simulate spectra with n gaussian without noise.
+Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test.m`.
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+See `test.m` for a usage example.
+
+contact@lovelacesquare.org
+MIT
+
+## Authors
+Ruggero Guerrini
+
+## License
+MIT
+
 ## Version
 1.0
 

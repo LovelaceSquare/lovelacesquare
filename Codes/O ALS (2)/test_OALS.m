@@ -1,4 +1,4 @@
-% testOALS_Spectra.m
+% test_OALS.m
 %
 % This script generates synthetic spectral data resembling Raman spectra composed
 % of three distinct components, adds low-level Gaussian noise, introduces a specified

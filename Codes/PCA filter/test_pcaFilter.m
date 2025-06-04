@@ -1,4 +1,4 @@
-% test.m
+% test_pcaFilter.m
 %
 % This script generates synthetic Raman spectra as a linear combination
 % of three underlying components with added noise. Each component

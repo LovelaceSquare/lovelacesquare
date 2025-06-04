@@ -21,22 +21,17 @@ intervals = [0 15; 40 60];
 [Xfilt, f] = fourierFilter(X, intervals, 0.01);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-fourierFilter. Apply frequency-domain filtering to time-series signals.
+Apply frequency-domain filtering to each row of a time‑series matrix using the
 
 ## How to use it
-Run `fourierFilter.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `fourierFilter.m` in MATLAB. A basic demonstration is provided in `test_fourierFilter.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_fourierFilter.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

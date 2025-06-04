@@ -1,4 +1,4 @@
-%% Test Script for EMSC Function
+% test_EMSC.m
 % This script tests the functionality of the EMSC function by simulating
 % spectral data with known additive and multiplicative effects.
 

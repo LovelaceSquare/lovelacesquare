@@ -1,4 +1,4 @@
-% test_birfi_smoothing.m
+% test_BIRFI_LS_smoothing.m
 %
 % This script generates synthetic decay data with a known instrument
 % response function (IRF) with two shoulders using an exponential decay

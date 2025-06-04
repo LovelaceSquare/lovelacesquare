@@ -21,28 +21,23 @@ interpolation, restoring a smooth spectrum while leaving genuine peaks intact.
 [cleaned, mask] = CosmicPeakCorrection(X,1,2,5);
 ```
 
-## Authors
-Adrián Gómez-Sánchez and Rodrigo Rocha de Oliveira
-
-MIT License.
-=======
 ## What the code does
-COSMICPEAKCORRECTION  Removes cosmic spikes from spectral data by
+Detect abrupt spikes in spectral data (e.g., cosmic rays) using derivatives and
 
 ## How to use it
-Run `CosmicPeakCorrection.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `CosmicPeakCorrection.m` in MATLAB. A basic demonstration is provided in `test_cosmicpeakcorrection.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_cosmicpeakcorrection.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org
 
 ## Authors
-% Authors: Adrián Gómez-Sánchez and Rodrigo Rocha de Oliveira
+Adrián Gómez-Sánchez
 
 ## License
 MIT

@@ -25,22 +25,17 @@ remove background around broad peaks while preserving narrow features elsewhere.
 [b, w] = LALS(y,[10 20;40 50],[0.01;0.001],[1e4;2e5],100,1e3,50,1e-6);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-LALS. Perform Local Asymmetric Least Squares (LALS) baseline correction with per-interval parameters.
+Local Asymmetric Least Squares baseline correction with interval‑dependent
 
 ## How to use it
-Run `LALS.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `LALS.m` in MATLAB. A basic demonstration is provided in `test_LALS.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_LALS.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

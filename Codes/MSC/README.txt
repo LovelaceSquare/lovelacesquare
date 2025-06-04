@@ -20,22 +20,17 @@ should represent the ideal shape of the data.
 [Xcorr, ref] = MSC(X,'Mean Spectrum',1);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-MSC.  Perform Multiplicative Scatter Correction on a 2D data matrix.
+Classic Multiplicative Scatter Correction using a reference spectrum. Each
 
 ## How to use it
-Run `MSC.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `MSC.m` in MATLAB. A basic demonstration is provided in `test_MSC.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_MSC.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

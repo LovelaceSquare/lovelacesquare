@@ -11,36 +11,30 @@ function is handy for creating test data or evaluating preprocessing routines.
 - `n_peaks` (int): number of Gaussians per spectrum.
 - `width` (double): scale factor for Gaussian width.
 - `type` ("same" or "different"): whether peak positions are shared.
-## Output
+## Outputs
 - `spectra` (matrix): generated spectra.
 ## Example
 ```matlab
 spec = simulate_spectra(10,200,3,5,'same');
 ```
 
-## Author
-MIT License.
-=======
 ## What the code does
-Simulate spectra with n gaussian without noise.
-Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test.m`.
-MATLAB R2018b or later. Add this folder to your MATLAB path.
-See `test.m` for a usage example.
+Generate synthetic spectra by summing Gaussian peaks. Peak centers are chosen at
 
+## How to use it
+Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test_simulate_spectra.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test_simulate_spectra.m` for a usage example.
+
+## Contact information
 contact@lovelacesquare.org
-MIT
 
 ## Authors
-Ruggero Guerrini
+Adrián Gómez-Sánchez
 
 ## License
 MIT
-
-## Version
-1.0
-
-## Date Created
-
-
-## Reviewed by Lovelace's Square team
-No

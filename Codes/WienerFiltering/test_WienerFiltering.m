@@ -1,4 +1,4 @@
-% testWienerFiltering.m
+% test_WienerFiltering.m
 %
 % This script generates synthetic spectral data, adds noise, applies
 % Wiener filtering, and compares the original, noisy, and filtered data

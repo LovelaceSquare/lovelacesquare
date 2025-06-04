@@ -1,4 +1,4 @@
-%% Test Script for MSC Function
+% test_MSC.m
 % This script tests the functionality of the MSC function
 %
 % Author:  Adrián Gómez-Sánchez

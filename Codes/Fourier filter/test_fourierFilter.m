@@ -1,4 +1,4 @@
-% testFourier.m
+% test_fourierFilter.m
 %
 % This script generates synthetic spectral data that simulates a smooth
 % signal with superimposed high-frequency noise. The goal is to filter out

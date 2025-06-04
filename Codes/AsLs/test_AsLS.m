@@ -1,4 +1,4 @@
-% test.m
+% test_AsLS.m
 %
 % This script generates synthetic spectral data with known baselines,
 % applies AsLS baseline correction, and evaluates the results visually

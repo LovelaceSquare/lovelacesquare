@@ -1,4 +1,4 @@
-% test.m
+% test_cosmicpeakcorrection.m
 %
 % This script generates several synthetic Raman spectra with varied features.
 % For each spectrum, it introduces Gaussian noise and simulates cosmic peaks

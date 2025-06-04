@@ -14,7 +14,7 @@ desired peak width.
 - `derivOrder` (int): derivative order (0=smoothing).
 - `edgeMethod` (string, optional): edge handling mode.
 
-## Output
+## Outputs
 - `filteredData` (matrix): smoothed or differentiated spectra.
 
 ## Example
@@ -22,22 +22,17 @@ desired peak width.
 Xf = SavGol(X,11,3,0,'Reflection');
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-SavGol.  Apply Savitzky-Golay filtering to a 2D data matrix.
+Savitzky–Golay smoothing and differentiation for spectral matrices. Within each
 
 ## How to use it
-Run `SavGol.m` in MATLAB. A basic demonstration is provided in `test.m`.
+Run `SavGol.m` in MATLAB. A basic demonstration is provided in `test_SavGol.m`.
 
 ## Installation/setup instructions
 MATLAB R2018b or later. Add this folder to your MATLAB path.
 
 ## Usage examples
-See `test.m` for a usage example.
+See `test_SavGol.m` for a usage example.
 
 ## Contact information
 contact@lovelacesquare.org

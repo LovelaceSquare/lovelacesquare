@@ -18,13 +18,8 @@ mean and standard deviation for possible inverse transformation.
 [Xs, params] = autoscale(X,'column');
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-AUTOSCALE Perform autoscaling on a 2D data matrix.
+Center and scale a matrix to zero mean and unit variance by rows or columns. The
 
 ## How to use it
 Run `autoscale.m` in MATLAB. A basic demonstration is provided in `test.m`.

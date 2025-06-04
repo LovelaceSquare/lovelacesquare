@@ -11,7 +11,7 @@ number of kernels determine the time resolution and coverage.
 - `num_kernels` (int): number of kernels to generate.
 - `kernel_width` (int): width of each kernel in points.
 
-## Output
+## Outputs
 - `D_kernelized` (3D array): kernelized data [samples × kernels × time].
 
 ## Example
@@ -19,13 +19,8 @@ number of kernels determine the time resolution and coverage.
 Dk = kernelize(D, 5, 20);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-kernelize Apply kernelization to the input matrix D
+Convolve each signal in the input matrix with a bank of normalized kernels. Each
 
 ## How to use it
 Run `kernelize.m` in MATLAB. A basic demonstration is provided in `test.m`.

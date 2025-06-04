@@ -18,13 +18,8 @@ baseline removal or signal denoising.
 [Xfilt] = pcaFilter(X,5);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-pcaFilter Performs PCA filtering on the input matrix.
+Performs dimensionality reduction by projecting the data matrix onto a selected
 
 ## How to use it
 Run `pcaFilter.m` in MATLAB. A basic demonstration is provided in `test.m`.

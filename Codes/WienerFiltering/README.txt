@@ -13,7 +13,7 @@ the noise can be considered additive and stationary.
 - `overlap` (int): overlap between segments.
 - `nfft` (int): FFT length.
 
-## Output
+## Outputs
 - `filteredData` (matrix): Wiener-filtered signals.
 
 ## Example
@@ -21,13 +21,8 @@ the noise can be considered additive and stationary.
 Xfilt = WienerFiltering(X,0.01,256,128,512);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-WienerFiltering. Apply Wiener filtering to spectral data.
+Row‑wise Wiener filter using Welch-estimated power spectra. For each signal the
 
 ## How to use it
 Run `WienerFiltering.m` in MATLAB. A basic demonstration is provided in `test.m`.
@@ -42,7 +37,7 @@ See `test.m` for a usage example.
 contact@lovelacesquare.org
 
 ## Authors
-Adrián Gómez-Sánchez.
+Adrián Gómez-Sánchez
 
 ## License
 MIT

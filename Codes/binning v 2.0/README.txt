@@ -11,7 +11,7 @@ analysis to improve signal‑to‑noise ratios.
 - `binVector` (vector): bin size for each dimension.
 - `mode` ("sum" or "mean"): how to combine elements.
 
-## Output
+## Outputs
 - `dataBinned` (array): binned array with reduced size.
 
 ## Example
@@ -19,13 +19,8 @@ analysis to improve signal‑to‑noise ratios.
 B = binning(rand(100,200),[4 5],'sum');
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-binning Bins the data array according to specified bin sizes and mode.
+Group adjacent elements of an N‑D array and sum or average them according to the
 
 ## How to use it
 Run `binning.m` in MATLAB. A basic demonstration is provided in `test.m`.

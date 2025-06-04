@@ -24,13 +24,8 @@ large data sets where SVD may be impractical.
 [Dr,T,P,r2,lof] = OALS(D,100,3);
 ```
 
-## Author
-Adrián Gómez-Sánchez
-
-MIT License.
-=======
 ## What the code does
-OALS  Perform Orthogonalized Alternating Least Squares (OALS) on the input data.
+Orthogonalized Alternating Least Squares for PCA. Scores and loadings are
 
 ## How to use it
 Run `OALS.m` in MATLAB. A basic demonstration is provided in `test.m`.

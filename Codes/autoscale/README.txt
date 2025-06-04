@@ -1,6 +1,9 @@
 # autoscale
 
-Center and scale a matrix to zero mean and unit variance by rows or columns.
+Center and scale a matrix to zero mean and unit variance by rows or columns. The
+operation standardizes each row or column separately so that subsequent analysis
+is not biased by absolute intensities. The accompanying structure returns the
+mean and standard deviation for possible inverse transformation.
 
 ## Inputs
 - `inputMatrix` (matrix): data to scale.

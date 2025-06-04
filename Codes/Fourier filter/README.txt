@@ -1,6 +1,10 @@
 # fourierFilter
 
-Applies frequency-domain filtering to each row of a time-series matrix using FFT.
+Apply frequency-domain filtering to each row of a time‑series matrix using the
+fast Fourier transform. The routine converts each signal to the frequency
+domain, zeroes out frequencies outside the provided pass bands, and then performs
+an inverse transform. This is useful for removing electrical noise or other
+unwanted frequency components from densely sampled data.
 
 ## Inputs
 - `data` (matrix): signals arranged as rows.

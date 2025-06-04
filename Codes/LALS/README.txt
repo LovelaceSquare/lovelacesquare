@@ -1,6 +1,10 @@
 # LALS
 
-Local Asymmetric Least Squares baseline correction with interval-specific asymmetry and smoothing parameters.
+Local Asymmetric Least Squares baseline correction with interval‑dependent
+parameters. The signal is divided into user supplied regions and each region can
+have its own asymmetry level and smoothing strength. Outside those regions a
+global Whittaker smoother is applied. This flexibility lets you aggressively
+remove background around broad peaks while preserving narrow features elsewhere.
 
 ## Inputs
 - `y` (vector): 1‑D signal to correct.

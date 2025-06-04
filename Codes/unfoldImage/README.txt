@@ -1,6 +1,9 @@
 # unfoldImage
 
-Flatten a 3D image cube into a 2D matrix so that each pixel becomes a row.
+Flatten a 3D image cube into a 2D matrix so that each pixel becomes a row. This
+reshaping step is typically performed prior to multivariate analysis so that
+common matrix algorithms can be applied to the spectral dimension while keeping
+track of pixel order for later refolding.
 ## Input
 - `Cube` (x × y × z array): image cube.
 ## Output

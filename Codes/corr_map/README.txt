@@ -1,6 +1,9 @@
 # corr_map
 
-Display a heatmap of correlation coefficients between spectra.
+Display a heatmap of correlation coefficients between spectra. The function
+computes the pairwise correlation matrix across rows and visualizes it using a
+color-coded image with optional numeric labels. This quick view helps identify
+groups of similar spectra or outliers in a dataset.
 ## Input
 - `C` (matrix): data matrix with samples in rows.
 The function creates a figure showing the correlation matrix with values annotated.

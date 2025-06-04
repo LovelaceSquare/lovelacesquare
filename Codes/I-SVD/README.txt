@@ -1,6 +1,11 @@
 # I_SVD
 
-Iterative SVD-based PCA imputation. Missing values are replaced by estimates from a low-rank SVD reconstruction until convergence.
+Iterative SVD‑based PCA imputation. The algorithm repeatedly fills missing
+values by projecting the partially observed data onto a specified number of
+principal components. After each SVD reconstruction the updated matrix replaces
+the missing entries and the process continues until the change between
+iterations falls below a tolerance. This works well when the underlying data are
+approximately low rank.
 
 ## Inputs
 - `D` (matrix): data matrix possibly containing NaNs.

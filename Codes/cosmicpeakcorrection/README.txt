@@ -1,6 +1,10 @@
 # CosmicPeakCorrection
 
-Detects abrupt spikes in spectral data (e.g., cosmic rays) using derivatives and replaces affected channels via interpolation.
+Detect abrupt spikes in spectral data (e.g., cosmic rays) using derivatives and
+replace the affected channels by interpolation. Derivatives amplify sudden
+intensity jumps so spikes are easily found with a threshold. After detection, a
+small window around each peak is marked as invalid and filled in by linear
+interpolation, restoring a smooth spectrum while leaving genuine peaks intact.
 
 ## Inputs
 - `data` (matrix): spectral data.

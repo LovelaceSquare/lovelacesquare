@@ -1,6 +1,10 @@
 # WienerFiltering
 
-Row-wise Wiener filter using Welch-estimated power spectra.
+Row‑wise Wiener filter using Welch-estimated power spectra. For each signal the
+power spectral density of both the noisy data and the estimated noise are
+computed with Welch's method. A Wiener gain is formed to attenuate frequency
+regions dominated by noise, leading to an improved signal-to-noise ratio when
+the noise can be considered additive and stationary.
 
 ## Inputs
 - `data` (matrix): spectral data matrix.

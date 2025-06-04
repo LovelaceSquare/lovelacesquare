@@ -1,6 +1,11 @@
 # SavGol
 
-Savitzky–Golay smoothing and differentiation for spectral matrices.
+Savitzky–Golay smoothing and differentiation for spectral matrices. Within each
+sliding window, a polynomial is fitted and evaluated at the center point. The
+result preserves peak heights and widths while suppressing noise. Derivative
+orders up to the polynomial order can be computed to enhance subtle features or
+estimate slopes. Window size should be odd and large enough to capture the
+desired peak width.
 
 ## Inputs
 - `data` (matrix): spectra arranged row-wise.

@@ -1,6 +1,10 @@
 # cropBackground
 
-Remove pixels from an image cube whose summed intensity is outside a given range.
+Remove pixels from a hyperspectral image cube whose summed intensity lies
+outside a user-defined range. Each pixel is integrated across all wavelengths
+and compared against the `minThresh` and `maxThresh` values. Pixels that fall
+outside this interval are discarded, allowing you to crop away low-signal
+background areas before further analysis.
 
 ## Inputs
 - `imageCube` (rows × cols × channels): hyperspectral image.

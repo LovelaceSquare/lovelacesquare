@@ -1,6 +1,10 @@
 # whittakerSmootherImpute
 
-Iteratively apply the Whittaker smoother to fill missing values (NaNs) in a matrix.
+Iteratively apply the Whittaker smoother to fill missing values (NaNs) in a
+matrix. At each iteration the current estimate is smoothed, and the original
+observed points are reinserted. The routine stops when successive estimates
+change by less than the specified tolerance. Use this when the underlying signal
+is expected to vary smoothly over the missing regions.
 
 ## Inputs
 - `inputMatrix` (matrix): data containing NaNs.

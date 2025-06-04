@@ -1,6 +1,10 @@
 # kernelize
 
-Convolve each signal in the input matrix with a set of normalized kernels, producing a 3‑way array of kernelized data.
+Convolve each signal in the input matrix with a bank of normalized kernels. Each
+kernel is typically Gaussian shaped and shifted across the signal, creating a
+third dimension representing kernel responses. The resulting tensor can be used
+for matched filtering or as features for classification tasks. The width and
+number of kernels determine the time resolution and coverage.
 
 ## Inputs
 - `D` (matrix): input data (samples × timepoints).

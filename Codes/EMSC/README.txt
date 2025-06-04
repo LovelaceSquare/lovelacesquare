@@ -1,7 +1,11 @@
 # EMSC
 
-Extended Multiplicative Scatter Correction.
-Removes additive and multiplicative effects by aligning each spectrum to a reference and optional polynomial baseline.
+Extended Multiplicative Scatter Correction. The procedure fits each spectrum to
+a common reference while optionally modeling low‑order polynomial trends. By
+separating multiplicative scaling from additive effects, EMSC is able to reduce
+scattering variability in Raman and NIR data. The reference can be computed as
+the mean/median spectrum or supplied explicitly, and the polynomial order
+controls how much baseline curvature is removed.
 
 ## Inputs
 - `data` (matrix): spectral data with one spectrum per row.

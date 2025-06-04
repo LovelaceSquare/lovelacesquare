@@ -1,6 +1,11 @@
 # birfi_ls
 
-Estimates the instrument response function (IRF) of a fluorescence decay using a Hankel matrix approach with Tikhonov regularization.
+Estimate the instrument response function (IRF) of a fluorescence decay. The
+procedure builds a structured Hankel matrix from the decay trace and solves a
+regularized least squares system. A Tikhonov term penalizes large second
+derivatives of the IRF, yielding a smooth estimate even when the signal is
+noisy. This routine is useful when an experimental IRF measurement is not
+available.
 
 ## Inputs
 - `decay` (vector): measured decay signal.

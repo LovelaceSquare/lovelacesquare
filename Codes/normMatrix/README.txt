@@ -1,6 +1,9 @@
 # normMatrix
 
-Normalize a matrix using a variety of norms.
+Normalize a matrix using a variety of norms. Depending on the `normType`
+parameter, each row or column (or the whole matrix) is divided by its chosen
+norm, such as L1, L2, infinity, or Frobenius. This allows easy comparison of
+spectra or variables on a common scale.
 ## Inputs
 - `data` (matrix): matrix to normalize.
 - `normType` (string): one of `'max'`, `'euclidean'`, `'l1'`, `'l2'`, `'linf'`, `'frobenius'`.

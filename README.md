@@ -1,10 +1,12 @@
 # Lovelace's Square Code Library
 
-This repository collects MATLAB implementations of common preprocessing and analysis routines used in chemometrics. Every algorithm resides under `Codes/` in its own folder containing the main function, a test script, and a README.
+This repository collects MATLAB implementations of common preprocessing and analysis routines used in chemometrics. Every algorithm resides under `Codes/` in its own folder containing the main function, a test script, and a README. The README files are structured so that a large language model can quickly locate parameter definitions and example usage.
 
 ## Quick Reference
 
 The table below lists the available algorithms and a short description of each.
+Follow the folder links for detailed usage including parameter descriptions and
+example code snippets.
 
 | Folder | Purpose |
 |-------|---------|

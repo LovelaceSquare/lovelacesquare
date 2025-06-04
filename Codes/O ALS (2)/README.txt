@@ -1,6 +1,10 @@
 # OALS
 
-Orthogonalized Alternating Least Squares for PCA with optional user-supplied loadings.
+Orthogonalized Alternating Least Squares for PCA. Scores and loadings are
+updated in an alternating fashion, and the loadings are orthogonalized at each
+step to maintain principal component properties. If a loading matrix is
+provided, it serves as the starting guess for refinement. Useful for PCA on
+large data sets where SVD may be impractical.
 
 ## Inputs
 - `D` (matrix): data matrix.

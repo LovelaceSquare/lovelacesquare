@@ -1,6 +1,10 @@
 # simulate_spectra
 
-Generate synthetic spectra by summing Gaussian peaks.
+Generate synthetic spectra by summing Gaussian peaks. Peak centers are chosen at
+random and each peak has a Gaussian shape with width controlled by the
+`width` parameter. When `type` is `'same'` all spectra share the same set of
+peak positions, otherwise each spectrum is generated independently. This
+function is handy for creating test data or evaluating preprocessing routines.
 ## Inputs
 - `num_spectra` (int): number of spectra.
 - `num_variables` (int): number of wavelength points.

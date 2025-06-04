@@ -30,6 +30,15 @@ MATLAB R2018b or later. Add this folder to your MATLAB path.
 ## Usage examples
 See `test_simulate_spectra.m` for a usage example.
 
+=======
+Run `simulate_spectra.m` in MATLAB. A basic demonstration is provided in `test.m`.
+
+## Installation/setup instructions
+MATLAB R2018b or later. Add this folder to your MATLAB path.
+
+## Usage examples
+See `test.m` for a usage example.
+
 ## Contact information
 contact@lovelacesquare.org
 

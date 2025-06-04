@@ -26,6 +26,7 @@ MATLAB R2018b or later. Add this folder to your MATLAB path.
 ## Usage examples
 See `test_corr_map.m` for a usage example.
 
+
 ## Contact information
 contact@lovelacesquare.org
 

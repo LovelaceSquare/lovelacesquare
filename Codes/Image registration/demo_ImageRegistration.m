@@ -82,7 +82,6 @@ fprintf('Applying distortion: tx=%.1f, ty=%.1f, theta=%.1f°, scale=%.3f\n', p_t
 hyperspectral_moving = WarpImageSimilarity(hyperspectral_original, p_true);
 fprintf('Original size: %dx%dx%d\n', size(hyperspectral_original));
 fprintf('Moving size: %dx%dx%d\n', size(hyperspectral_moving));
-hyperspectral_moving=hyperspectral_moving(20:end-30,10:end-40,:);
 
 %% Registration workflow
 fprintf('\n=== Registration Workflow ===\n');

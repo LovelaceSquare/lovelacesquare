@@ -152,10 +152,10 @@ function [registeredImg, pOpt] = imageRegistration( ...
 
     % -------------------- Unconstrained search (simplex) -------------
     opts = optimset('Display','iter', ...
-                    'MaxFunEvals', 5000, ...
-                    'MaxIter',     5000, ...
-                    'TolX',        1e-14, ...
-                    'TolFun',      1e-14);
+                    'MaxFunEvals', 4000, ...
+                    'MaxIter',     2000, ...
+                    'TolX',        1e-8, ...
+                    'TolFun',      1e-10);
 
     yOpt = fminsearch(objY, y0, opts);
 
@@ -432,7 +432,7 @@ function p = estimateSimilarityTwoPoints(m1, m2, f1, f2)
     v = f2 - f1; 
     nu2 = dot(u, u);
     
-    if nu2 < 1e-14
+    if nu2 < 1e-12
         error('Point pairs too close together for reliable estimation');
     end
     
@@ -473,7 +473,7 @@ function p = estimateSimilarityLeastSquares(movPts, fixPts)
     
     % Estimate scale
     varM = trace((Mc' * Mc) / size(movPts, 1));
-    sVal = trace(S) / max(varM, 1e-14);
+    sVal = trace(S) / max(varM, 1e-12);
     
     % Estimate translation
     t = muF - muM * (sVal * R);

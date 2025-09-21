@@ -1,7 +1,7 @@
-# Lovelace Square – Chemometric Codes
+# Lovelace Square's – Chemometric Codes
 
 This repository collects the **chemometric algorithms and utilities** written by our team.  
-It is part of the contribution effort to [Lovelace Square](https://lovelacesquare.org), an open and collaborative hub for code, data, and learning resources in chemometrics.
+It is part of the contribution effort to [Lovelace's Square](https://lovelacesquare.org), an open and collaborative hub for code, data, and learning resources in chemometrics.
 
 ## 📂 Structure
 
@@ -69,3 +69,4 @@ To contribute:
 ## 📜 License
 
 Unless otherwise stated, code in this repository is released under the [MIT License](LICENSE).
+

@@ -1,7 +1,8 @@
 # Lovelace Square's – Chemometric Codes
 
-This repository collects the **chemometric algorithms and utilities** written by our team.  
-It is part of the contribution effort to [Lovelace's Square](https://lovelacesquare.org), an open and collaborative hub for code, data, and learning resources in chemometrics.
+This repository collects the **chemometric algorithms and utilities** written by our team.
+It is part of the contribution effort to [Lovelace's Square](https://lovelacesquare.org), an open and collaborative hub for code,
+data, and learning resources in chemometrics.
 
 ## 📂 Structure
 
@@ -9,30 +10,35 @@ The repository is organized by algorithms, each under its own subfolder in `Code
 
 ```
 Codes/
-├── AsLs/                 # Asymmetric Least Squares baseline correction
-├── BIRFI LS/             # Baseline Iterative Reweighted Fitting
-├── EMSC/                 # Extended Multiplicative Scatter Correction
-├── Fourier filter/       # Fourier-based spectral filtering
-├── I-SVD/                # Iterative SVD
-├── Image registration/   # Image registration utilities
-├── Kernelize/            # Kernel preprocessing
-├── LALS/                 # Localized ALS
-├── MSC/                  # Multiplicative Scatter Correction
-├── O ALS/                # Orthogonal ALS
-├── PCA filter/           # PCA-based filtering
-├── Pure/                 # Pure variable selection
-├── autoscale/            # Autoscaling methods
-├── binning/              # Spectral binning
-├── cosmicpeakcorrection/ # Cosmic ray peak correction
-├── cropBackground/       # Background cropping
-├── normMatrix/           # Normalization utilities
-└── …                     # (More to come)
+├── AsLs/                         # Asymmetric Least Squares baseline correction
+├── BIRFI LS/                     # Baseline Iterative Reweighted Fitting
+├── BIRFI LS smoothing/           # Smoothed Baseline Iterative Reweighted Fitting
+├── EMSC/                         # Extended Multiplicative Scatter Correction
+├── Fourier filter/               # Fourier-based spectral filtering
+├── I-SVD/                        # Iterative SVD
+├── Image registration/           # Image registration utilities
+├── Kernelize/                    # Kernel preprocessing
+├── LALS/                         # Localized ALS
+├── MSC/                          # Multiplicative Scatter Correction
+├── O ALS/                        # Orthogonal ALS
+├── PCA filter/                   # PCA-based filtering
+├── Pure/                         # Pure variable selection
+├── SavGol/                       # Savitzky–Golay filtering
+├── WienerFiltering/              # Wiener filtering
+├── autoscale/                    # Autoscaling methods
+├── binning/                      # Spectral binning
+├── cosmicpeakcorrection/         # Cosmic ray peak correction
+├── cropBackground/               # Background cropping
+├── normMatrix/                   # Normalization utilities
+├── unfoldImage/                  # Image unfolding utilities
+├── whittakerSmoother/            # Whittaker smoothing
+└── whittakerSmoother_imputation/ # Whittaker smoothing with imputation
 ```
 
 Each folder typically contains:
-- `*.m` — MATLAB implementation(s)  
-- `test_*.m` — example/test script  
-- `README.txt` — short description and usage notes  
+- `*.m` — MATLAB implementation(s)
+- `test_*.m` — example/test script
+- `README.txt` — short description and usage notes
 
 ## If you want to download all codes:
 
@@ -54,19 +60,18 @@ Each folder typically contains:
 ## 📖 Documentation
 
 Each algorithm folder includes a `README.txt` with:
-- A short explanation of the method  
-- Basic usage instructions  
-- References to the original publication(s)  
+- A short explanation of the method
+- Basic usage instructions
+- References to the original publication(s)
 
 Additional learning resources will be available through [The Library](https://library.lovelacesquare.org).
 
 To contribute:
-1. Fork this repository.  
-2. Create a new branch: `git checkout -b feature/my-algorithm`.  
-3. Commit your changes and push: `git push origin feature/my-algorithm`.  
+1. Fork this repository.
+2. Create a new branch: `git checkout -b feature/my-algorithm`.
+3. Commit your changes and push: `git push origin feature/my-algorithm`.
 4. Open a Pull Request.
 
 ## 📜 License
 
 Unless otherwise stated, code in this repository is released under the [MIT License](LICENSE).
-

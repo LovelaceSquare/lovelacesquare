@@ -59,7 +59,7 @@ Each folder typically contains:
 
 ## 📖 Documentation
 
-Each algorithm folder includes a `README.txt` with:
+Each algorithm folder includes a `README.md` with:
 - A short explanation of the method
 - Basic usage instructions
 - References to the original publication(s)

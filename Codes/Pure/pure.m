@@ -16,14 +16,14 @@ function [pureProfiles, pureIndices] = pure(dataMatrix, numPureComponents, noise
 %   about-the-origin submatrix formed from scaled columns (to penalize collinearity).
 %
 % Author    : Legacy SIMPLISMA pure.m implementations circulated from multiple sources; 
-	      the most widely used open version appears in the Barcelona MCR-ALS toolboxes (Jaumot, Tauler, de Juan). 
-              Proprietary implementations exist in PLS_Toolbox (Eigenvector).
+% the most widely used open version appears in the Barcelona MCR-ALS toolboxes (Jaumot, Tauler, de Juan). 
+% Proprietary implementations exist in PLS_Toolbox (Eigenvector).
 
-Adrián Gómez-Sánchez polished and documented this legacy-style implementation.
+% Adrián Gómez-Sánchez polished and documented this legacy-style implementation.
 
-Date of Creation: August 4, 2025
+% Date of Creation: August 4, 2025
 
-Reviewed by: Lovelace’s SquareAdrián Gómez-Sánchez  (legacy algorithm wrapped & documented)
+% Reviewed by: Lovelace’s SquareAdrián Gómez-Sánchez  (legacy algorithm wrapped & documented)
 % Date      : 2025-08-04
 % License   : MIT
 % Reviewed  : Lovelace’s Square – Yes

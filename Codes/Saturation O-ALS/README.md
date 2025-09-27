@@ -1,6 +1,6 @@
 # OALS: Recovery of Saturated Spectral Peaks (MATLAB)
 
-Recovers saturated spectral signals in MATLAB by treating clipped values as missing (NaNs) and reconstructing them with Orthogonalized Alternating Least Squares (O-ALS).
+Recovers saturated spectral signals in MATLAB by treating saturated values as missing (NaNs) and reconstructing them with Orthogonalized Alternating Least Squares (O-ALS).
 
 **Reference**:  
 Gómez-Sánchez, Adrián, et al. *Solving the missing value problem in PCA by Orthogonalized-Alternating Least Squares (O-ALS).* Chemometrics and Intelligent Laboratory Systems (2024): 105153.  
@@ -20,7 +20,7 @@ where:
 - `P` = loadings (spectral profiles)  
 
 In the case of detector saturation:  
-- Clipped channels are replaced with `NaN`  
+- Saturated channels are replaced with `NaN`  
 - OALS iteratively estimates `T` and `P` under orthogonality constraints  
 - Full spectra are reconstructed as `X̂ = T·P`, providing estimates for the saturated regions  
 
@@ -52,15 +52,15 @@ This recovery is possible because spectra lie in a **low-dimensional subspace**:
 ```matlab
 % Example: Recover saturated peaks in simulated spectra
 
-% Step 1: Replace saturated (clipped) values by NaN
-D_withNaNs = D_clipped;
-D_withNaNs(D_clipped >= ADC_max) = NaN;
+% Step 1: Replace saturated values by NaN
+D_withNaNs = D_saturated;
+D_withNaNs(D_saturated >= ADC_max) = NaN;
 
 % Step 2: Apply OALS with 3 components and 200 iterations
 [Dr, T, P, r2, lofc] = OALS(D_withNaNs, 200, 3);
 
-% Step 3: Substitute only missing entries in the clipped data
-D_recovered = D_clipped;
+% Step 3: Substitute only missing entries in the saturated data
+D_recovered = D_saturated;
 missingMask = isnan(D_withNaNs);
 D_recovered(missingMask) = Dr(missingMask);
 ```

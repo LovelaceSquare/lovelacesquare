@@ -33,7 +33,7 @@ The Orthogonalized Alternating Least Squares (OALS) algorithm proceeds as follow
    - At each iteration, explained variance (r²) and lack of fit (LOF) are computed (`lofNaN.m`)  
    - Algorithm halts when relative LOF improvement < 1e-12 or max iterations reached
 
-This method is well-suited for chemometrics, spectroscopy, or any domain requiring robust PCA on incomplete datasets.
+This method is well-suited for chemometrics, spectroscopy, or any domain as long as the dataset is bilinear and the number of component is well approximated.
 
 ---
 

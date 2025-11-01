@@ -19,10 +19,15 @@ Codes/
 ├── Image registration/           # Image registration utilities
 ├── Kernelize/                    # Kernel preprocessing
 ├── LALS/                         # Localized ALS
+├── MCR-ALS Classic/              # Multivariate Curve Resolution - Alternating Least Squares
+├── MCR-ALS Lite/                 # MCR-ALS Lite: Lightweight foundational implementation
 ├── MSC/                          # Multiplicative Scatter Correction
 ├── O ALS/                        # Orthogonal ALS
+├── PARAFAC-ALS Lite/             # PARAFAC-ALS Lite: Lightweight foundational implementation
+├── PCA ALS-QR/                   # PCA-based ALS with QR decomposition
 ├── PCA filter/                   # PCA-based filtering
 ├── Pure/                         # Pure variable selection
+├── Saturation O-ALS/             # Orthogonal ALS with saturation peak recovery
 ├── SavGol/                       # Savitzky–Golay filtering
 ├── WienerFiltering/              # Wiener filtering
 ├── autoscale/                    # Autoscaling methods
@@ -38,13 +43,43 @@ Codes/
 Each folder typically contains:
 - `*.m` — MATLAB implementation(s)
 - `test_*.m` — example/test script
-- `README.txt` — short description and usage notes
+- `README.md` — short description and usage notes
+
+## 🌟 Featured: Lite Implementations
+
+The **Lite** series provides lightweight, foundational implementations of core chemometric algorithms:
+
+### MCR-ALS Lite
+**Multivariate Curve Resolution - Alternating Least Squares**
+- Bilinear decomposition: `D = C × S + E`
+- Non-negativity constraints on concentration (C) and spectral (S) profiles
+- Real-time convergence visualization
+- Perfect for learning the fundamentals of MCR-ALS
+- [📖 Documentation](Codes/MCR-ALS%20Lite/README.md)
+
+### PARAFAC-ALS Lite
+**Parallel Factor Analysis - Alternating Least Squares**
+- Trilinear decomposition: `X ≈ ∑ aᵣ ⊗ bᵣ ⊗ cᵣ`
+- Three-way tensor decomposition with Khatri-Rao products
+- Non-negativity constraints on all factor matrices
+- Real-time convergence visualization
+- Perfect for learning the fundamentals of PARAFAC
+- [📖 Documentation](Codes/PARAFAC-ALS%20Lite/README.md)
+
+**What makes Lite implementations special:**
+- 🎯 **Consistent structure** across implementations for easy learning
+- 📚 **Educational focus** with detailed comments and documentation
+- 🚀 **No external dependencies** (custom FNNLS solver included)
+- 🔬 **Foundation for advanced variants** that may be added in the future
+- 📊 **Real-time visualization** to understand algorithm behavior
+
+---
 
 ## If you want to download all codes:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/GomezSanchezA/lovelacesquare.git
+   git clone https://github.com/LovelaceSquare/lovelacesquare.git
    cd lovelacesquare/Codes
    ```
 2. Open your code interpreter

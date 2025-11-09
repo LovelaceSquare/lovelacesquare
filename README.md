@@ -19,7 +19,6 @@ Codes/
 ├── Image registration/           # Image registration utilities
 ├── Kernelize/                    # Kernel preprocessing
 ├── LALS/                         # Localized ALS
-├── MCR-ALS Classic/              # Multivariate Curve Resolution - Alternating Least Squares
 ├── MCR-ALS Lite/                 # MCR-ALS Lite: Lightweight foundational implementation
 ├── MSC/                          # Multiplicative Scatter Correction
 ├── O ALS/                        # Orthogonal ALS
@@ -80,7 +79,7 @@ The **Lite** series provides lightweight, foundational implementations of core c
 1. Clone this repository:
    ```bash
    git clone https://github.com/LovelaceSquare/lovelacesquare.git
-   cd lovelacesquare/Codes
+   cd lovelacesquare
    ```
 2. Open your code interpreter
 3. Add the desired subfolder to your path:

@@ -10,33 +10,33 @@ The repository is organized by algorithms, each under its own subfolder in `Code
 
 ```
 Codes/
-├── AsLs/                         # Asymmetric Least Squares baseline correction
-├── BIRFI LS/                     # Baseline Iterative Reweighted Fitting
-├── BIRFI LS smoothing/           # Smoothed Baseline Iterative Reweighted Fitting
-├── EMSC/                         # Extended Multiplicative Scatter Correction
-├── Fourier filter/               # Fourier-based spectral filtering
-├── I-SVD/                        # Iterative SVD
-├── Image registration/           # Image registration utilities
-├── Kernelize/                    # Kernel preprocessing
-├── LALS/                         # Localized ALS
-├── MCR-ALS Lite/                 # MCR-ALS Lite: Lightweight foundational implementation
-├── MSC/                          # Multiplicative Scatter Correction
-├── O ALS/                        # Orthogonal ALS
-├── PARAFAC-ALS Lite/             # PARAFAC-ALS Lite: Lightweight foundational implementation
-├── PCA ALS-QR/                   # PCA-based ALS with QR decomposition
-├── PCA filter/                   # PCA-based filtering
-├── Pure/                         # Pure variable selection
-├── Saturation O-ALS/             # Orthogonal ALS with saturation peak recovery
-├── SavGol/                       # Savitzky–Golay filtering
-├── WienerFiltering/              # Wiener filtering
-├── autoscale/                    # Autoscaling methods
-├── binning/                      # Spectral binning
-├── cosmicpeakcorrection/         # Cosmic ray peak correction
-├── cropBackground/               # Background cropping
-├── normMatrix/                   # Normalization utilities
-├── unfoldImage/                  # Image unfolding utilities
-├── whittakerSmoother/            # Whittaker smoothing
-└── whittakerSmoother_imputation/ # Whittaker smoothing with imputation
+├── AsLs/                                      # Asymmetric Least Squares baseline correction
+├── Autoscale/                                 # Autoscaling methods
+├── Binning/                                   # Spectral binning
+├── BIRFI LS/                                  # Baseline Iterative Reweighted Fitting
+├── BIRFI LS smoothing/                        # Smoothed Baseline Iterative Reweighted Fitting
+├── Cosmic Peak Correction/                    # Cosmic ray peak correction
+├── Crop Background/                           # Background cropping
+├── EMSC/                                      # Extended Multiplicative Scatter Correction
+├── Fourier filter/                            # Fourier-based spectral filtering
+├── I-SVD/                                     # Iterative SVD
+├── Image registration/                        # Image registration utilities
+├── Kernelize/                                 # Kernel preprocessing
+├── LALS/                                      # Localized ALS
+├── MCR-ALS Lite/                              # MCR-ALS Lite: Lightweight foundational implementation
+├── MSC/                                       # Multiplicative Scatter Correction
+├── Normalize Matrix/                          # Normalization utilities
+├── O ALS/                                     # Orthogonal ALS
+├── PARAFAC-ALS Lite/                          # PARAFAC-ALS Lite: Lightweight foundational implementation
+├── PCA ALS-QR/                                # PCA-based ALS with QR decomposition
+├── PCA filter/                                # PCA-based filtering
+├── Pure/                                      # Pure variable selection
+├── Saturation O-ALS/                          # Orthogonal ALS with saturation peak recovery
+├── SavGol/                                    # Savitzky–Golay filtering
+├── UnfoldImage/                               # Image unfolding utilities
+├── Whittaker Smoother/                        # Whittaker smoothing
+├── Whittaker Smoother with missing values/    # Whittaker smoothing with imputation
+└── Wiener Filtering/                          # Wiener filtering
 ```
 
 Each folder typically contains:

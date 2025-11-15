@@ -30,6 +30,7 @@ where **⊙** is the Khatri-Rao product (column-wise Kronecker product).
 
 ### Key Features of the Lite Version
 
+- ✅ **Flexible initialization** with any combination of A, B, C (or none)
 - ✅ **Non-negativity constraints** on all factor matrices (A, B, C)
 - ✅ **Factor normalization** (B and C normalized; A absorbs scaling) to prevent scale ambiguity
 - ✅ **Real-time visualization** of convergence progress
@@ -59,7 +60,10 @@ PARAFAC is widely used in:
 
 ### Alternating Least Squares (ALS) for PARAFAC
 
-1. **Initialize** factor matrices **A**, **B**, **C**
+1. **Initialize** factor matrices **A**, **B**, **C** from provided initializations or randomly:
+   - If factor provided: use it
+   - If [] : initialize randomly (non-negative)
+   - If all [] and A_init is scalar: use as number of components R
 2. **Iterate** until convergence:
    - **Step 1**: Fix B and C, solve for A with non-negativity:
      `min ||X₁ - A(C ⊙ B)ᵀ||²  s.t.  A ≥ 0` (A not normalized)
@@ -132,7 +136,7 @@ which PARAFAC_ALS_Lite
 
 ## 📝 Usage
 
-### Basic Example
+### Example 1: Initialize with only A (modes B and C random)
 
 ```matlab
 % Load your 3-way data tensor X (I × J × K)
@@ -140,15 +144,50 @@ which PARAFAC_ALS_Lite
 
 % Initialize factor matrix A for mode-1 (e.g., 3 components)
 nComponents = 3;
-A_init = rand(size(X,1), nComponents);  % Random initialization
+A_init = rand(size(X,1), nComponents);
 
-% Run PARAFAC-ALS Lite
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, 100, 1e-6);
+% Run PARAFAC-ALS Lite (B_init and C_init are [], so they're random)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, [], [], 100, 1e-6);
 
 % A: Factor matrix for mode 1 (samples × components)
 % B: Factor matrix for mode 2 (wavelengths × components)
 % C: Factor matrix for mode 3 (time × components)
 % lof: Lack of fit per iteration (%)
+```
+
+### Example 2: Initialize all three factors
+
+```matlab
+% Initialize all three factor matrices
+nComponents = 3;
+A_init = rand(size(X,1), nComponents);
+B_init = rand(size(X,2), nComponents);
+C_init = rand(size(X,3), nComponents);
+
+% Run PARAFAC-ALS Lite with all initializations
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, 100, 1e-6);
+```
+
+### Example 3: All random initialization (specify number of components)
+
+```matlab
+% Specify number of components as scalar in A_init position
+nComponents = 3;
+
+% Run PARAFAC-ALS Lite with all factors randomly initialized
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, nComponents, [], [], 100, 1e-6);
+```
+
+### Example 4: Initialize only B and C (A random)
+
+```matlab
+% Initialize only modes 2 and 3
+nComponents = 3;
+B_init = rand(size(X,2), nComponents);
+C_init = rand(size(X,3), nComponents);
+
+% Run PARAFAC-ALS Lite (A_init is [], so A is random)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, [], B_init, C_init, 100, 1e-6);
 ```
 
 ### Advanced Initialization
@@ -184,14 +223,18 @@ This will:
 ### `PARAFAC_ALS_Lite`
 
 ```matlab
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, tol)
 ```
 
 **Inputs:**
 - `X` — Data tensor (I × J × K)
-- `A_init` — Initial factor matrix for mode 1 (I × R)
+- `A_init` — Initial factor matrix for mode 1 (I × R), OR `[]` for random, OR scalar R if all factors are `[]`
+- `B_init` — Initial factor matrix for mode 2 (J × R) OR `[]` for random
+- `C_init` — Initial factor matrix for mode 3 (K × R) OR `[]` for random
 - `maxIter` — Maximum iterations (default: 100)
 - `tol` — Convergence tolerance for LOF change (default: 1e-6)
+
+**Note:** Any combination of initializations can be provided (0, 1, 2, or 3 factors). All provided factors must have the same number of components R.
 
 **Outputs:**
 - `A` — Final factor matrix for mode 1 (I × R), absorbs all scaling (not normalized)

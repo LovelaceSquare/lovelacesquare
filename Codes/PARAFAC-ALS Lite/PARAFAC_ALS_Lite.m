@@ -1,4 +1,4 @@
-function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
+function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, tol)
 % =========================================================================
 % PARAFAC_ALS_Lite  —  Parallel Factor Analysis by Alternating Least Squares (Constrained)
 % =========================================================================
@@ -53,9 +53,18 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
 % -------------------------------------------------------------------------
 % INPUT ARGUMENTS:
 %   X        - (I × J × K) Data tensor [3-way array]
-%   A_init   - (I × R) Initial estimate of factor matrix A (mode 1)
+%   A_init   - (I × R) Initial estimate of factor matrix A (mode 1),
+%              OR [] for random initialization,
+%              OR scalar R (number of components) if all B_init, C_init are also []
+%   B_init   - (J × R) Initial estimate of factor matrix B (mode 2) OR [] for random
+%   C_init   - (K × R) Initial estimate of factor matrix C (mode 3) OR [] for random
 %   maxIter  - Maximum number of ALS iterations (positive integer)
 %   tol      - (Optional) Convergence tolerance for LOF change (default 1e-6)
+%
+%   NOTE: Any combination of initializations can be provided (0, 1, 2, or 3 factors).
+%         - If at least one factor matrix is provided, R is determined from it
+%         - If all are [], A_init must be a scalar specifying R
+%         - All provided factor matrices must have the same number of components R
 %
 % -------------------------------------------------------------------------
 % OUTPUT ARGUMENTS:
@@ -69,7 +78,10 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
 %
 % -------------------------------------------------------------------------
 % ALGORITHM OVERVIEW:
-%   1. Initialize A = A_init, B, C randomly
+%   1. Initialize A, B, C from provided initializations or randomly:
+%        - If A_init, B_init, or C_init provided: use those
+%        - If [] : initialize randomly (non-negative)
+%        - If all [] and A_init is scalar: A_init specifies R (number of components)
 %   2. Repeat until convergence or maxIter:
 %        a) Solve for A:   min ||X₁ - A(C ⊙ B)ᵀ||²,  A ≥ 0  (A not normalized)
 %        b) Solve for B:   min ||X₂ - B(C ⊙ A)ᵀ||²,  B ≥ 0
@@ -81,6 +93,7 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
 %
 % -------------------------------------------------------------------------
 % KEY FEATURES:
+%   • Flexible initialization: provide any combination of A, B, C (or none)
 %   • Non-negativity enforced via fast NNLS (FNNLS)
 %   • B and C normalized to unit norm; A absorbs all scaling
 %   • Convergence visualization for A, B, C, and LOF
@@ -93,30 +106,76 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
 
 
     %% ------------------------- 1) Validate inputs -------------------------
-    if nargin < 3
-        error('PARAFAC_ALS_Lite requires at least 3 inputs: X, A_init, and maxIter.');
+    if nargin < 5
+        error('PARAFAC_ALS_Lite requires at least 5 inputs: X, A_init, B_init, C_init, and maxIter.');
     end
-    if nargin < 4 || isempty(tol)
+    if nargin < 6 || isempty(tol)
         tol = 1e-6; % keep in sync with documentation
     end
 
     validateattributes(X,      {'double','single'}, {'3d','real','finite','nonempty'}, mfilename, 'X', 1);
-    validateattributes(A_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'A_init', 2);
-    validateattributes(maxIter,{'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'maxIter', 3);
-    validateattributes(tol,    {'numeric'},         {'scalar','real','finite','positive'}, mfilename, 'tol', 4);
+    validateattributes(maxIter,{'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'maxIter', 5);
+    validateattributes(tol,    {'numeric'},         {'scalar','real','finite','positive'}, mfilename, 'tol', 6);
 
     [I, J, K] = size(X);
-    [IAinit, R] = size(A_init);
 
-    if IAinit ~= I
-        error('A_init rows (%d) must match X mode-1 dimension (%d).', IAinit, I);
+    % Determine which factors are provided
+    A_provided = ~isempty(A_init) && ~isscalar(A_init);
+    B_provided = ~isempty(B_init);
+    C_provided = ~isempty(C_init);
+    R_only = isscalar(A_init) && ~B_provided && ~C_provided;
+
+    % Determine R and validate dimensions
+    R = [];
+
+    if R_only
+        % A_init is a scalar specifying R
+        R = A_init;
+        validateattributes(R, {'numeric'}, {'scalar','real','finite','positive','integer'}, mfilename, 'R (A_init as scalar)', 2);
+    else
+        % Extract R from provided initializations and validate dimensions
+        if A_provided
+            validateattributes(A_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'A_init', 2);
+            [IAinit, RA] = size(A_init);
+            if IAinit ~= I
+                error('A_init rows (%d) must match X mode-1 dimension (%d).', IAinit, I);
+            end
+            R = RA;
+        end
+
+        if B_provided
+            validateattributes(B_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'B_init', 3);
+            [JBinit, RB] = size(B_init);
+            if JBinit ~= J
+                error('B_init rows (%d) must match X mode-2 dimension (%d).', JBinit, J);
+            end
+            if isempty(R)
+                R = RB;
+            elseif R ~= RB
+                error('B_init components (%d) must match other provided initializations (%d).', RB, R);
+            end
+        end
+
+        if C_provided
+            validateattributes(C_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'C_init', 4);
+            [KCinit, RC] = size(C_init);
+            if KCinit ~= K
+                error('C_init rows (%d) must match X mode-3 dimension (%d).', KCinit, K);
+            end
+            if isempty(R)
+                R = RC;
+            elseif R ~= RC
+                error('C_init components (%d) must match other provided initializations (%d).', RC, R);
+            end
+        end
+
+        % If no initializations provided at all
+        if isempty(R)
+            error('At least one factor initialization must be provided, or A_init must be a scalar specifying R.');
+        end
     end
 
     %% ------------------------- 2) Initialize ------------------------------
-    A = max(A_init, 0);               % enforce non-negativity on start
-    B = abs(randn(J, R));             % random initialization
-    C = abs(randn(K, R));             % random initialization
-
     lof = nan(1, maxIter);
     normX = norm(X(:));               % Frobenius norm of X
 
@@ -127,6 +186,25 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol)
         C = zeros(K, R, 'like', X);
         lof = 0;
         return;
+    end
+
+    % Initialize factors based on what was provided
+    if A_provided
+        A = max(A_init, 0);           % enforce non-negativity
+    else
+        A = abs(randn(I, R));         % random initialization
+    end
+
+    if B_provided
+        B = max(B_init, 0);           % enforce non-negativity
+    else
+        B = abs(randn(J, R));         % random initialization
+    end
+
+    if C_provided
+        C = max(C_init, 0);           % enforce non-negativity
+    else
+        C = abs(randn(K, R));         % random initialization
     end
 
     % Unfold tensor for each mode

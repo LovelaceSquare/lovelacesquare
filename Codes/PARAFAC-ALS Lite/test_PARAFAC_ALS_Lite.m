@@ -95,7 +95,8 @@ fprintf('  Noise level: %.2f%%\n\n', noiseLevel * 100);
 fprintf('Initializing PARAFAC-ALS Lite...\n\n');
 
 % Random nonnegative initialization for mode-1
-A_init = abs(rand(I, R));
+B_init = abs(rand(J, R));
+C_init = abs(rand(K, R));
 
 %% ========================================================================
 %% 3. Run PARAFAC-ALS Lite
@@ -109,7 +110,7 @@ tol     = 1e-10;
 % Ensure function is available
 assert(exist('PARAFAC_ALS_Lite','file')==2, 'PARAFAC_ALS_Lite.m not found on path.');
 
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, maxIter, tol);
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, [], B_init, C_init, maxIter, tol);
 
 %% ========================================================================
 %% 3b. Normalize BOTH true and recovered by their OWN L2 norms

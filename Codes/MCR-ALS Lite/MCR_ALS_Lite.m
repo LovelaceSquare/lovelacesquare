@@ -1,4 +1,4 @@
-function [C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol)
+function [C, S, lof] = MCR_ALS_Lite(D, C_init, S_init, maxIter, tol)
 % =========================================================================
 % MCR_ALS_Lite  —  Multivariate Curve Resolution by Alternating Least Squares (Constrained)
 % =========================================================================
@@ -48,9 +48,13 @@ function [C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol)
 % -------------------------------------------------------------------------
 % INPUT ARGUMENTS:
 %   D        - (n × m) Data matrix [samples × variables]
-%   C_init   - (n × k) Initial estimate of concentration profiles
+%   C_init   - (n × k) Initial estimate of concentration profiles OR [] if using S_init
+%   S_init   - (k × m) Initial estimate of spectral profiles OR [] if using C_init
 %   maxIter  - Maximum number of ALS iterations (positive integer)
 %   tol      - (Optional) Convergence tolerance for LOF change (default 1e-6)
+%
+%   NOTE: Provide either C_init OR S_init (set the other to []).
+%         Exactly one must be non-empty.
 %
 % -------------------------------------------------------------------------
 % OUTPUT ARGUMENTS:
@@ -63,16 +67,25 @@ function [C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol)
 %
 % -------------------------------------------------------------------------
 % ALGORITHM OVERVIEW:
-%   1. Initialize C = C_init
+%   1. Initialize with either C = C_init OR S = S_init
 %   2. Repeat until convergence or maxIter:
+%
+%      If C_init provided:
 %        a) Solve for S:   min ||D - C*S||²,  S ≥ 0
 %        b) Normalize each S(i,:) to unit Euclidean norm
 %        c) Solve for C:   min ||D - C*S||²,  C ≥ 0
-%        d) Compute LOF and test convergence (|ΔLOF| < tol)
-%        e) Update plots periodically
+%
+%      If S_init provided:
+%        a) Solve for C:   min ||D - C*S||²,  C ≥ 0
+%        b) Solve for S:   min ||D - C*S||²,  S ≥ 0
+%        c) Normalize each S(i,:) to unit Euclidean norm
+%
+%      d) Compute LOF and test convergence (|ΔLOF| < tol)
+%      e) Update plots periodically
 %
 % -------------------------------------------------------------------------
 % KEY FEATURES:
+%   • Flexible initialization: C_init OR S_init
 %   • Non-negativity enforced via fast NNLS (FNNLS)
 %   • Spectral normalization avoids scale ambiguity
 %   • Convergence visualization for C, S, and LOF
@@ -85,35 +98,69 @@ function [C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol)
 
 
     %% ------------------------- 1) Validate inputs -------------------------
-    if nargin < 3
-        error('MCR_ALS_Lite requires at least 3 inputs: D, C_init, and maxIter.');
+    if nargin < 4
+        error('MCR_ALS_Lite requires at least 4 inputs: D, C_init, S_init, and maxIter.');
     end
-    if nargin < 4 || isempty(tol)
+    if nargin < 5 || isempty(tol)
         tol = 1e-6; % keep in sync with documentation
     end
 
     validateattributes(D,      {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'D', 1);
-    validateattributes(C_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'C_init', 2);
-    validateattributes(maxIter,{'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'maxIter', 3);
-    validateattributes(tol,    {'numeric'},         {'scalar','real','finite','positive'}, mfilename, 'tol', 4);
+    validateattributes(maxIter,{'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'maxIter', 4);
+    validateattributes(tol,    {'numeric'},         {'scalar','real','finite','positive'}, mfilename, 'tol', 5);
+
+    % Check that exactly one initialization is provided
+    C_provided = ~isempty(C_init);
+    S_provided = ~isempty(S_init);
+
+    if ~C_provided && ~S_provided
+        error('Either C_init or S_init must be provided (both are empty).');
+    end
+    if C_provided && S_provided
+        error('Provide only ONE initialization: either C_init or S_init (not both).');
+    end
 
     [nSamples, nVars] = size(D);
-    [nCinit,  nComp ] = size(C_init);
 
-    if nCinit ~= nSamples
-        error('C_init rows (%d) must match D rows (%d).', nCinit, nSamples);
+    % Validate and extract dimensions based on which init is provided
+    if C_provided
+        validateattributes(C_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'C_init', 2);
+        [nCinit, nComp] = size(C_init);
+        if nCinit ~= nSamples
+            error('C_init rows (%d) must match D rows (%d).', nCinit, nSamples);
+        end
+    else % S_provided
+        validateattributes(S_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'S_init', 3);
+        [nComp, nSinit] = size(S_init);
+        if nSinit ~= nVars
+            error('S_init columns (%d) must match D columns (%d).', nSinit, nVars);
+        end
     end
 
     %% ------------------------- 2) Initialize ------------------------------
-    C   = max(C_init, 0);             % enforce non-negativity on start
     lof = nan(1, maxIter);
     normD = norm(D, 'fro');           % Frobenius norm of D
 
     if normD == 0
-        warning('||D||_F = 0; returning zeros for S and LOF=0.');
-        S = zeros(nComp, nVars, 'like', D);
+        warning('||D||_F = 0; returning zeros for C, S and LOF=0.');
+        if C_provided
+            C = C_init;
+            S = zeros(nComp, nVars, 'like', D);
+        else
+            S = S_init;
+            C = zeros(nSamples, nComp, 'like', D);
+        end
         lof = 0;
         return;
+    end
+
+    % Initialize based on which input was provided
+    if C_provided
+        C = max(C_init, 0);           % enforce non-negativity on C_init
+        S = [];                        % S will be computed in first iteration
+    else % S_provided
+        S = max(S_init, 0);           % enforce non-negativity on S_init
+        C = [];                        % C will be computed in first iteration
     end
 
     % Create figure for real-time visualization
@@ -131,23 +178,48 @@ function [C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol)
     fprintf('----\t--------\t--------\n');
 
     for iter = 1:maxIter
-        % --- 3a. Update S: Non-negative least squares ---
-        %     A=C (nSamples×nComp), B=D (nSamples×nVars) -> S (nComp×nVars)
-        S = fnnls(C, D);
+        if C_provided
+            % --- Standard order: C provided, solve for S first ---
 
-        % --- 3b. Normalize spectral profiles (row-wise) ---
-        for g = 1:nComp
-            s_norm = norm(S(g, :));
-            if s_norm > eps
-                S(g, :)  = S(g, :) / s_norm;
-                C(:, g)  = C(:, g) * s_norm;
+            % --- 3a. Update S: Non-negative least squares ---
+            %     A=C (nSamples×nComp), B=D (nSamples×nVars) -> S (nComp×nVars)
+            S = fnnls(C, D);
+
+            % --- 3b. Normalize spectral profiles (row-wise) ---
+            for g = 1:nComp
+                s_norm = norm(S(g, :));
+                if s_norm > eps
+                    S(g, :)  = S(g, :) / s_norm;
+                    C(:, g)  = C(:, g) * s_norm;
+                end
+            end
+
+            % --- 3c. Update C: Non-negative least squares ---
+            %     Use multi-RHS trick: C = fnnls(S', D')'
+            C = fnnls(S', D')';
+            C(C < 0) = 0; % gentle clip for numerical noise
+
+        else % S_provided
+            % --- Reverse order: S provided, solve for C first ---
+
+            % --- 3a. Update C: Non-negative least squares ---
+            %     Use multi-RHS trick: C = fnnls(S', D')'
+            C = fnnls(S', D')';
+            C(C < 0) = 0; % gentle clip for numerical noise
+
+            % --- 3b. Update S: Non-negative least squares ---
+            %     A=C (nSamples×nComp), B=D (nSamples×nVars) -> S (nComp×nVars)
+            S = fnnls(C, D);
+
+            % --- 3c. Normalize spectral profiles (row-wise) ---
+            for g = 1:nComp
+                s_norm = norm(S(g, :));
+                if s_norm > eps
+                    S(g, :)  = S(g, :) / s_norm;
+                    C(:, g)  = C(:, g) * s_norm;
+                end
             end
         end
-
-        % --- 3c. Update C: Non-negative least squares ---
-        %     Use multi-RHS trick: C = fnnls(S', D')'
-        C = fnnls(S', D')';
-        C(C < 0) = 0; % gentle clip for numerical noise
 
         % --- 3d. Compute Lack of Fit ---
         E = D - C * S;

@@ -93,7 +93,7 @@ tol     = 1e-10;
 % Ensure function is available
 assert(exist('MCR_ALS_Lite','file')==2, 'MCR_ALS_Lite.m not found on path.');
 
-[C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol);
+[C, S, lof] = MCR_ALS_Lite(D, C_init, [], maxIter, tol);
 
 %% ========================================================================
 %% 3b. Normalize BOTH true and recovered by their OWN L2 norms

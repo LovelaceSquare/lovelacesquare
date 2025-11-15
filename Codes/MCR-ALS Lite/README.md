@@ -22,11 +22,12 @@ where:
 
 ### Key Features of the Lite Version
 
-- ✅ **Non-negativity constraints** on both C and S  
-- ✅ **Spectral normalization** (unit Euclidean norm) to prevent scale ambiguity  
-- ✅ **Real-time visualization** of convergence progress  
-- ✅ **Lack of Fit (LOF)** monitoring at each iteration  
-- ✅ **Simple, lightweight implementation** with minimal dependencies  
+- ✅ **Flexible initialization** with either C_init OR S_init
+- ✅ **Non-negativity constraints** on both C and S
+- ✅ **Spectral normalization** (unit Euclidean norm) to prevent scale ambiguity
+- ✅ **Real-time visualization** of convergence progress
+- ✅ **Lack of Fit (LOF)** monitoring at each iteration
+- ✅ **Simple, lightweight implementation** with minimal dependencies
 - ✅ **Foundation for future MCR variants** in this repository
 
 > **Note**: This is the **Lite** version. Future additions to this repository may include MCR-ALS with additional constraints (unimodality, closure, selectivity), MCR-BANDS, weighted MCR-ALS, and other advanced variants.
@@ -49,13 +50,22 @@ MCR-ALS is widely used in:
 
 ### Alternating Least Squares (ALS)
 
-1. **Initialize** concentration profiles **C**  
+1. **Initialize** with either concentration profiles **C** OR spectral profiles **S**
 2. **Iterate** until convergence:
+
+   **If C_init provided:**
    - **Step 1**: Fix C, solve for S with non-negativity: `min ||D - C×S||²  s.t.  S ≥ 0`
    - **Step 2**: Normalize each row of S to unit norm, compensate in C
    - **Step 3**: Fix S, solve for C with non-negativity: `min ||D - C×S||²  s.t.  C ≥ 0`
+
+   **If S_init provided:**
+   - **Step 1**: Fix S, solve for C with non-negativity: `min ||D - C×S||²  s.t.  C ≥ 0`
+   - **Step 2**: Fix C, solve for S with non-negativity: `min ||D - C×S||²  s.t.  S ≥ 0`
+   - **Step 3**: Normalize each row of S to unit norm, compensate in C
+
    - **Step 4**: Calculate Lack of Fit: `LOF = 100 × ||D - C×S||_F / ||D||_F`
    - **Step 5**: Check convergence: if `|LOF(i-1) - LOF(i)| < tol`, stop
+
 3. **Return** optimized C, S, and LOF history
 
 ### Normalization Strategy
@@ -94,7 +104,7 @@ which MCR_ALS_Lite
 
 ## 📝 Usage
 
-### Basic Example
+### Basic Example - Initialize with Concentration Profiles
 
 % Load your data matrix D (samples × variables)
 % For example: D could be 50 spectra × 200 wavelengths
@@ -103,8 +113,24 @@ which MCR_ALS_Lite
 nComponents = 3;
 C_init = rand(size(D,1), nComponents);  % Random initialization
 
-% Run MCR-ALS Lite
-[C, S, lof] = MCR_ALS_Lite(D, C_init, 100, 1e-6);
+% Run MCR-ALS Lite (C_init provided, S_init is [])
+[C, S, lof] = MCR_ALS_Lite(D, C_init, [], 100, 1e-6);
+
+% C: Concentration profiles (samples × components)
+% S: Spectral profiles (components × variables)
+% lof: Lack of fit per iteration (%)
+
+### Basic Example - Initialize with Spectral Profiles
+
+% Load your data matrix D (samples × variables)
+% For example: D could be 50 spectra × 200 wavelengths
+
+% Initialize spectral profiles (e.g., 3 components)
+nComponents = 3;
+S_init = rand(nComponents, size(D,2));  % Random initialization
+
+% Run MCR-ALS Lite (C_init is [], S_init provided)
+[C, S, lof] = MCR_ALS_Lite(D, [], S_init, 100, 1e-6);
 
 % C: Concentration profiles (samples × components)
 % S: Spectral profiles (components × variables)
@@ -112,14 +138,14 @@ C_init = rand(size(D,1), nComponents);  % Random initialization
 
 ### Advanced Initialization
 
-For better results, use informed initialization.
+For better results, use informed initialization. These methods can provide either concentration (C) or spectral (S) profiles:
 
-Method | Description | When to Use
----|---|---
-**PUREST** | PURity-based Evolving Self-modeling Technique 
-**ESI** | Essential spectra 
-**Pure windows** | Known regions where components are isolated 
-**Random** | Random positive values | Last resort, may need multiple runs
+Method | Description | Output | When to Use
+---|---|---|---
+**PUREST** | PURity-based Evolving Self-modeling Technique | S profiles | Pure variable detection
+**ESI** | Essential spectra | S profiles | Spectral libraries available
+**Pure windows** | Known regions where components are isolated | C or S | Domain knowledge of mixture
+**Random** | Random positive values | C or S | Last resort, may need multiple runs
 
 ---
 
@@ -141,17 +167,20 @@ This will:
 
 ### `MCR_ALS_Lite`
 
-[C, S, lof] = MCR_ALS_Lite(D, C_init, maxIter, tol)
+[C, S, lof] = MCR_ALS_Lite(D, C_init, S_init, maxIter, tol)
 
 **Inputs:**
-- `D` — Data matrix (n × m)  
-- `C_init` — Initial concentration profiles (n × k)  
-- `maxIter` — Maximum iterations (default: 100)  
+- `D` — Data matrix (n × m)
+- `C_init` — Initial concentration profiles (n × k) OR `[]` if using S_init
+- `S_init` — Initial spectral profiles (k × m) OR `[]` if using C_init
+- `maxIter` — Maximum iterations (default: 100)
 - `tol` — Convergence tolerance for LOF change (default: 1e-6)
 
+**Note:** Provide either `C_init` OR `S_init` (set the other to `[]`). Exactly one must be non-empty.
+
 **Outputs:**
-- `C` — Final concentration profiles (n × k)  
-- `S` — Final spectral profiles (k × m), each row normalized to unit norm  
+- `C` — Final concentration profiles (n × k)
+- `S` — Final spectral profiles (k × m), each row normalized to unit norm
 - `lof` — Lack of fit per iteration (%)
 
 **Dependencies:**

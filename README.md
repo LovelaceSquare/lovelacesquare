@@ -25,6 +25,7 @@ Codes/
 ├── LALS/                                      # Localized ALS
 ├── MCR-ALS Lite/                              # MCR-ALS Lite: Lightweight foundational implementation
 ├── MSC/                                       # Multiplicative Scatter Correction
+├── NIPALS/                                    # Nonlinear Iterative Partial Least Squares (PCA with missing data)
 ├── Normalize Matrix/                          # Normalization utilities
 ├── O ALS/                                     # Orthogonal ALS
 ├── PARAFAC-ALS Lite/                          # PARAFAC-ALS Lite: Lightweight foundational implementation

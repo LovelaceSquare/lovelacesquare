@@ -1,13 +1,13 @@
-function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, tol)
+function [A, B, C, lof] = PARAFAC_ALS_Lite(X, N, A_init, B_init, C_init, maxIter, tol, nonnegMode)
 % =========================================================================
-% PARAFAC_ALS_Lite  —  Parallel Factor Analysis by Alternating Least Squares (Constrained)
+% PARAFAC_ALS_Lite  —  Parallel Factor Analysis by Alternating Least Squares (Constrained/Unconstrained)
 % =========================================================================
 %
 % PURPOSE:
 %   Perform Parallel Factor Analysis (PARAFAC) using the Alternating Least
-%   Squares (ALS) algorithm with non-negativity constraints on all factor
-%   matrices. This "Lite" version implements the classical PARAFAC-ALS core
-%   algorithm with compact code and simplified visualization.
+%   Squares (ALS) algorithm with optional non-negativity constraints on the
+%   factor matrices. This "Lite" version implements the classical PARAFAC-ALS
+%   core algorithm with compact code and simplified visualization.
 %
 % -------------------------------------------------------------------------
 % REFERENCES:
@@ -24,20 +24,20 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, t
 %   Author:       Adrián Gómez-Sánchez
 %   Created:      2025-11-01
 %   Reviewed by:  Lovelace's Square
-%   Version:      1.0 (Lite)
+%   Version:      1.3 (Lite, with per-mode non-negativity and enhanced docs)
 %   License:      MIT
 %
 % -------------------------------------------------------------------------
 % DESCRIPTION:
 %   PARAFAC_ALS_Lite decomposes a 3-way tensor X into trilinear factors:
 %
-%       X ≈ sum_{r=1}^R a_r ⊗ b_r ⊗ c_r
+%       X ≈ sum_{n=1}^N a_n ⊗ b_n ⊗ c_n
 %
 %   where:
 %     • X (I × J × K): Data tensor (3-way array)
-%     • A (I × R): Factor matrix for mode 1
-%     • B (J × R): Factor matrix for mode 2
-%     • C (K × R): Factor matrix for mode 3
+%     • A (I × N): Factor matrix for mode 1
+%     • B (J × N): Factor matrix for mode 2
+%     • C (K × N): Factor matrix for mode 3
 %     • ⊗ denotes outer product
 %
 %   In matricized form (mode-1 unfolding):
@@ -45,32 +45,42 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, t
 %
 %   where ⊙ is the Khatri-Rao product (column-wise Kronecker product).
 %
-%   The algorithm alternates between estimating A, B, and C using non-negative
-%   least squares (FNNLS), normalizing each factor to prevent scale
-%   indeterminacy. Lack of Fit (LOF) is computed per iteration, and
-%   convergence plots are updated periodically.
+%   The algorithm alternates between estimating A, B, and C using either:
+%     • Non-negative least squares (FNNLS) in selected modes
+%     • Unconstrained least squares in other modes
+%
+%   B and C are normalized each iteration to prevent scale indeterminacy,
+%   with A absorbing the scaling. Lack of Fit (LOF) is computed per
+%   iteration, and convergence plots are updated periodically.
 %
 % -------------------------------------------------------------------------
 % INPUT ARGUMENTS:
-%   X        - (I × J × K) Data tensor [3-way array]
-%   A_init   - (I × R) Initial estimate of factor matrix A (mode 1),
-%              OR [] for random initialization,
-%              OR scalar R (number of components) if all B_init, C_init are also []
-%   B_init   - (J × R) Initial estimate of factor matrix B (mode 2) OR [] for random
-%   C_init   - (K × R) Initial estimate of factor matrix C (mode 3) OR [] for random
-%   maxIter  - Maximum number of ALS iterations (positive integer)
-%   tol      - (Optional) Convergence tolerance for LOF change (default 1e-6)
+%   X         - (I × J × K) Data tensor [3-way array]
+%   N         - Number of components (positive integer)
+%   A_init    - (I × N) Initial estimate of factor matrix A (mode 1),
+%               OR [] for random initialization
+%   B_init    - (J × N) Initial estimate of factor matrix B (mode 2),
+%               OR [] for random initialization
+%   C_init    - (K × N) Initial estimate of factor matrix C (mode 3),
+%               OR [] for random initialization
+%   maxIter   - Maximum number of ALS iterations (positive integer)
+%   tol       - (Optional) Convergence tolerance for LOF change (default 1e-6)
+%   nonnegMode- (Optional) 1×3 logical vector [nA, nB, nC]:
+%                 nA = true  -> A constrained non-negative (mode 1)
+%                 nB = true  -> B constrained non-negative (mode 2)
+%                 nC = true  -> C constrained non-negative (mode 3)
+%               If scalar given, it is broadcast to all modes.
+%               Default: [true true true] (original fully non-negative behaviour)
 %
 %   NOTE: Any combination of initializations can be provided (0, 1, 2, or 3 factors).
-%         - If at least one factor matrix is provided, R is determined from it
-%         - If all are [], A_init must be a scalar specifying R
-%         - All provided factor matrices must have the same number of components R
+%         - Provided factor matrices must have N columns
+%         - Pass [] for any factor to use random initialization
 %
 % -------------------------------------------------------------------------
 % OUTPUT ARGUMENTS:
-%   A   - (I × R) Final factor matrix for mode 1 (non-negative, absorbs scaling)
-%   B   - (J × R) Final factor matrix for mode 2 (non-negative, normalized)
-%   C   - (K × R) Final factor matrix for mode 3 (non-negative, normalized)
+%   A   - (I × N) Final factor matrix for mode 1 (absorbs all scaling)
+%   B   - (J × N) Final factor matrix for mode 2 (normalized columns)
+%   C   - (K × N) Final factor matrix for mode 3 (normalized columns)
 %   lof - (1 × iter) Lack of Fit (%) evolution
 %
 %     LOF = 100 × ||E||_F / ||X||_F
@@ -80,13 +90,15 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, t
 % ALGORITHM OVERVIEW:
 %   1. Initialize A, B, C from provided initializations or randomly:
 %        - If A_init, B_init, or C_init provided: use those
-%        - If [] : initialize randomly (non-negative)
-%        - If all [] and A_init is scalar: A_init specifies R (number of components)
+%        - If [] : initialize randomly (with N components)
+%        - If nonnegMode(m) = true for mode m: initial factor in that mode is made ≥ 0
 %   2. Repeat until convergence or maxIter:
-%        a) Solve for A:   min ||X₁ - A(C ⊙ B)ᵀ||²,  A ≥ 0  (A not normalized)
-%        b) Solve for B:   min ||X₂ - B(C ⊙ A)ᵀ||²,  B ≥ 0
+%        a) Solve for A:   min ||X₁ - A(C ⊙ B)ᵀ||
+%             - via non-negative LS (FNNLS) if nonnegMode(1) = true
+%             - via unconstrained LS otherwise
+%        b) Solve for B:   min ||X₂ - B(C ⊙ A)ᵀ||
 %        c) Normalize B columns to unit norm, compensate in A
-%        d) Solve for C:   min ||X₃ - C(B ⊙ A)ᵀ||²,  C ≥ 0
+%        d) Solve for C:   min ||X₃ - C(B ⊙ A)ᵀ||
 %        e) Normalize C columns to unit norm, compensate in A
 %        f) Compute LOF and test convergence (|ΔLOF| < tol)
 %        g) Update plots periodically
@@ -94,7 +106,7 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, t
 % -------------------------------------------------------------------------
 % KEY FEATURES:
 %   • Flexible initialization: provide any combination of A, B, C (or none)
-%   • Non-negativity enforced via fast NNLS (FNNLS)
+%   • Per-mode non-negativity via fast NNLS (FNNLS)
 %   • B and C normalized to unit norm; A absorbs all scaling
 %   • Convergence visualization for A, B, C, and LOF
 %
@@ -105,190 +117,293 @@ function [A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, t
 % =========================================================================
 
 
-    %% ------------------------- 1) Validate inputs -------------------------
-    if nargin < 5
-        error('PARAFAC_ALS_Lite requires at least 5 inputs: X, A_init, B_init, C_init, and maxIter.');
+    %% ======================================================================
+    %% STEP 1: VALIDATE INPUTS
+    %% ======================================================================
+    % Purpose: Ensure all inputs are valid before starting the algorithm
+    % Strategy: Check dimensions, types, and logical consistency
+    if nargin < 6
+        error('PARAFAC_ALS_Lite requires at least 6 inputs: X, N, A_init, B_init, C_init, and maxIter.');
     end
-    if nargin < 6 || isempty(tol)
+    if nargin < 7 || isempty(tol)
         tol = 1e-6; % keep in sync with documentation
+    end
+    if nargin < 8 || isempty(nonnegMode)
+        nonnegMode = [true true true];  % default: fully non-negative (original)
     end
 
     validateattributes(X,      {'double','single'}, {'3d','real','finite','nonempty'}, mfilename, 'X', 1);
-    validateattributes(maxIter,{'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'maxIter', 5);
-    validateattributes(tol,    {'numeric'},         {'scalar','real','finite','positive'}, mfilename, 'tol', 6);
+    validateattributes(N,      {'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'N', 2);
+    validateattributes(maxIter,{'numeric'},         {'scalar','real','finite','positive','integer'}, mfilename, 'maxIter', 6);
+    validateattributes(tol,    {'numeric'},         {'scalar','real','finite','positive'}, mfilename, 'tol', 7);
+
+    % handle nonnegMode: scalar or 1x3
+    if isscalar(nonnegMode)
+        nonnegMode = logical(nonnegMode) * [1 1 1];
+    end
+    validateattributes(nonnegMode, {'logical','numeric'}, {'vector','numel',3}, mfilename, 'nonnegMode', 8);
+    nonnegMode = logical(nonnegMode(:)).'; % ensure 1x3 logical row
+    nonnegA = nonnegMode(1);
+    nonnegB = nonnegMode(2);
+    nonnegC = nonnegMode(3);
 
     [I, J, K] = size(X);
 
     % Determine which factors are provided
-    A_provided = ~isempty(A_init) && ~isscalar(A_init);
+    A_provided = ~isempty(A_init);
     B_provided = ~isempty(B_init);
     C_provided = ~isempty(C_init);
-    R_only = isscalar(A_init) && ~B_provided && ~C_provided;
 
-    % Determine R and validate dimensions
-    R = [];
-
-    if R_only
-        % A_init is a scalar specifying R
-        R = A_init;
-        validateattributes(R, {'numeric'}, {'scalar','real','finite','positive','integer'}, mfilename, 'R (A_init as scalar)', 2);
-    else
-        % Extract R from provided initializations and validate dimensions
-        if A_provided
-            validateattributes(A_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'A_init', 2);
-            [IAinit, RA] = size(A_init);
-            if IAinit ~= I
-                error('A_init rows (%d) must match X mode-1 dimension (%d).', IAinit, I);
-            end
-            R = RA;
+    % Validate provided initializations match N and tensor dimensions
+    if A_provided
+        validateattributes(A_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'A_init', 3);
+        [IAinit, NA] = size(A_init);
+        if IAinit ~= I
+            error('A_init rows (%d) must match X mode-1 dimension (%d).', IAinit, I);
         end
-
-        if B_provided
-            validateattributes(B_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'B_init', 3);
-            [JBinit, RB] = size(B_init);
-            if JBinit ~= J
-                error('B_init rows (%d) must match X mode-2 dimension (%d).', JBinit, J);
-            end
-            if isempty(R)
-                R = RB;
-            elseif R ~= RB
-                error('B_init components (%d) must match other provided initializations (%d).', RB, R);
-            end
-        end
-
-        if C_provided
-            validateattributes(C_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'C_init', 4);
-            [KCinit, RC] = size(C_init);
-            if KCinit ~= K
-                error('C_init rows (%d) must match X mode-3 dimension (%d).', KCinit, K);
-            end
-            if isempty(R)
-                R = RC;
-            elseif R ~= RC
-                error('C_init components (%d) must match other provided initializations (%d).', RC, R);
-            end
-        end
-
-        % If no initializations provided at all
-        if isempty(R)
-            error('At least one factor initialization must be provided, or A_init must be a scalar specifying R.');
+        if NA ~= N
+            error('A_init columns (%d) must match N (%d).', NA, N);
         end
     end
 
-    %% ------------------------- 2) Initialize ------------------------------
-    lof = nan(1, maxIter);
-    normX = norm(X(:));               % Frobenius norm of X
+    if B_provided
+        validateattributes(B_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'B_init', 4);
+        [JBinit, NB] = size(B_init);
+        if JBinit ~= J
+            error('B_init rows (%d) must match X mode-2 dimension (%d).', JBinit, J);
+        end
+        if NB ~= N
+            error('B_init columns (%d) must match N (%d).', NB, N);
+        end
+    end
 
+    if C_provided
+        validateattributes(C_init, {'double','single'}, {'2d','real','finite','nonempty'}, mfilename, 'C_init', 5);
+        [KCinit, NC] = size(C_init);
+        if KCinit ~= K
+            error('C_init rows (%d) must match X mode-3 dimension (%d).', KCinit, K);
+        end
+        if NC ~= N
+            error('C_init columns (%d) must match N (%d).', NC, N);
+        end
+    end
+
+    %% ======================================================================
+    %% STEP 2: INITIALIZE FACTOR MATRICES
+    %% ======================================================================
+    % Purpose: Set starting values for A, B, C before iterative optimization
+    % Strategy: Use provided initializations OR generate random starting points
+
+    % Pre-allocate LOF (Lack of Fit) tracking array
+    lof = nan(1, maxIter);
+
+    % Compute Frobenius norm of data tensor (for LOF calculation)
+    % WHY: We need ||X||_F to normalize the residual error into a percentage
+    normX = norm(X(:));
+
+    % Edge case: empty tensor
     if normX == 0
         warning('||X||_F = 0; returning zeros for A, B, C and LOF=0.');
-        A = zeros(I, R, 'like', X);
-        B = zeros(J, R, 'like', X);
-        C = zeros(K, R, 'like', X);
+        A = zeros(I, N, 'like', X);
+        B = zeros(J, N, 'like', X);
+        C = zeros(K, N, 'like', X);
         lof = 0;
         return;
     end
 
-    % Initialize factors based on what was provided
+    % --- Initialize factor matrices based on provided inputs ---
+    % WHY: Good initialization can significantly improve convergence speed
+    %      and help avoid poor local minima
+    % --- Mode 1: A ---
     if A_provided
-        A = max(A_init, 0);           % enforce non-negativity
+        A = A_init;
+        if nonnegA
+            A = max(A, 0);
+        end
     else
-        A = abs(randn(I, R));         % random initialization
+        if nonnegA
+            A = abs(randn(I, N));
+        else
+            A = randn(I, N);
+        end
     end
 
+    % --- Mode 2: B ---
     if B_provided
-        B = max(B_init, 0);           % enforce non-negativity
+        B = B_init;
+        if nonnegB
+            B = max(B, 0);
+        end
     else
-        B = abs(randn(J, R));         % random initialization
+        if nonnegB
+            B = abs(randn(J, N));
+        else
+            B = randn(J, N);
+        end
     end
 
+    % --- Mode 3: C ---
     if C_provided
-        C = max(C_init, 0);           % enforce non-negativity
+        C = C_init;
+        if nonnegC
+            C = max(C, 0);
+        end
     else
-        C = abs(randn(K, R));         % random initialization
+        if nonnegC
+            C = abs(randn(K, N));
+        else
+            C = randn(K, N);
+        end
     end
 
-    % Unfold tensor for each mode
-    X1 = unfold(X, 1);  % I × (J*K)
-    X2 = unfold(X, 2);  % J × (I*K)
-    X3 = unfold(X, 3);  % K × (I*J)
+    % --- Unfold (matricize) tensor along each mode ---
+    % WHY: ALS solves matrix least-squares problems, so we need matrix forms
+    %      Unfolding "flattens" the 3-way tensor into a 2D matrix for each mode
+    X1 = unfold(X, 1);  % Mode-1 unfolding: I × (J*K)
+    X2 = unfold(X, 2);  % Mode-2 unfolding: J × (I*K)
+    X3 = unfold(X, 3);  % Mode-3 unfolding: K × (I*J)
 
-    % Create figure for real-time visualization
+    % --- Create figure for real-time visualization ---
+    % WHY: Visual feedback helps monitor convergence and detect issues
     fig = figure('Name', 'PARAFAC-ALS Lite Convergence', ...
                  'NumberTitle', 'off', ...
                  'Color', 'w', ...
                  'Position', [100, 100, 1400, 600]);
 
-    %% ------------------------- 3) ALS Iterations --------------------------
+    %% ======================================================================
+    %% STEP 3: ALTERNATING LEAST SQUARES (ALS) ITERATIONS
+    %% ======================================================================
+    % Purpose: Iteratively optimize A, B, C to minimize ||X - X_reconstructed||
+    % Strategy: Fix two factors, solve for the third; repeat until convergence
+    %
+    % KEY CONCEPT: ALS alternates between three steps:
+    %   1. Fix B and C → solve for A
+    %   2. Fix A and C → solve for B (then normalize)
+    %   3. Fix A and B → solve for C (then normalize)
+    %
+    % WHY NORMALIZE? To prevent scale ambiguity (A could get smaller while B
+    %                gets bigger, both representing the same decomposition)
+
     fprintf('PARAFAC-ALS Lite started...\n');
     fprintf('Tensor size: %d × %d × %d\n', I, J, K);
-    fprintf('Number of components: %d\n', R);
-    fprintf('Max iterations: %d, Tolerance: %.2e\n\n', maxIter, tol);
+    fprintf('Number of components: %d\n', N);
+    fprintf('Max iterations: %d, Tolerance: %.2e\n', maxIter, tol);
+    fprintf('Non-negativity (A,B,C): [%d %d %d]\n\n', nonnegA, nonnegB, nonnegC);
     fprintf('Iter\tLOF (%%)\t\tChange\n');
     fprintf('----\t--------\t--------\n');
 
     for iter = 1:maxIter
-        % --- 3a. Update A: Non-negative least squares ---
-        %     X₁ ≈ A(C ⊙ B)ᵀ  =>  A = X₁ × pinv((C ⊙ B)ᵀ)
-        %     Solve: A = fnnls((C ⊙ B), X₁')'
-        Z = khatrirao(C, B);  % (J*K) × R
-        A = fnnls(Z, X1')';   % I × R
-        % Note: A is NOT normalized; it absorbs all scaling
+        % ==================================================================
+        % SUBSTEP 3a: Update factor matrix A (Mode 1)
+        % ==================================================================
+        % Goal: Solve for A while keeping B and C fixed
+        % Math: X₁ ≈ A(C ⊙ B)ᵀ, where ⊙ is Khatri-Rao product
+        % WHY KHATRI-RAO? It's the key operation that relates the matricized
+        %                 tensor to the factor matrices in PARAFAC
 
-        % --- 3b. Update B: Non-negative least squares ---
-        %     X₂ ≈ B(C ⊙ A)ᵀ
-        Z = khatrirao(C, A);  % (I*K) × R
-        B = fnnls(Z, X2')';   % J × R
+        % Compute Khatri-Rao product: column-wise Kronecker product
+        Z = khatrirao(C, B);  % (J*K) × N
 
-        % --- 3c. Normalize B (column-wise) and compensate in A ---
-        for r = 1:R
-            b_norm = norm(B(:, r));
+        if nonnegA
+            % Non-negative least squares: enforce A ≥ 0
+            % WHY? Physical/chemical constraints (e.g., concentrations can't be negative)
+            A = fnnls(Z, X1')';   % I × N
+        else
+            % Unconstrained least squares: A = X1 / Z'
+            A = X1 / Z';
+        end
+        % NOTE: A is NOT normalized—it will absorb all scaling from B and C
+
+        % ==================================================================
+        % SUBSTEP 3b: Update factor matrix B (Mode 2)
+        % ==================================================================
+        % Goal: Solve for B while keeping A and C fixed
+        % Math: X₂ ≈ B(C ⊙ A)ᵀ
+        Z = khatrirao(C, A);  % (I*K) × N
+        if nonnegB
+            B = fnnls(Z, X2')';   % J × N
+        else
+            B = X2 / Z';
+        end
+
+        % ==================================================================
+        % SUBSTEP 3c: Normalize B to prevent scale indeterminacy
+        % ==================================================================
+        % Strategy: Normalize each column of B to unit norm
+        % WHY? Without normalization, A could shrink while B grows (or vice versa)
+        %      giving the same reconstruction but unstable factor matrices
+        % Compensation: Transfer B's scaling to A to maintain X ≈ A(C⊙B)ᵀ
+        for n = 1:N
+            b_norm = norm(B(:, n));
             if b_norm > eps
-                B(:, r) = B(:, r) / b_norm;
-                A(:, r) = A(:, r) * b_norm;
+                B(:, n) = B(:, n) / b_norm;  % Normalize B
+                A(:, n) = A(:, n) * b_norm;  % Compensate in A
             end
         end
 
-        % --- 3d. Update C: Non-negative least squares ---
-        %     X₃ ≈ C(B ⊙ A)ᵀ
-        Z = khatrirao(B, A);  % (I*J) × R
-        C = fnnls(Z, X3')';   % K × R
+        % ==================================================================
+        % SUBSTEP 3d: Update factor matrix C (Mode 3)
+        % ==================================================================
+        % Goal: Solve for C while keeping A and B fixed
+        % Math: X₃ ≈ C(B ⊙ A)ᵀ
+        Z = khatrirao(B, A);  % (I*J) × N
+        if nonnegC
+            C = fnnls(Z, X3')';   % K × N
+        else
+            C = X3 / Z';
+        end
 
-        % --- 3e. Normalize C (column-wise) and compensate in A ---
-        for r = 1:R
-            c_norm = norm(C(:, r));
+        % ==================================================================
+        % SUBSTEP 3e: Normalize C to prevent scale indeterminacy
+        % ==================================================================
+        % Strategy: Same as for B—normalize C and compensate in A
+        for n = 1:N
+            c_norm = norm(C(:, n));
             if c_norm > eps
-                C(:, r) = C(:, r) / c_norm;
-                A(:, r) = A(:, r) * c_norm;
+                C(:, n) = C(:, n) / c_norm;  % Normalize C
+                A(:, n) = A(:, n) * c_norm;  % Compensate in A
             end
         end
 
-        % --- 3f. Compute Lack of Fit ---
+        % ==================================================================
+        % SUBSTEP 3f: Compute Lack of Fit (LOF) - Quality Metric
+        % ==================================================================
+        % Purpose: Measure how well the model fits the data
+        % Formula: LOF = 100 × ||X - X_reconstructed||_F / ||X||_F
+        % Interpretation: Lower LOF = better fit (0% = perfect fit)
         X_reconstructed = reconstruct(A, B, C);
         E = X(:) - X_reconstructed(:);
         lof(iter) = 100 * norm(E) / normX;
 
-        % --- 3g. Check convergence ---
+        % ==================================================================
+        % SUBSTEP 3g: Check for convergence
+        % ==================================================================
+        % Convergence criterion: LOF change between iterations < tolerance
+        % WHY? If LOF isn't improving significantly, we've reached the optimum
         if iter > 1
             lof_change = abs(lof(iter-1) - lof(iter));
             fprintf('%4d\t%8.4f\t%8.6f\n', iter, lof(iter), lof_change);
             if lof_change < tol
                 fprintf('\nConverged at iteration %d (LOF change < %.2e)\n', iter, tol);
-                lof = lof(1:iter);
+                lof = lof(1:iter);  % Trim unused LOF entries
                 break;
             end
         else
             fprintf('%4d\t%8.4f\t%8s\n', iter, lof(iter), '-');
         end
 
-        % --- 3h. Visualization update ---
+        % ==================================================================
+        % SUBSTEP 3h: Update visualization (every 3 iterations for performance)
+        % ==================================================================
+        % WHY? Real-time plots help monitor convergence and spot issues early
         if mod(iter, 3) == 0 || iter == 1 || iter == maxIter
-            updatePlots(fig, A, B, C, lof, iter, R);
+            updatePlots(fig, A, B, C, lof, iter, N);
             drawnow;
         end
     end
 
     % Final plot update
-    updatePlots(fig, A, B, C, lof, iter, R);
+    updatePlots(fig, A, B, C, lof, min(iter, numel(lof)), N);
 
     fprintf('\nPARAFAC-ALS Lite completed.\n');
     fprintf('Final LOF: %.4f%%\n\n', lof(end));
@@ -330,7 +445,7 @@ function Z = khatrirao(A, B)
         error('A and B must have the same number of columns.');
     end
 
-    Z = zeros(m*n, r1);
+    Z = zeros(m*n, r1, 'like', A);
     for i = 1:r1
         Z(:, i) = kron(A(:, i), B(:, i));
     end
@@ -341,16 +456,16 @@ end
 %% ========================================================================
 function X_hat = reconstruct(A, B, C)
     % Reconstructs tensor from PARAFAC factors
-    % X ≈ sum_{r=1}^R a_r ⊗ b_r ⊗ c_r
+    % X ≈ sum_{n=1}^N a_n ⊗ b_n ⊗ c_n
 
-    [I, R] = size(A);
+    [I, N] = size(A);
     [J, ~] = size(B);
     [K, ~] = size(C);
 
-    X_hat = zeros(I, J, K);
-    for r = 1:R
-        % Outer product: a_r ⊗ b_r ⊗ c_r
-        X_hat = X_hat + outerprod3(A(:,r), B(:,r), C(:,r));
+    X_hat = zeros(I, J, K, 'like', A);
+    for n = 1:N
+        % Outer product: a_n ⊗ b_n ⊗ c_n
+        X_hat = X_hat + outerprod3(A(:,n), B(:,n), C(:,n));
     end
 end
 
@@ -365,7 +480,7 @@ function T = outerprod3(a, b, c)
     J = length(b);
     K = length(c);
 
-    T = zeros(I, J, K);
+    T = zeros(I, J, K, 'like', a);
     for i = 1:I
         for j = 1:J
             for k = 1:K
@@ -378,7 +493,7 @@ end
 %% ========================================================================
 %% HELPER FUNCTION: Update Visualization
 %% ========================================================================
-function updatePlots(fig, A, B, C, lof, iter, R)
+function updatePlots(fig, A, B, C, lof, iter, N)
     if ~ishandle(fig), return; end
     figure(fig); clf(fig);
 
@@ -388,7 +503,7 @@ function updatePlots(fig, A, B, C, lof, iter, R)
     xlabel('Mode-1 Index', 'FontSize', 11);
     ylabel('Loading', 'FontSize', 11);
     title('Factor A (Mode 1)', 'FontSize', 12, 'FontWeight', 'bold');
-    legend(arrayfun(@(x) sprintf('Comp %d', x), 1:R, 'UniformOutput', false), ...
+    legend(arrayfun(@(x) sprintf('Comp %d', x), 1:N, 'UniformOutput', false), ...
         'Location', 'best');
     grid on;
 
@@ -398,7 +513,7 @@ function updatePlots(fig, A, B, C, lof, iter, R)
     xlabel('Mode-2 Index', 'FontSize', 11);
     ylabel('Loading', 'FontSize', 11);
     title('Factor B (Mode 2)', 'FontSize', 12, 'FontWeight', 'bold');
-    legend(arrayfun(@(x) sprintf('Comp %d', x), 1:R, 'UniformOutput', false), ...
+    legend(arrayfun(@(x) sprintf('Comp %d', x), 1:N, 'UniformOutput', false), ...
         'Location', 'best');
     grid on;
 
@@ -408,17 +523,26 @@ function updatePlots(fig, A, B, C, lof, iter, R)
     xlabel('Mode-3 Index', 'FontSize', 11);
     ylabel('Loading', 'FontSize', 11);
     title('Factor C (Mode 3)', 'FontSize', 12, 'FontWeight', 'bold');
-    legend(arrayfun(@(x) sprintf('Comp %d', x), 1:R, 'UniformOutput', false), ...
+    legend(arrayfun(@(x) sprintf('Comp %d', x), 1:N, 'UniformOutput', false), ...
         'Location', 'best');
     grid on;
 
-    % Lack of Fit evolution
+    % Lack of Fit evolution (log scale on y-axis)
     subplot(2,4,[4,8]);
-    plot(1:length(lof), lof, 'o-', 'LineWidth', 2, 'MarkerSize', 6);
+    % Only plot non-NaN values
+    valid_idx = ~isnan(lof);
+    if any(valid_idx)
+        semilogy(find(valid_idx), lof(valid_idx), 'o-', 'LineWidth', 2, 'MarkerSize', 6);
+    end
     xlabel('Iteration', 'FontSize', 11);
-    ylabel('LOF (%)', 'FontSize', 11);
-    title(sprintf('Lack of Fit (Iter %d, LOF=%.4f%%)', iter, lof(end)), ...
-        'FontSize', 12, 'FontWeight', 'bold');
+    ylabel('LOF (%) (log scale)', 'FontSize', 11);
+    % Handle NaN in title
+    if iter > 0 && iter <= length(lof) && ~isnan(lof(iter))
+        title(sprintf('Lack of Fit (Iter %d, LOF=%.4f%%)', iter, lof(iter)), ...
+            'FontSize', 12, 'FontWeight', 'bold');
+    else
+        title('Lack of Fit', 'FontSize', 12, 'FontWeight', 'bold');
+    end
     grid on;
     xlim([1, max(10, length(lof))]);
 end

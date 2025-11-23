@@ -15,15 +15,16 @@ MCR-ALS decomposes a data matrix according to the bilinear model:
 **D = C × S + E**
 
 where:
-- **D** (n × m): Experimental data matrix (e.g., spectra collected over time)
-- **C** (n × k): Concentration profiles of k components across n samples
-- **S** (k × m): Pure spectral profiles of k components across m variables
-- **E** (n × m): Residual matrix (experimental noise and model error)
+- **D** (I × J): Experimental data matrix (e.g., spectra collected over time)
+- **C** (I × N): Concentration profiles of N components across I samples
+- **S** (N × J): Pure spectral profiles of N components across J variables
+- **E** (I × J): Residual matrix (experimental noise and model error)
 
 ### Key Features of the Lite Version
 
-- ✅ **Flexible initialization** with either C_init OR S_init
-- ✅ **Non-negativity constraints** on both C and S
+- ✅ **Flexible initialization** with C_init, S_init, both, or neither
+- ✅ **Explicit component specification** (N parameter)
+- ✅ **Optional non-negativity constraints** on C and/or S (individually controllable)
 - ✅ **Spectral normalization** (unit Euclidean norm) to prevent scale ambiguity
 - ✅ **Real-time visualization** of convergence progress
 - ✅ **Lack of Fit (LOF)** monitoring at each iteration
@@ -50,17 +51,17 @@ MCR-ALS is widely used in:
 
 ### Alternating Least Squares (ALS)
 
-1. **Initialize** with either concentration profiles **C** OR spectral profiles **S**
+1. **Initialize** concentration profiles **C** and/or spectral profiles **S** (with N components specified)
 2. **Iterate** until convergence:
 
    **If C_init provided:**
-   - **Step 1**: Fix C, solve for S with non-negativity: `min ||D - C×S||²  s.t.  S ≥ 0`
+   - **Step 1**: Fix C, solve for S: `min ||D - C×S||²` (with non-negativity if nonnegS = true)
    - **Step 2**: Normalize each row of S to unit norm, compensate in C
-   - **Step 3**: Fix S, solve for C with non-negativity: `min ||D - C×S||²  s.t.  C ≥ 0`
+   - **Step 3**: Fix S, solve for C: `min ||D - C×S||²` (with non-negativity if nonnegC = true)
 
    **If S_init provided:**
-   - **Step 1**: Fix S, solve for C with non-negativity: `min ||D - C×S||²  s.t.  C ≥ 0`
-   - **Step 2**: Fix C, solve for S with non-negativity: `min ||D - C×S||²  s.t.  S ≥ 0`
+   - **Step 1**: Fix S, solve for C: `min ||D - C×S||²` (with non-negativity if nonnegC = true)
+   - **Step 2**: Fix C, solve for S: `min ||D - C×S||²` (with non-negativity if nonnegS = true)
    - **Step 3**: Normalize each row of S to unit norm, compensate in C
 
    - **Step 4**: Calculate Lack of Fit: `LOF = 100 × ||D - C×S||_F / ||D||_F`
@@ -109,12 +110,12 @@ which MCR_ALS_Lite
 % Load your data matrix D (samples × variables)
 % For example: D could be 50 spectra × 200 wavelengths
 
-% Initialize concentration profiles (e.g., 3 components)
+% Specify number of components and initialize concentration profiles
 nComponents = 3;
 C_init = rand(size(D,1), nComponents);  % Random initialization
 
 % Run MCR-ALS Lite (C_init provided, S_init is [])
-[C, S, lof] = MCR_ALS_Lite(D, C_init, [], 100, 1e-6);
+[C, S, lof] = MCR_ALS_Lite(D, nComponents, C_init, [], 100, 1e-6);
 
 % C: Concentration profiles (samples × components)
 % S: Spectral profiles (components × variables)
@@ -125,16 +126,33 @@ C_init = rand(size(D,1), nComponents);  % Random initialization
 % Load your data matrix D (samples × variables)
 % For example: D could be 50 spectra × 200 wavelengths
 
-% Initialize spectral profiles (e.g., 3 components)
+% Specify number of components and initialize spectral profiles
 nComponents = 3;
 S_init = rand(nComponents, size(D,2));  % Random initialization
 
 % Run MCR-ALS Lite (C_init is [], S_init provided)
-[C, S, lof] = MCR_ALS_Lite(D, [], S_init, 100, 1e-6);
+[C, S, lof] = MCR_ALS_Lite(D, nComponents, [], S_init, 100, 1e-6);
 
 % C: Concentration profiles (samples × components)
 % S: Spectral profiles (components × variables)
 % lof: Lack of fit per iteration (%)
+
+### Example - Using Optional Non-Negativity Constraints
+
+% Full non-negativity (default behavior, backward compatible)
+[C, S, lof] = MCR_ALS_Lite(D, 3, C_init, [], 100, 1e-6, [true true]);
+
+% Only constrain concentrations (C) to be non-negative
+[C, S, lof] = MCR_ALS_Lite(D, 3, C_init, [], 100, 1e-6, [true false]);
+
+% Only constrain spectra (S) to be non-negative
+[C, S, lof] = MCR_ALS_Lite(D, 3, C_init, [], 100, 1e-6, [false true]);
+
+% Fully unconstrained (both C and S can be negative)
+[C, S, lof] = MCR_ALS_Lite(D, 3, C_init, [], 100, 1e-6, [false false]);
+
+% Scalar input (broadcast to both modes)
+[C, S, lof] = MCR_ALS_Lite(D, 3, C_init, [], 100, 1e-6, true);  % same as [true true]
 
 ### Advanced Initialization
 
@@ -143,9 +161,9 @@ For better results, use informed initialization. These methods can provide eithe
 Method | Description | Output | When to Use
 ---|---|---|---
 **PUREST** | PURity-based Evolving Self-modeling Technique | S profiles | Pure variable detection
-**ESI** | Essential spectra | S profiles | Spectral libraries available
+**SIMPLISMA/ESI** | SIMPLe-to-use Interactive Self-modeling / Essential Spectra Identification | S profiles | Simplex geometry for pure components
 **Pure windows** | Known regions where components are isolated | C or S | Domain knowledge of mixture
-**Random** | Random positive values | C or S | Last resort, may need multiple runs
+**Random** | Random positive values | C or S | Last resort (quick initialization)
 
 ---
 
@@ -167,20 +185,26 @@ This will:
 
 ### `MCR_ALS_Lite`
 
-[C, S, lof] = MCR_ALS_Lite(D, C_init, S_init, maxIter, tol)
+[C, S, lof] = MCR_ALS_Lite(D, N, C_init, S_init, maxIter, tol, nonnegMode)
 
 **Inputs:**
-- `D` — Data matrix (n × m)
-- `C_init` — Initial concentration profiles (n × k) OR `[]` if using S_init
-- `S_init` — Initial spectral profiles (k × m) OR `[]` if using C_init
-- `maxIter` — Maximum iterations (default: 100)
-- `tol` — Convergence tolerance for LOF change (default: 1e-6)
+- `D` — Data matrix (I × J)
+- `N` — Number of components (positive integer)
+- `C_init` — Initial concentration profiles (I × N) OR `[]` for random
+- `S_init` — Initial spectral profiles (N × J) OR `[]` for random
+- `maxIter` — Maximum iterations
+- `tol` — (Optional) Convergence tolerance for LOF change (default: 1e-6)
+- `nonnegMode` — (Optional) 1×2 logical vector [nonnegC, nonnegS]:
+  - `nonnegC = true` → C constrained non-negative
+  - `nonnegS = true` → S constrained non-negative
+  - If scalar given, it is broadcast to both modes
+  - Default: `[true true]` (fully non-negative, original behavior)
 
-**Note:** Provide either `C_init` OR `S_init` (set the other to `[]`). Exactly one must be non-empty.
+**Note:** Provide `C_init`, `S_init`, both, or neither (all random if both []). Provided matrices must have N components.
 
 **Outputs:**
-- `C` — Final concentration profiles (n × k)
-- `S` — Final spectral profiles (k × m), each row normalized to unit norm
+- `C` — Final concentration profiles (I × N)
+- `S` — Final spectral profiles (N × J), each row normalized to unit norm
 - `lof` — Lack of fit per iteration (%)
 
 **Dependencies:**

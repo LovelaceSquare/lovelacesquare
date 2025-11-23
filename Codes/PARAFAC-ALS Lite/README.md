@@ -12,15 +12,15 @@ PARAFAC (also known as CANDECOMP) is a powerful multi-way decomposition techniqu
 
 PARAFAC decomposes a three-way tensor according to the trilinear model:
 
-**X ≈ ∑ᵣ aᵣ ⊗ bᵣ ⊗ cᵣ**
+**X ≈ ∑ₙ aₙ ⊗ bₙ ⊗ cₙ**
 
 where:
 - **X** (I × J × K): Three-way data tensor (e.g., samples × wavelengths × elution time)
-- **A** (I × R): Factor matrix for mode 1 (e.g., concentration profiles)
-- **B** (J × R): Factor matrix for mode 2 (e.g., spectral profiles)
-- **C** (K × R): Factor matrix for mode 3 (e.g., elution profiles)
+- **A** (I × N): Factor matrix for mode 1 (e.g., concentration profiles)
+- **B** (J × N): Factor matrix for mode 2 (e.g., spectral profiles)
+- **C** (K × N): Factor matrix for mode 3 (e.g., elution profiles)
 - **⊗** denotes outer product
-- **R**: Number of components
+- **N**: Number of components
 
 In matricized form (mode-1 unfolding):
 
@@ -31,7 +31,7 @@ where **⊙** is the Khatri-Rao product (column-wise Kronecker product).
 ### Key Features of the Lite Version
 
 - ✅ **Flexible initialization** with any combination of A, B, C (or none)
-- ✅ **Non-negativity constraints** on all factor matrices (A, B, C)
+- ✅ **Optional non-negativity constraints** on factor matrices (individually controllable for A, B, C)
 - ✅ **Factor normalization** (B and C normalized; A absorbs scaling) to prevent scale ambiguity
 - ✅ **Real-time visualization** of convergence progress
 - ✅ **Lack of Fit (LOF)** monitoring at each iteration
@@ -61,17 +61,17 @@ PARAFAC is widely used in:
 ### Alternating Least Squares (ALS) for PARAFAC
 
 1. **Initialize** factor matrices **A**, **B**, **C** from provided initializations or randomly:
+   - Number of components **N** explicitly specified
    - If factor provided: use it
-   - If [] : initialize randomly (non-negative)
-   - If all [] and A_init is scalar: use as number of components R
+   - If [] : initialize randomly (respecting nonnegMode constraints)
 2. **Iterate** until convergence:
-   - **Step 1**: Fix B and C, solve for A with non-negativity:
-     `min ||X₁ - A(C ⊙ B)ᵀ||²  s.t.  A ≥ 0` (A not normalized)
-   - **Step 2**: Fix A and C, solve for B with non-negativity:
-     `min ||X₂ - B(C ⊙ A)ᵀ||²  s.t.  B ≥ 0`
+   - **Step 1**: Fix B and C, solve for A:
+     `min ||X₁ - A(C ⊙ B)ᵀ||²` (with non-negativity if nonnegA = true; A not normalized)
+   - **Step 2**: Fix A and C, solve for B:
+     `min ||X₂ - B(C ⊙ A)ᵀ||²` (with non-negativity if nonnegB = true)
    - **Step 3**: Normalize each column of B to unit norm, compensate in A
-   - **Step 4**: Fix A and B, solve for C with non-negativity:
-     `min ||X₃ - C(B ⊙ A)ᵀ||²  s.t.  C ≥ 0`
+   - **Step 4**: Fix A and B, solve for C:
+     `min ||X₃ - C(B ⊙ A)ᵀ||²` (with non-negativity if nonnegC = true)
    - **Step 5**: Normalize each column of C to unit norm, compensate in A
    - **Step 6**: Calculate Lack of Fit: `LOF = 100 × ||X - X̂||_F / ||X||_F`
    - **Step 7**: Check convergence: if `|LOF(i-1) - LOF(i)| < tol`, stop
@@ -87,7 +87,7 @@ PARAFAC is widely used in:
 **Khatri-Rao Product (C ⊙ B):**
 Column-wise Kronecker product:
 ```
-(C ⊙ B) = [c₁ ⊗ b₁,  c₂ ⊗ b₂,  ...,  cᵣ ⊗ bᵣ]
+(C ⊙ B) = [c₁ ⊗ b₁,  c₂ ⊗ b₂,  ...,  cₙ ⊗ bₙ]
 ```
 
 ### Normalization Strategy
@@ -95,13 +95,13 @@ Column-wise Kronecker product:
 Only B and C factor columns are normalized by their Euclidean norms, with A absorbing all scaling:
 
 ```matlab
-% Normalize factor column r in B and compensate in A
-B(:,r) = B(:,r) / norm(B(:,r), 2);
-A(:,r) = A(:,r) * norm(B(:,r), 2);
+% Normalize factor column n in B and compensate in A
+B(:,n) = B(:,n) / norm(B(:,n), 2);
+A(:,n) = A(:,n) * norm(B(:,n), 2);
 
-% Normalize factor column r in C and compensate in A
-C(:,r) = C(:,r) / norm(C(:,r), 2);
-A(:,r) = A(:,r) * norm(C(:,r), 2);
+% Normalize factor column n in C and compensate in A
+C(:,n) = C(:,n) / norm(C(:,n), 2);
+A(:,n) = A(:,n) * norm(C(:,n), 2);
 ```
 
 This ensures:
@@ -142,12 +142,12 @@ which PARAFAC_ALS_Lite
 % Load your 3-way data tensor X (I × J × K)
 % For example: X could be 50 samples × 40 wavelengths × 30 time points
 
-% Initialize factor matrix A for mode-1 (e.g., 3 components)
+% Specify number of components and initialize factor matrix A for mode-1
 nComponents = 3;
 A_init = rand(size(X,1), nComponents);
 
 % Run PARAFAC-ALS Lite (B_init and C_init are [], so they're random)
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, [], [], 100, 1e-6);
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, nComponents, A_init, [], [], 100, 1e-6);
 
 % A: Factor matrix for mode 1 (samples × components)
 % B: Factor matrix for mode 2 (wavelengths × components)
@@ -158,36 +158,55 @@ A_init = rand(size(X,1), nComponents);
 ### Example 2: Initialize all three factors
 
 ```matlab
-% Initialize all three factor matrices
+% Specify number of components and initialize all three factor matrices
 nComponents = 3;
 A_init = rand(size(X,1), nComponents);
 B_init = rand(size(X,2), nComponents);
 C_init = rand(size(X,3), nComponents);
 
 % Run PARAFAC-ALS Lite with all initializations
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, 100, 1e-6);
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, nComponents, A_init, B_init, C_init, 100, 1e-6);
 ```
 
 ### Example 3: All random initialization (specify number of components)
 
 ```matlab
-% Specify number of components as scalar in A_init position
+% Specify number of components; all factors randomly initialized
 nComponents = 3;
 
 % Run PARAFAC-ALS Lite with all factors randomly initialized
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, nComponents, [], [], 100, 1e-6);
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, nComponents, [], [], [], 100, 1e-6);
 ```
 
 ### Example 4: Initialize only B and C (A random)
 
 ```matlab
-% Initialize only modes 2 and 3
+% Specify number of components and initialize only modes 2 and 3
 nComponents = 3;
 B_init = rand(size(X,2), nComponents);
 C_init = rand(size(X,3), nComponents);
 
 % Run PARAFAC-ALS Lite (A_init is [], so A is random)
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, [], B_init, C_init, 100, 1e-6);
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, nComponents, [], B_init, C_init, 100, 1e-6);
+```
+
+### Example 5: Using Optional Non-Negativity Constraints
+
+```matlab
+% Full non-negativity (default behavior, backward compatible)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, 3, [], [], [], 100, 1e-6, [true true true]);
+
+% Only constrain A and B to be non-negative
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, 3, [], [], [], 100, 1e-6, [true true false]);
+
+% Only constrain mode 2 (B) to be non-negative
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, 3, [], [], [], 100, 1e-6, [false true false]);
+
+% Fully unconstrained (all factors can be negative)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, 3, [], [], [], 100, 1e-6, [false false false]);
+
+% Scalar input (broadcast to all modes)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, 3, [], [], [], 100, 1e-6, true);  % same as [true true true]
 ```
 
 ### Advanced Initialization
@@ -223,23 +242,25 @@ This will:
 ### `PARAFAC_ALS_Lite`
 
 ```matlab
-[A, B, C, lof] = PARAFAC_ALS_Lite(X, A_init, B_init, C_init, maxIter, tol)
+[A, B, C, lof] = PARAFAC_ALS_Lite(X, N, A_init, B_init, C_init, maxIter, tol, nonnegMode)
 ```
 
 **Inputs:**
 - `X` — Data tensor (I × J × K)
-- `A_init` — Initial factor matrix for mode 1 (I × R), OR `[]` for random, OR scalar R if all factors are `[]`
-- `B_init` — Initial factor matrix for mode 2 (J × R) OR `[]` for random
-- `C_init` — Initial factor matrix for mode 3 (K × R) OR `[]` for random
-- `maxIter` — Maximum iterations (default: 100)
-- `tol` — Convergence tolerance for LOF change (default: 1e-6)
+- `N` — Number of components (positive integer)
+- `A_init` — Initial factor matrix for mode 1 (I × N) OR `[]` for random
+- `B_init` — Initial factor matrix for mode 2 (J × N) OR `[]` for random
+- `C_init` — Initial factor matrix for mode 3 (K × N) OR `[]` for random
+- `maxIter` — Maximum iterations
+- `tol` — (Optional) Convergence tolerance for LOF change (default: 1e-6)
+- `nonnegMode` — (Optional) 1×3 logical vector [nA, nB, nC] for per-mode non-negativity (default: [true true true])
 
-**Note:** Any combination of initializations can be provided (0, 1, 2, or 3 factors). All provided factors must have the same number of components R.
+**Note:** Any combination of initializations can be provided (0, 1, 2, or 3 factors). All provided factors must have N columns.
 
 **Outputs:**
-- `A` — Final factor matrix for mode 1 (I × R), absorbs all scaling (not normalized)
-- `B` — Final factor matrix for mode 2 (J × R), columns normalized to unit norm
-- `C` — Final factor matrix for mode 3 (K × R), columns normalized to unit norm
+- `A` — Final factor matrix for mode 1 (I × N), absorbs all scaling (not normalized)
+- `B` — Final factor matrix for mode 2 (J × N), columns normalized to unit norm
+- `C` — Final factor matrix for mode 3 (K × N), columns normalized to unit norm
 - `lof` — Lack of fit per iteration (%)
 
 **Dependencies:**

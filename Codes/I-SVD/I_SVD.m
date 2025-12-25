@@ -2,8 +2,8 @@ function [Dimp, T, P, r2, lofc] = I_SVD(D, nComp, maxIter, tol)
 % I_SVD  Perform Iterative SVD-based PCA Imputation on the input data.
 %
 % REFERENCE:
-%   Roweis, Sam. "EM algorithms for PCA and SPCA." 
-%   Advances in Neural Information Processing Systems 10 (1997).
+%   Hastie, Trevor, et al. "Imputing missing data for gene expression arrays." (1999).
+%   Technical Report, Division of Biostatistics, Stanford University
 %
 % Author:         Adrián Gómez-Sánchez
 % Date Created:   2025-01-02

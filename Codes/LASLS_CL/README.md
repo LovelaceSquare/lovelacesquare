@@ -11,44 +11,51 @@ Eilers, P. H. C., & Boelens, H. F. M. (2005). *Baseline correction with asymmetr
 
 ## Contents
 
-- **`LASLS_CL.m`** — Command-line function for LAsLS baseline correction
-- **`test_LASLS_CL.m`** — Test script with synthetic data for the command-line function
-- **`LASLS_GUI/`** — Interactive graphical interface (MATLAB AppBase + uihtml)
-  - `LASLS.m` — Main app class
+Two packages are available under `Codes/`:
+
+- **`LASLS_CL/`** — Command-line function for scripted/batch use
+  - `LASLS_CL.m` — Standalone baseline correction function
+  - `test_LASLS_CL.m` — Test script with synthetic data
+- **`LASLS_GUI/`** — Interactive graphical interface
+  - `LASLS.m` — Main app class (MATLAB AppBase + uihtml)
   - `LASLS_test.m` — Synthetic data generator for the GUI
   - `business_logic/` — Core algorithm (`@LASLSCorrector`) and validation (`@DataValidator`)
   - `ui/` — HTML/JS frontend
 
 ---
 
-## Overview
-
-The `LASLS_CL` function implements a Local Asymmetric Least Squares (LAsLS) baseline correction algorithm tailored for one-dimensional data vectors, such as spectra or chromatograms.
-
-Key features:
-- **Interval-specific asymmetry (`pVals`)**: Different sensitivity to positive/negative residuals across intervals.
-- **Interval-specific smoothing (`lambdasAsym`)**: Finer curvature control in defined segments.
-- **Global penalties**:
-  - `lambdaWhit`: uniform second-derivative penalty outside intervals
-  - `mu`: global first-derivative penalty discouraging abrupt slope changes
-
-The method solves the following weighted system in each IRLS iteration:
-
-    (W + Dᵀ * diag(lambdaVec) * D + μ * Lᵀ * L) * b = W * y
-
-Where:
-- `y`: observed data vector
-- `W`: diagonal weight matrix updated per iteration
-- `D`, `L`: second- and first-order difference operators
-- `lambdaVec`: vector combining local and global smoothing terms
-
----
-
-## Usage Example
+## Command-Line Usage (`LASLS_CL`)
 
     [estimatedBaseline, weights] = LASLS_CL(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
 
 See `test_LASLS_CL.m` for a full working example with synthetic data.
+
+---
+
+## GUI Usage (`LASLS_GUI`)
+
+Launch the graphical interface from MATLAB:
+
+    LASLS
+
+### Quick start
+
+1. **Load data** — Click *Load* to import a matrix variable from the workspace (rows = samples, columns = channels). To try the tool without your own data, use the *Generate demo data* option in the *+* menu.
+2. **Draw intervals** — Click *Draw* and drag on the preview chart to define peak regions. Each interval gets its own local smoothing (λ) and asymmetry (p) parameters.
+3. **Tune parameters** — Use the *Global* tab to adjust baseline smoothness (λ), asymmetry (p), and tension (μ). Switch to the *Interval* tab to fine-tune parameters for individual intervals.
+4. **Preview** — The baseline estimate updates in real time as you adjust parameters. The corrected signal is shown in the bottom chart.
+5. **Apply & Export** — Click *Apply* to compute baselines for all samples, then *Export* to save corrected data and baselines to the workspace.
+
+### Features
+
+- **Signal-by-signal navigation** — Browse individual samples using the badge controls in the chart header.
+- **Per-signal parameters** — Assign different global parameters to each sample for heterogeneous datasets.
+- **Peak detection** — Automatic peak finder to help define intervals.
+- **Batch processing** — Apply correction to all samples at once.
+- **Import/Export intervals** — Save and reload interval definitions.
+- **Interactive zoom & pan** — Scroll to zoom, drag to pan on both charts.
+- **Dark mode** — Toggle via the *+* menu.
+- **Built-in tutorial** — Click *Tutorial* in the *+* menu for a step-by-step guided tour of all interface features.
 
 ---
 
@@ -59,13 +66,13 @@ See `test_LASLS_CL.m` for a full working example with synthetic data.
 
 ### Setup
 
-1. Add the folder to your MATLAB path:
+1. Add the command-line function to your MATLAB path:
 
-        addpath('path/to/LAsLS');
+        addpath('path/to/LASLS_CL');
 
-2. For the GUI, also add subfolders:
+2. For the GUI, add with subfolders:
 
-        addpath(genpath('path/to/LAsLS/LASLS_GUI'));
+        addpath(genpath('path/to/LASLS_GUI'));
 
 ### Dependencies
 - Built-in MATLAB functions only: `spdiags`, matrix division (`\`), `norm`, `ones`, `length`

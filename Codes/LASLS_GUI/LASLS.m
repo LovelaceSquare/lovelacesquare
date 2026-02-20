@@ -179,21 +179,33 @@ classdef LASLS < matlab.apps.AppBase
             try
                 vars = evalin('base', 'whos');
                 varList = {};
+                vectorList = {};
                 for i = 1:length(vars)
                     if (strcmp(vars(i).class, 'double') || ...
                         strcmp(vars(i).class, 'single')) && ...
                         length(vars(i).size) == 2 && all(vars(i).size > 0)
-                        % Include variable info for display
-                        varList{end+1} = struct(...
-                            'name', vars(i).name, ...
-                            'size', sprintf('%dx%d', vars(i).size(1), vars(i).size(2)), ...
-                            'rows', vars(i).size(1), ...
-                            'cols', vars(i).size(2)); %#ok<AGROW>
+                        nR = vars(i).size(1);
+                        nC = vars(i).size(2);
+                        if nR == 1 || nC == 1
+                            % 1D vector — candidate for x-axis
+                            vecLen = max(nR, nC);
+                            vectorList{end+1} = struct(...
+                                'name', vars(i).name, ...
+                                'length', vecLen); %#ok<AGROW>
+                        end
+                        if min(nR, nC) >= 2
+                            % 2D matrix — candidate for data
+                            varList{end+1} = struct(...
+                                'name', vars(i).name, ...
+                                'size', sprintf('%dx%d', nR, nC), ...
+                                'rows', nR, ...
+                                'cols', nC); %#ok<AGROW>
+                        end
                     end
                 end
 
-                % Always show modal, even if empty (so user knows it's working)
-                sendResponse(app, 'showVarList', struct('variables', {varList}));
+                payload = struct('variables', {varList}, 'vectors', {vectorList});
+                sendResponse(app, 'showVarList', payload);
 
             catch ME
                 sendResponse(app, 'statusUpdate', ...
@@ -230,7 +242,28 @@ classdef LASLS < matlab.apps.AppBase
 
                 app.OriginalData = double(rawData);
                 [nRows, nCols] = size(rawData);
-                app.Wavelength = (1:nCols)';
+
+                % Load x-axis vector if specified, otherwise use indices
+                if isfield(data, 'xAxisVar') && ~isempty(data.xAxisVar)
+                    xName = data.xAxisVar;
+                    if ischar(xName), xName = char(xName); end
+                    if evalin('base', ['exist(''' xName ''', ''var'')'])
+                        xRaw = evalin('base', xName);
+                        xVec = double(xRaw(:))';
+                        if length(xVec) == nCols
+                            app.Wavelength = xVec';
+                        else
+                            sendResponse(app, 'statusUpdate', ...
+                                struct('type', 'error', 'message', ...
+                                sprintf('X-axis length (%d) does not match data columns (%d). Using indices.', length(xVec), nCols)));
+                            app.Wavelength = (1:nCols)';
+                        end
+                    else
+                        app.Wavelength = (1:nCols)';
+                    end
+                else
+                    app.Wavelength = (1:nCols)';
+                end
                 app.DataLoaded = true;
                 app.LoadedVarName = selectedName;
                 app.CorrectedData = [];

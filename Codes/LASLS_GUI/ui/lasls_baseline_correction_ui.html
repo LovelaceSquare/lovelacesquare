@@ -3279,6 +3279,7 @@ function showModal(title, fields, onApply) {
 /* Variable Selection Modal (Load Data) */
 function showVariableSelectionModal(payload) {
     var vars = payload.variables || [];
+    var vectors = payload.vectors || [];
     var isEmpty = (vars.length === 0);
 
     var ov = document.createElement('div');
@@ -3305,14 +3306,14 @@ function showVariableSelectionModal(payload) {
         html += '</div>';
     } else {
         html += '<div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Select a spectral data matrix:</div>';
-        html += '<div style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;margin-bottom:16px;">';
+        html += '<div style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;margin-bottom:12px;">';
         html += '<table class="intervals-table" style="width:100%"><thead><tr>';
         html += '<th style="width:40px;"></th><th>Variable</th><th>Size</th><th>Samples</th><th>Channels</th>';
         html += '</tr></thead><tbody id="var-list-tbody">';
 
         for (var i = 0; i < vars.length; i++) {
             var v = vars[i];
-            html += '<tr class="var-row" data-varname="' + v.name + '" style="cursor:pointer;">';
+            html += '<tr class="var-row" data-varname="' + v.name + '" data-cols="' + v.cols + '" style="cursor:pointer;">';
             html += '<td style="text-align:center;"><input type="radio" name="var-select" value="' + v.name + '"' + (i === 0 ? ' checked' : '') + '></td>';
             html += '<td style="font-weight:600;">' + v.name + '</td>';
             html += '<td>' + v.size + '</td>';
@@ -3322,6 +3323,18 @@ function showVariableSelectionModal(payload) {
         }
 
         html += '</tbody></table></div>';
+
+        // X-axis vector selector
+        html += '<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">';
+        html += '<label style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">X-axis (optional):</label>';
+        html += '<select id="xaxis-select" style="flex:1;padding:5px 8px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;">';
+        html += '<option value="">Column indices (1, 2, 3, ...)</option>';
+        for (var i = 0; i < vectors.length; i++) {
+            html += '<option value="' + vectors[i].name + '">' + vectors[i].name + ' (' + vectors[i].length + ')</option>';
+        }
+        html += '</select>';
+        html += '</div>';
+
         html += '<div class="modal-btns">';
         html += '<button class="btn-secondary btn-sm" id="var-modal-cancel">Cancel</button>';
         html += '<button class="btn-primary btn-sm" id="var-modal-load">Load</button>';
@@ -3331,6 +3344,12 @@ function showVariableSelectionModal(payload) {
     md.innerHTML = html;
     ov.appendChild(md);
     document.body.appendChild(ov);
+
+    // Helper to get selected x-axis variable
+    function getSelectedXAxis() {
+        var sel = document.getElementById('xaxis-select');
+        return sel ? sel.value : '';
+    }
 
     // Row click selects the radio button (only if not empty)
     if (!isEmpty) {
@@ -3347,8 +3366,11 @@ function showVariableSelectionModal(payload) {
             // Double-click to load immediately
             rows[j].ondblclick = function() {
                 var varName = this.dataset.varname;
+                var xAxis = getSelectedXAxis();
                 document.body.removeChild(ov);
-                sendAction('loadVariable', { varName: varName });
+                var params = { varName: varName };
+                if (xAxis) params.xAxisVar = xAxis;
+                sendAction('loadVariable', params);
             };
         }
 
@@ -3359,8 +3381,11 @@ function showVariableSelectionModal(payload) {
             var selected = md.querySelector('input[name="var-select"]:checked');
             if (selected) {
                 var varName = selected.value;
+                var xAxis = getSelectedXAxis();
                 document.body.removeChild(ov);
-                sendAction('loadVariable', { varName: varName });
+                var params = { varName: varName };
+                if (xAxis) params.xAxisVar = xAxis;
+                sendAction('loadVariable', params);
             }
         };
     }

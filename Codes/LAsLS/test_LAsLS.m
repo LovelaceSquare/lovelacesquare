@@ -1,7 +1,7 @@
-% test_LALS.m
+% test_LAsLS.m
 %
 % This script generates synthetic spectral data with known baselines,
-% applies LALS baseline correction with local multi-interval parameters,
+% applies LAsLS baseline correction with local multi-interval parameters,
 % and evaluates the results visually and statistically.
 %
 % REFERENCES:
@@ -9,15 +9,16 @@
 %   "Baseline correction with asymmetric least squares smoothing."
 %   Leiden University Medical Centre Report 1.1 (2005): 5.
 %
-% Author: Adrián Gómez-Sánchez
+% Authors: Adrián Gómez-Sánchez, Berta Torres-Cobos, Rodrigo Rocha de Oliveira
 % Date Created: 2024-12-16
 % License: MIT
+% Repository: https://github.com/GomezSanchezA/lasls
 % Reviewed by Lovelace's Square: Yes
-% Version: 1.0
+% Version: 1.1
 %
 % The script creates synthetic spectral data containing multiple Gaussian peaks
 % with an added baseline and Gaussian noise. It then applies the Local Asymmetric
-% Least Squares (LALS) baseline correction algorithm to a selected spectrum using
+% Least Squares (LAsLS) baseline correction algorithm to a selected spectrum using
 % specified intervals with unique asymmetry and smoothing parameters. The resulting
 % estimated baseline is subtracted from the original spectrum to obtain a baseline-
 % corrected spectrum. Visual plots and a statistical evaluation (Mean Squared Error)
@@ -28,7 +29,7 @@
 nRows = 5;            % Number of spectra (rows)
 nCols = 500;          % Number of data points per spectrum (columns)
 
-% LALS parameters for a single spectrum (test on one row)
+% LAsLS parameters for a single spectrum (test on one row)
 % Define intervals around expected peaks (convert x-values to indices):
 % For peaks near x=3, x=6, and x=8.
 intervals = [140, 160; 280, 320; 375, 425];
@@ -73,13 +74,13 @@ for i = 1:nRows
     data(i, :) = noisySpectrum;
 end
 
-%% Apply LALS Baseline Correction on a Single Spectrum
+%% Apply LAsLS Baseline Correction on a Single Spectrum
 % Select one spectrum for detailed analysis
 spectrumIndex = 1;
 y = data(spectrumIndex, :)';
 
-% Apply LALS baseline correction
-[estimatedBaseline, weights] = LALS(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
+% Apply LAsLS baseline correction
+[estimatedBaseline, weights] = LAsLS(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
 
 % Compute baseline-corrected spectrum
 correctedSpectrum = y - estimatedBaseline;
@@ -96,11 +97,11 @@ xlabel('Wavelength (arbitrary units)');
 ylabel('Intensity');
 legend('Noisy Spectrum', 'True Baseline');
 
-% Estimated baseline from LALS
+% Estimated baseline from LAsLS
 subplot(3, 1, 2);
 plot(x, data(spectrumIndex, :), 'LineWidth', 1.5); hold on;
 plot(x, estimatedBaseline, '--', 'LineWidth', 1.5);
-title('Estimated Baseline (LALS)');
+title('Estimated Baseline (LAsLS)');
 xlabel('Wavelength (arbitrary units)');
 ylabel('Intensity');
 legend('Noisy Spectrum', 'Estimated Baseline');
@@ -121,4 +122,4 @@ mseBaseline = mean((trueBaseline(spectrumIndex, :)' - estimatedBaseline).^2);
 fprintf('Mean Squared Error for Estimated Baseline: %.6e\n', mseBaseline);
 
 % Completion message
-disp('LALS baseline correction test completed. Review plots and results.');
+disp('LAsLS baseline correction test completed. Review plots and results.');

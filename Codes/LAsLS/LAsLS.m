@@ -1,4 +1,4 @@
-function [baseline, weights] = LALS( ...
+function [baseline, weights] = LAsLS( ...
     y,                 ... % (n x 1) data vector
     intervals,         ... % (m x 2) or cell of intervals; each row [startIdx, endIdx]
     pVals,             ... % (m x 1) each interval's p_j
@@ -7,20 +7,21 @@ function [baseline, weights] = LALS( ...
     mu,                ... % global first-derivative penalty
     maxIter,           ... % IRLS max iterations
     tol)               ... % IRLS stopping tolerance (relative baseline change)
-% LALS. Perform Local Asymmetric Least Squares (LALS) baseline correction with per-interval parameters.
+% LAsLS. Perform Local Asymmetric Least Squares (LAsLS) baseline correction with per-interval parameters.
 %
 % REFERENCES:
 %   Eilers, Paul H.C., and Hans F.M. Boelens. 
 %   "Baseline correction with asymmetric least squares smoothing." 
 %   Leiden University Medical Centre Report 1.1 (2005): 5.
 %
-% Author: Adrián Gómez-Sánchez
+% Authors: Adrián Gómez-Sánchez, Berta Torres-Cobos, Rodrigo Rocha de Oliveira
 % Date Created: 2024-12-16
 % License: MIT
+% Repository: https://github.com/GomezSanchezA/lasls
 % Reviewed by Lovelace's Square: Yes
-% Version: 1.0
+% Version: 1.1
 %
-% The Local Asymmetric Least Squares (LALS) algorithm is a modification of the
+% The Local Asymmetric Least Squares (LAsLS) algorithm is a modification of the
 % standard Asymmetric Least Squares (AsLS) smoothing method, adapted for
 % one-dimensional data vectors. It permits distinct asymmetry parameters
 % (`pVals`) and second-derivative smoothing penalties (`lambdasAsym`) on user-defined
@@ -67,7 +68,7 @@ function [baseline, weights] = LALS( ...
 %   mu = 1e3;
 %   maxIter = 50;
 %   tol = 1e-6;
-%   [baseline, weights] = LALS(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
+%   [baseline, weights] = LAsLS(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
 %
 % DISCLAIMER:
 %   The author and Lovelace's Square are not responsible for any issues, inaccuracies, 

@@ -18,7 +18,6 @@ function [baseline, weights] = LASLS_CL( ...
 % Date Created: 2024-12-16
 % License: MIT
 % Repository: https://github.com/LovelaceSquare/lovelacesquare
-% Reviewed by Lovelace's Square: Yes
 % Version: 1.1
 %
 % The Local Asymmetric Least Squares (LAsLS) algorithm is a modification of the

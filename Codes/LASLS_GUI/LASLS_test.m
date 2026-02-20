@@ -6,7 +6,6 @@
 % Authors: Adrián Gómez-Sánchez, Berta Torres-Cobos, Rodrigo Rocha de Oliveira
 % License: MIT
 % Repository: https://github.com/LovelaceSquare/lovelacesquare
-% Reviewed by Lovelace's Square: Yes
 
 rng(42);
 

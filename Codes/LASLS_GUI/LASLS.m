@@ -18,7 +18,6 @@ classdef LASLS < matlab.apps.AppBase
     % Date Created: 2024-12-16
     % License: MIT
     % Repository: https://github.com/LovelaceSquare/lovelacesquare
-    % Reviewed by Lovelace's Square: Yes
     % Version: 1.1
 
     properties (Access = public)

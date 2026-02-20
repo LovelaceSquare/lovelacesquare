@@ -1,4 +1,4 @@
-function [baseline, weights] = LAsLS( ...
+function [baseline, weights] = LASLS_CL( ...
     y,                 ... % (n x 1) data vector
     intervals,         ... % (m x 2) or cell of intervals; each row [startIdx, endIdx]
     pVals,             ... % (m x 1) each interval's p_j
@@ -17,7 +17,7 @@ function [baseline, weights] = LAsLS( ...
 % Authors: Adrián Gómez-Sánchez, Berta Torres-Cobos, Rodrigo Rocha de Oliveira
 % Date Created: 2024-12-16
 % License: MIT
-% Repository: https://github.com/GomezSanchezA/lasls
+% Repository: https://github.com/LovelaceSquare/lovelacesquare
 % Reviewed by Lovelace's Square: Yes
 % Version: 1.1
 %
@@ -68,7 +68,7 @@ function [baseline, weights] = LAsLS( ...
 %   mu = 1e3;
 %   maxIter = 50;
 %   tol = 1e-6;
-%   [baseline, weights] = LAsLS(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
+%   [baseline, weights] = LASLS_CL(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
 %
 % DISCLAIMER:
 %   The author and Lovelace's Square are not responsible for any issues, inaccuracies, 

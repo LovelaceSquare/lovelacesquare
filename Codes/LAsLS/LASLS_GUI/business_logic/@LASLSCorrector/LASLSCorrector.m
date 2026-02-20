@@ -17,7 +17,7 @@ classdef LASLSCorrector
     % Authors: Adrián Gómez-Sánchez, Berta Torres-Cobos, Rodrigo Rocha de Oliveira
     % Date Created: 2024-12-16
     % License: MIT
-    % Repository: https://github.com/GomezSanchezA/lasls
+    % Repository: https://github.com/LovelaceSquare/lovelacesquare
     % Reviewed by Lovelace's Square: Yes
     % Version: 1.1
 

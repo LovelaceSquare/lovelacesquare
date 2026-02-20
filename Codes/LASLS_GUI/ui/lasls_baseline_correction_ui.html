@@ -128,22 +128,6 @@ body {
 .burger-toggle:hover { background: var(--bg-tertiary); }
 .burger-toggle .check { color: var(--accent-primary); font-weight: 700; width: 22px; text-align: center; }
 
-/* ---- Signal Navigator ---- */
-.signal-nav { display: flex; align-items: center; gap: 5px; font-size: 16px; color: var(--text-secondary); }
-.signal-nav button {
-    background: var(--button-bg); border: 1px solid var(--button-border);
-    border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 14px;
-    color: var(--button-text); transition: all 0.15s ease;
-}
-.signal-nav button:hover { border-color: var(--accent-primary); }
-.signal-nav button:disabled { opacity: 0.4; cursor: default; }
-.signal-nav button:disabled:hover { border-color: var(--button-border); }
-.signal-nav input {
-    width: 60px; text-align: center; background: var(--bg-tertiary);
-    border: 1px solid var(--border-color); border-radius: 8px; padding: 5px;
-    font-size: 16px; color: var(--text-primary);
-}
-.signal-nav input:focus { outline: none; border-color: var(--accent-primary); }
 
 /* ---- Main Layout ---- */
 .main-content { flex: 1; display: grid; grid-template-columns: 420px 1fr; gap: 0; overflow: hidden; }
@@ -737,16 +721,6 @@ input[type="range"]::-moz-range-thumb {
                 <button class="dropdown-btn dropdown-btn--secondary" onclick="importParams()">Import</button>
                 <button class="dropdown-btn dropdown-btn--secondary" onclick="exportData()">Export</button>
             </div>
-            <div class="panel-toolbar-row">
-                <span id="loaded-var-name" style="font-size: 12px; font-weight: 500; color: var(--text-tertiary); font-family: 'SF Mono','Consolas',monospace;"></span>
-                <div class="signal-nav" id="signal-nav" style="display:none;">
-                    <span>Signal:</span>
-                    <button id="btn-prev-signal" onclick="stepSignal(-1)" disabled>&#9664;</button>
-                    <input type="number" id="sample-field" value="1" min="1" onchange="jumpToSample()">
-                    <span id="signal-total">/1</span>
-                    <button id="btn-next-signal" onclick="stepSignal(1)" disabled>&#9654;</button>
-                </div>
-            </div>
         </div>
 
         <!-- Tabbed Parameters -->
@@ -758,13 +732,16 @@ input[type="range"]::-moz-range-thumb {
 
             <!-- Global Tab -->
             <div class="tab-content active" id="tab-global">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+                    <button class="btn-secondary btn-sm" onclick="resetGlobalDefaults()" style="padding:4px 10px;font-size:12px;" title="Reset global parameters to defaults">Reset defaults</button>
+                </div>
                 <!-- Lambda (log) -->
                 <div class="param-box">
                     <div class="slider-group">
                         <div class="slider-header">
                             <span class="slider-label"><i>&lambda;</i> &mdash; smoothness</span>
                             <div class="slider-controls">
-                                <input type="text" class="slider-value" id="val-lambda" value="10">
+                                <input type="text" class="slider-value" id="val-lambda" value="100000">
                                 <div class="nudge-pair">
                                     <button class="btn-nudge" onclick="nudgeLog('lambda',1)">&#9650;</button>
                                     <button class="btn-nudge" onclick="nudgeLog('lambda',-1)">&#9660;</button>
@@ -772,8 +749,8 @@ input[type="range"]::-moz-range-thumb {
                                 <button class="btn-gear" onclick="openSliderSettings('lambda')" title="Configure range">&#9881;&#65039;</button>
                             </div>
                         </div>
-                        <input type="range" id="slider-lambda" min="-3" max="8" step="0.01" value="1" oninput="onLogSlider('lambda', this.value)">
-                        <div class="slider-ticks"><span>10<sup>-2</sup></span><span>1</span><span>10<sup>2</sup></span><span>10<sup>4</sup></span><span>10<sup>6</sup></span><span>10<sup>8</sup></span></div>
+                        <input type="range" id="slider-lambda" min="-3" max="8" step="0.01" value="5" oninput="onLogSlider('lambda', this.value)">
+                        <div class="slider-ticks" id="ticks-lambda"></div>
                     </div>
                 </div>
 
@@ -783,7 +760,7 @@ input[type="range"]::-moz-range-thumb {
                         <div class="slider-header">
                             <span class="slider-label"><i>p</i> &mdash; asymmetry (outside)</span>
                             <div class="slider-controls">
-                                <input type="text" class="slider-value" id="val-p" value="0.5">
+                                <input type="text" class="slider-value" id="val-p" value="0.001">
                                 <div class="nudge-pair">
                                     <button class="btn-nudge" onclick="nudgeLinear('p',1)">&#9650;</button>
                                     <button class="btn-nudge" onclick="nudgeLinear('p',-1)">&#9660;</button>
@@ -791,8 +768,8 @@ input[type="range"]::-moz-range-thumb {
                                 <button class="btn-gear" onclick="openPSettings('p')" title="Configure range">&#9881;&#65039;</button>
                             </div>
                         </div>
-                        <input type="range" id="slider-p" min="0" max="1" step="0.001" value="0.5" oninput="onLinearSlider('p', this.value)">
-                        <div class="slider-ticks"><span>0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1</span></div>
+                        <input type="range" id="slider-p" min="0" max="1" step="0.001" value="0.001" oninput="onLinearSlider('p', this.value)">
+                        <div class="slider-ticks" id="ticks-p"></div>
                     </div>
                 </div>
 
@@ -802,7 +779,7 @@ input[type="range"]::-moz-range-thumb {
                         <div class="slider-header">
                             <span class="slider-label"><i>&mu;</i> &mdash; baseline tension</span>
                             <div class="slider-controls">
-                                <input type="text" class="slider-value" id="val-mu" value="10">
+                                <input type="text" class="slider-value" id="val-mu" value="0">
                                 <div class="nudge-pair">
                                     <button class="btn-nudge" onclick="nudgeLog('mu',1)">&#9650;</button>
                                     <button class="btn-nudge" onclick="nudgeLog('mu',-1)">&#9660;</button>
@@ -810,8 +787,8 @@ input[type="range"]::-moz-range-thumb {
                                 <button class="btn-gear" onclick="openSliderSettings('mu')" title="Configure range">&#9881;&#65039;</button>
                             </div>
                         </div>
-                        <input type="range" id="slider-mu" min="-3" max="6" step="0.01" value="1" oninput="onLogSlider('mu', this.value)">
-                        <div class="slider-ticks"><span>0</span><span>1</span><span>10<sup>2</sup></span><span>10<sup>4</sup></span><span>10<sup>6</sup></span></div>
+                        <input type="range" id="slider-mu" min="-3" max="6" step="0.01" value="-3" oninput="onLogSlider('mu', this.value)">
+                        <div class="slider-ticks" id="ticks-mu"></div>
                     </div>
                 </div>
             </div>
@@ -832,7 +809,7 @@ input[type="range"]::-moz-range-thumb {
                             <div class="slider-header">
                                 <span class="slider-label"><i>&lambda;</i><sub>in</sub> (inside selected)</span>
                                 <div class="slider-controls">
-                                    <input type="text" class="slider-value" id="val-lambda-in" value="1000">
+                                    <input type="text" class="slider-value" id="val-lambda-in" value="100000">
                                     <div class="nudge-pair">
                                         <button class="btn-nudge" onclick="nudgeLog('lambdaIn',1)">&#9650;</button>
                                         <button class="btn-nudge" onclick="nudgeLog('lambdaIn',-1)">&#9660;</button>
@@ -849,7 +826,7 @@ input[type="range"]::-moz-range-thumb {
                             <div class="slider-header">
                                 <span class="slider-label"><i>p</i><sub>in</sub> (inside selected)</span>
                                 <div class="slider-controls">
-                                    <input type="text" class="slider-value" id="val-p-in" value="0.005">
+                                    <input type="text" class="slider-value" id="val-p-in" value="0.001">
                                     <div class="nudge-pair">
                                         <button class="btn-nudge" onclick="nudgeLinear('pIn',1)">&#9650;</button>
                                         <button class="btn-nudge" onclick="nudgeLinear('pIn',-1)">&#9660;</button>
@@ -857,7 +834,7 @@ input[type="range"]::-moz-range-thumb {
                                     <button class="btn-gear" onclick="openPSettings('pIn')">&#9881;&#65039;</button>
                                 </div>
                             </div>
-                            <input type="range" id="slider-p-in" min="0" max="0.05" step="0.0001" value="0.005" oninput="onInsideLinearSlider('pIn', this.value)">
+                            <input type="range" id="slider-p-in" min="0" max="0.05" step="0.0001" value="0.001" oninput="onInsideLinearSlider('pIn', this.value)">
                         </div>
                     </div>
                 </div>
@@ -1173,11 +1150,9 @@ function toggleBurgerOption(option) {
                 if (allSpectra && allSpectra.length > 0) {
                     currentSignal = 1;
                     currentSpectrum = allSpectra[0].slice();
-                    document.getElementById('sample-field').value = currentSignal;
                     renderAll();
                     scheduleAutoPreview();
                 } else {
-                    currentSignal = parseInt(document.getElementById('sample-field').value) || 1;
                     requestSpectrum(currentSignal);
                 }
             }
@@ -1642,6 +1617,7 @@ document.addEventListener('DOMContentLoaded', function() {
     syncSliderFromInput('val-mu', 'slider-mu', true, 'mu');
     syncSliderFromInput('val-lambda-in', 'slider-lambda-in', true, 'lambdaIn');
     syncSliderFromInput('val-p-in', 'slider-p-in', false, null);
+    initAllTicks();
 
     // Also sync inside params text input -> interval value
     document.getElementById('val-lambda-in').addEventListener('change', function() {
@@ -1681,9 +1657,9 @@ function getGlobalParams() {
     var p = parseFloat(document.getElementById('val-p').value);
     var mu = parseFloat(document.getElementById('val-mu').value);
     return {
-        lambda:    isNaN(lambda) ? 10 : lambda,
-        p:         isNaN(p) ? 0.5 : p,
-        mu:        isNaN(mu) ? 10 : mu,
+        lambda:    isNaN(lambda) ? 100000 : lambda,
+        p:         isNaN(p) ? 0.001 : p,
+        mu:        isNaN(mu) ? 0 : mu,
         maxIter:   solverMaxIter,
         tolerance: solverTol
     };
@@ -1767,14 +1743,20 @@ function collectExportParams() {
         intervals: []
     };
 
-    // Collect intervals
+    // Collect intervals (including table metrics)
     for (var i = 0; i < intervals.length; i++) {
-        params.intervals.push({
-            startIdx: intervals[i].startIdx,
-            endIdx: intervals[i].endIdx,
-            lambda: intervals[i].lambda,
-            p: intervals[i].p
-        });
+        var intv = intervals[i];
+        var entry = {
+            startIdx: intv.startIdx,
+            endIdx: intv.endIdx,
+            width: intv.endIdx - intv.startIdx,
+            lambda: intv.lambda,
+            p: intv.p
+        };
+        if (intv._area !== undefined) entry.area = intv._area;
+        if (intv._max !== undefined) entry.max = intv._max;
+        if (intv._min !== undefined) entry.min = intv._min;
+        params.intervals.push(entry);
     }
 
     // Collect per-signal data if in per-signal mode
@@ -1885,17 +1867,35 @@ function showImportModal(payload) {
 }
 
 function applyImportedParams(p) {
-    // Apply global parameters
-    if (p.lambda !== undefined) document.getElementById('val-lambda').value = p.lambda;
-    if (p.p !== undefined) document.getElementById('val-p').value = p.p;
-    if (p.mu !== undefined) document.getElementById('val-mu').value = p.mu;
+    // Apply global parameters, auto-expand slider ranges if needed, and move sliders
+    if (p.lambda !== undefined) {
+        var lv = parseFloat(p.lambda);
+        document.getElementById('val-lambda').value = lv;
+        var logLam = lv > 0 ? Math.log10(lv) : sliderCfg.lambda.min;
+        if (logLam > sliderCfg.lambda.max) { sliderCfg.lambda.max = Math.ceil(logLam); document.getElementById('slider-lambda').max = sliderCfg.lambda.max; }
+        if (lv > 0 && logLam < sliderCfg.lambda.min) { sliderCfg.lambda.min = Math.floor(logLam); document.getElementById('slider-lambda').min = sliderCfg.lambda.min; }
+        document.getElementById('slider-lambda').value = logLam;
+        updateLogTicks('lambda');
+    }
+    if (p.p !== undefined) {
+        var pv = parseFloat(p.p);
+        document.getElementById('val-p').value = pv;
+        if (pv > pCfg.p.max) { pCfg.p.max = Math.min(1, pv * 1.2); document.getElementById('slider-p').max = pCfg.p.max; }
+        if (pv < pCfg.p.min) { pCfg.p.min = Math.max(0, pv * 0.8); document.getElementById('slider-p').min = pCfg.p.min; }
+        document.getElementById('slider-p').value = pv;
+        updateLinearTicks('p');
+    }
+    if (p.mu !== undefined) {
+        var mv = parseFloat(p.mu);
+        document.getElementById('val-mu').value = mv;
+        var logMu = mv > 0 ? Math.log10(mv) : sliderCfg.mu.min;
+        if (logMu > sliderCfg.mu.max) { sliderCfg.mu.max = Math.ceil(logMu); document.getElementById('slider-mu').max = sliderCfg.mu.max; }
+        if (mv > 0 && logMu < sliderCfg.mu.min) { sliderCfg.mu.min = Math.floor(logMu); document.getElementById('slider-mu').min = sliderCfg.mu.min; }
+        document.getElementById('slider-mu').value = logMu;
+        updateLogTicks('mu');
+    }
     if (p.maxIter !== undefined) solverMaxIter = p.maxIter;
     if (p.tolerance !== undefined) solverTolerance = p.tolerance;
-
-    // Sync sliders
-    syncSliderFromInput('val-lambda', 'slider-lambda', true, 'lambda');
-    syncSliderFromInput('val-p', 'slider-p', false, null);
-    syncSliderFromInput('val-mu', 'slider-mu', true, 'mu');
 
     // Apply intervals
     intervals = [];
@@ -2177,7 +2177,6 @@ function onSignalModeChanged() {
     if (signalMode) {
         showAllSpectra = false;
         updateBurgerChecks();
-        currentSignal = parseInt(document.getElementById('sample-field').value) || 1;
         requestSpectrum(currentSignal);
     } else {
         // Per-signal mode requires signal-by-signal, so disable it too
@@ -2194,22 +2193,13 @@ function onSignalModeChanged() {
 }
 
 function updateSignalNav() {
-    var nav = document.getElementById('signal-nav');
-    if (signalMode && nSamples > 1) {
-        nav.style.display = 'flex';
-        document.getElementById('btn-prev-signal').disabled = false;
-        document.getElementById('btn-next-signal').disabled = false;
-        document.getElementById('signal-total').textContent = '/' + nSamples;
-    } else {
-        nav.style.display = 'none';
-    }
+    // Signal navigation is handled by chart header badges
 }
 
 function stepSignal(dir) {
     if (!signalMode) return;
     if (perSignalMode) saveCurrentSignalParams();
     currentSignal = Math.max(1, Math.min(nSamples, currentSignal + dir));
-    document.getElementById('sample-field').value = currentSignal;
     if (perSignalMode) loadCurrentSignalParams();
 
     // If allSpectra is available, use it directly instead of requesting from MATLAB
@@ -2218,9 +2208,10 @@ function stepSignal(dir) {
         baselineData = [];
         correctedPreview = [];
         previewView = null;
-        // Re-detect peaks for this signal if peak detection is active
+        // Re-detect peaks and recreate intervals for this signal if peak detection is active
         if (peakNavMode) {
             detectPeaks();
+            autoCreateIntervalsFromPeaks();
             if (peaks.length > 0) {
                 currentPeak = 0;
                 updatePeakLabel();
@@ -2238,43 +2229,6 @@ function stepSignal(dir) {
     }
 }
 
-function jumpToSample() {
-    var idx = parseInt(document.getElementById('sample-field').value) || 1;
-    idx = Math.max(1, Math.min(nSamples, idx));
-    document.getElementById('sample-field').value = idx;
-    if (!signalMode && nSamples > 1) {
-        signalMode = true;
-        onSignalModeChanged();
-        return;
-    }
-    if (perSignalMode) saveCurrentSignalParams();
-    currentSignal = idx;
-    if (perSignalMode) loadCurrentSignalParams();
-
-    // If allSpectra is available, use it directly
-    if (allSpectra && allSpectra.length >= currentSignal && allSpectra[currentSignal - 1]) {
-        currentSpectrum = allSpectra[currentSignal - 1].slice();
-        baselineData = [];
-        correctedPreview = [];
-        previewView = null;
-        if (peakNavMode) {
-            detectPeaks();
-            if (peaks.length > 0) {
-                currentPeak = 0;
-                updatePeakLabel();
-            }
-        }
-        // For fast preview, compute baseline immediately
-        if (fastPreviewMode) {
-            computeJSBaseline();
-        } else {
-            renderAll();
-            scheduleAutoPreview();
-        }
-    } else {
-        requestSpectrum(currentSignal);
-    }
-}
 
 function requestSpectrum(idx) {
     sendAction('getSpectrum', { signalIndex: idx });
@@ -2414,8 +2368,8 @@ function addIntervalFromDraw(startX, endX) {
     s = fit.s;
     e = fit.e;
 
-    var defLam = parseFloat(document.getElementById('val-lambda').value) || 1000;
-    var defP = parseFloat(document.getElementById('val-p-in').value) || 0.005;
+    var defLam = parseFloat(document.getElementById('val-lambda').value) || 100000;
+    var defP = parseFloat(document.getElementById('val-p-in').value) || 0.001;
     intervals.push({ startIdx: s, endIdx: e, lambda: defLam, p: defP });
     selectedIdx = intervals.length - 1;
     updateSelectedIntervalPanel();
@@ -2498,12 +2452,34 @@ function resetIntervalToGlobal() {
     if (selectedIdx < 0 || selectedIdx >= intervals.length) return;
     var gp = getGlobalParams();
     intervals[selectedIdx].lambda = gp.lambda;
-    intervals[selectedIdx].p = 0.005;
+    intervals[selectedIdx].p = 0.001;
     updateSelectedIntervalPanel();
     updateIntervalTable();
     renderAll();
     scheduleAutoPreview();
     setStatus('success', 'Interval ' + (selectedIdx+1) + ' reset to global defaults');
+}
+
+function resetGlobalDefaults() {
+    // Reset values
+    document.getElementById('val-lambda').value = '100000';
+    document.getElementById('val-p').value = '0.001';
+    document.getElementById('val-mu').value = '0';
+    // Reset slider ranges to defaults
+    sliderCfg.lambda.min = -3; sliderCfg.lambda.max = 8;
+    sliderCfg.mu.min = -3; sliderCfg.mu.max = 6;
+    pCfg.p.min = 0; pCfg.p.max = 1; pCfg.p.step = 0.01;
+    var slL = document.getElementById('slider-lambda'); slL.min = -3; slL.max = 8;
+    var slP = document.getElementById('slider-p'); slP.min = 0; slP.max = 1; slP.step = 0.01;
+    var slM = document.getElementById('slider-mu'); slM.min = -3; slM.max = 6;
+    // Move sliders to default positions
+    slL.value = 5;   // log10(100000) = 5
+    slP.value = 0.001;
+    slM.value = -3;  // 0 (leftmost position)
+    initAllTicks();
+    renderAll();
+    scheduleAutoPreview();
+    setStatus('success', 'Global parameters reset to defaults');
 }
 
 /* ====================================================================
@@ -2929,7 +2905,6 @@ function applyPeakDetectionToAllSamples() {
 
     updateSelectedIntervalPanel();
     updateIntervalTable();
-    document.getElementById('sample-field').value = currentSignal;
     setStatus('success', 'Applied peak detection to all ' + nSamples + ' samples. Total: ' + totalIntervals + ' intervals');
 }
 
@@ -3000,7 +2975,7 @@ function createIntervalsFromPeaks(peakList) {
             newIntervals.push({
                 startIdx: startIdx,
                 endIdx: endIdx,
-                lambda: 1000,
+                lambda: 100000,
                 p: 0.001
             });
         }
@@ -3044,8 +3019,8 @@ function autoCreateIntervalsFromPeaks() {
             newIntervals.push({
                 startIdx: startIdx,
                 endIdx: endIdx,
-                lambda: 1000,  // Default lambda inside interval
-                p: 0.001       // Low p for better peak fitting
+                lambda: 100000,  // Default lambda inside interval
+                p: 0.001         // Low p for better peak fitting
             });
         }
     }
@@ -3151,6 +3126,55 @@ function openSolverSettings() {
     });
 }
 
+function updateLogTicks(param) {
+    var tickIds = { lambda: 'ticks-lambda', mu: 'ticks-mu' };
+    var el = document.getElementById(tickIds[param]);
+    if (!el) return;
+    var cfg = sliderCfg[param];
+    var minExp = Math.ceil(cfg.min);
+    var maxExp = Math.floor(cfg.max);
+    // Generate ~5-6 evenly spaced ticks
+    var ticks = [];
+    var range = maxExp - minExp;
+    var step = Math.max(1, Math.round(range / 5));
+    for (var e = minExp; e <= maxExp; e += step) {
+        if (cfg.allowZero && e === minExp && minExp < 0) ticks.push('0');
+        else if (e === 0) ticks.push('1');
+        else if (e === 1) ticks.push('10');
+        else ticks.push('10<sup>' + e + '</sup>');
+    }
+    // Ensure last tick is included
+    if (ticks.length > 0) {
+        var lastExp = maxExp;
+        var lastLabel = lastExp === 0 ? '1' : lastExp === 1 ? '10' : '10<sup>' + lastExp + '</sup>';
+        if (ticks[ticks.length - 1] !== lastLabel) ticks.push(lastLabel);
+    }
+    el.innerHTML = ticks.map(function(t) { return '<span>' + t + '</span>'; }).join('');
+}
+
+function updateLinearTicks(param) {
+    var tickIds = { p: 'ticks-p' };
+    var el = document.getElementById(tickIds[param]);
+    if (!el) return;
+    var cfg = pCfg[param];
+    var mn = cfg.min, mx = cfg.max;
+    var range = mx - mn;
+    var step = range / 4;
+    var ticks = [];
+    for (var i = 0; i <= 4; i++) {
+        var v = mn + step * i;
+        // Format nicely: avoid floating point artifacts
+        ticks.push(parseFloat(v.toPrecision(4)).toString());
+    }
+    el.innerHTML = ticks.map(function(t) { return '<span>' + t + '</span>'; }).join('');
+}
+
+function initAllTicks() {
+    updateLogTicks('lambda');
+    updateLogTicks('mu');
+    updateLinearTicks('p');
+}
+
 function openSliderSettings(param) {
     var cfg = sliderCfg[param];
     var paramNames = { lambda: '\u03BB (Smoothness)', mu: '\u03BC (Baseline tension)', lambdaIn: '\u03BB inside interval' };
@@ -3174,13 +3198,15 @@ function openSliderSettings(param) {
             var sl = document.getElementById(ids[param]);
             sl.min = cfg.min; sl.max = cfg.max;
             sl.value = Math.max(cfg.min, Math.min(cfg.max, parseFloat(sl.value)));
+            updateLogTicks(param);
         }
     });
 }
 
 function openPSettings(param) {
     var cfg = pCfg[param];
-    showModal(param + ' Range', [
+    var displayNames = { p: 'p (asymmetry)', pIn: 'p\u1D62\u2099 (asymmetry inside)' };
+    showModal((displayNames[param] || param) + ' Range', [
         { label: 'Min', id: 'modal-pmin', type: 'number', value: cfg.min, min: 0, max: 1, step: 0.001 },
         { label: 'Max', id: 'modal-pmax', type: 'number', value: cfg.max, min: 0, max: 1, step: 0.001 },
         { label: 'Step', id: 'modal-pstep', type: 'number', value: cfg.step, min: 0, max: 1, step: 0.0001 }
@@ -3194,6 +3220,7 @@ function openPSettings(param) {
             var sl = document.getElementById(ids[param]);
             sl.min = mn; sl.max = mx; sl.step = st;
             sl.value = Math.max(mn, Math.min(mx, parseFloat(sl.value)));
+            updateLinearTicks(param);
         }
     });
 }
@@ -3211,10 +3238,14 @@ function openPeakSettings() {
         if (isFinite(dist) && dist >= 0) {
             peakMinDistance = dist;
         }
-        // Re-run peak detection if peaks are enabled
+        // Re-run peak detection and recreate intervals if peaks are enabled
         if (peaksEnabled && currentSpectrum.length > 0) {
             detectPeaks();
-            setStatus('success', 'Peak detection updated. ' + peaks.length + ' peaks found.');
+            autoCreateIntervalsFromPeaks();
+            updateIntervalTable();
+            renderAll();
+            scheduleAutoPreview();
+            setStatus('success', 'Peak detection updated. ' + peaks.length + ' peaks, ' + intervals.length + ' intervals.');
         }
     });
 }
@@ -3587,13 +3618,44 @@ function drawLine(ctx, xData, yData, xMin, xMax, yMin, yMax, pw, ph, color, lw, 
     var m = MARGIN, xR = (xMax - xMin) || 1, yR = (yMax - yMin) || 1;
     ctx.strokeStyle = color; ctx.lineWidth = lw || 1.5;
     if (dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+
+    // Find visible range indices
+    var iStart = 0, iEnd = xData.length - 1;
+    while (iStart < xData.length && xData[iStart] < xMin) iStart++;
+    while (iEnd >= 0 && xData[iEnd] > xMax) iEnd--;
+    if (iStart > 0) iStart--;  // include one point before view for continuity
+    if (iEnd < xData.length - 1) iEnd++;
+    var visibleCount = iEnd - iStart + 1;
+
+    // Min/max per-pixel-bucket downsampling when data >> pixels
+    var maxPoints = pw * 2;  // 2 points per pixel preserves all visual detail
     ctx.beginPath();
-    var started = false;
-    for (var i = 0; i < xData.length; i++) {
-        if (xData[i] < xMin || xData[i] > xMax) continue;
-        var x = m.left + (xData[i] - xMin) / xR * pw;
-        var y = m.top + ph - (yData[i] - yMin) / yR * ph;
-        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    if (visibleCount > maxPoints && visibleCount > 4) {
+        var bucketSize = visibleCount / (maxPoints / 2);  // each bucket produces 2 points (min+max)
+        var started = false;
+        for (var b = 0; b < maxPoints / 2; b++) {
+            var bStart = iStart + Math.floor(b * bucketSize);
+            var bEnd = Math.min(iStart + Math.floor((b + 1) * bucketSize), iEnd + 1);
+            var minY = Infinity, maxY = -Infinity, minI = bStart, maxI = bStart;
+            for (var j = bStart; j < bEnd; j++) {
+                if (yData[j] < minY) { minY = yData[j]; minI = j; }
+                if (yData[j] > maxY) { maxY = yData[j]; maxI = j; }
+            }
+            // Draw min then max in data order to preserve shape
+            var pts = minI < maxI ? [minI, maxI] : [maxI, minI];
+            for (var k = 0; k < 2; k++) {
+                var x = m.left + (xData[pts[k]] - xMin) / xR * pw;
+                var y = m.top + ph - (yData[pts[k]] - yMin) / yR * ph;
+                if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+            }
+        }
+    } else {
+        var started = false;
+        for (var i = iStart; i <= iEnd; i++) {
+            var x = m.left + (xData[i] - xMin) / xR * pw;
+            var y = m.top + ph - (yData[i] - yMin) / yR * ph;
+            if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        }
     }
     ctx.stroke(); ctx.setLineDash([]);
 }
@@ -4145,14 +4207,9 @@ function onDataLoaded(p) {
         allSpectra = [];
     }
 
-    document.getElementById('loaded-var-name').textContent = (p.varName || 'data') + ' (' + nSamples + '\u00d7' + nChannels + ')';
-    document.getElementById('loaded-var-name').style.color = 'var(--accent-primary)';
 
     /* Enable controls */
-    document.getElementById('sample-field').max = nSamples;
-    document.getElementById('sample-field').value = 1;
     document.getElementById('btn-draw-interval').disabled = false;
-    document.getElementById('signal-total').textContent = '/' + nSamples;
 
     /* Hide peak section */
     document.getElementById('peak-section').style.display = 'none';
@@ -4177,14 +4234,14 @@ function onDataLoaded(p) {
 function onSpectrumLoaded(p) {
     currentSpectrum = toArray(p.spectrum);
     currentSignal = p.signalIndex || currentSignal;
-    document.getElementById('sample-field').value = currentSignal;
     previewView = null;
     baselineData = [];
     correctedPreview = [];
 
-    // If peak detection mode is active, re-detect peaks for this signal
+    // If peak detection mode is active, re-detect peaks and recreate intervals for this signal
     if (peakNavMode) {
         detectPeaks();
+        autoCreateIntervalsFromPeaks();
         if (peaks.length > 0) {
             currentPeak = 0;
             updatePeakLabel();

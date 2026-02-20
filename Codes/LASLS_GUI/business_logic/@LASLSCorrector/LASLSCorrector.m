@@ -18,6 +18,7 @@ classdef LASLSCorrector
     % Date Created: 2024-12-16
     % License: MIT
     % Repository: https://github.com/LovelaceSquare/lovelacesquare
+
     % Version: 1.1
 
     methods (Access = public)

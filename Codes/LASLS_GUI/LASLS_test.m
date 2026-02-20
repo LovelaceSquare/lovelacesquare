@@ -7,6 +7,7 @@
 % License: MIT
 % Repository: https://github.com/LovelaceSquare/lovelacesquare
 
+
 rng(42);
 
 % Grid

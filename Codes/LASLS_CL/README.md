@@ -1,81 +1,81 @@
-# LAsLS: Local Asymmetric Least Squares Baseline Correction (MATLAB)
+# LAsLS Command-Line: Local Asymmetric Least Squares Baseline Correction
 
-The Local Asymmetric Least Squares (LAsLS) algorithm extends asymmetric least squares (AsLS) smoothing to one-dimensional data vectors by allowing different asymmetry parameters (`pVals`) and second-derivative smoothing penalties (`lambdasAsym`) within specified intervals. Outside these intervals, a uniform smoothing penalty (`lambdaWhit`) and a global first-derivative penalty (`mu`) are enforced.
+Standalone MATLAB function for Local Asymmetric Least Squares (LAsLS) baseline correction. LAsLS extends Asymmetric Least Squares (AsLS) by allowing different asymmetry parameters (`pVals`) and smoothing penalties (`lambdasAsym`) within user-defined intervals. Outside these intervals, symmetric weighting and a uniform smoothing penalty (`lambdaWhit`) are applied. A global first-derivative penalty (`mu`) enforces baseline tension across the full signal.
 
-Through an Iteratively Reweighted Least Squares (IRLS) procedure, the method updates a weight matrix based on residuals to adaptively estimate a smooth, locally tailored baseline.
+The baseline is estimated via Iteratively Reweighted Least Squares (IRLS):
 
-**Reference of the original AsLS**:
-Eilers, P. H. C., & Boelens, H. F. M. (2005). *Baseline correction with asymmetric least squares smoothing*. Leiden University Medical Centre Report, 1(1), 5.
+```
+(W + D' * diag(lambdaVec) * D + mu * L' * L) * baseline = W * y
+```
+
+**Reference**: Eilers, P. H. C., & Boelens, H. F. M. (2005). *Baseline correction with asymmetric least squares smoothing*. Leiden University Medical Centre Report, 1(1), 5.
+
+---
+
+## Usage
+
+```matlab
+[baseline, weights] = LASLS_CL(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
+```
+
+### Inputs
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `y` | (n x 1) vector | Input signal |
+| `intervals` | (m x 2) matrix or cell | Each row defines `[startIdx, endIdx]` of a peak region |
+| `pVals` | (m x 1) vector | Asymmetry parameter for each interval (small values ignore peaks) |
+| `lambdasAsym` | (m x 1) vector | Local smoothing penalty for each interval |
+| `lambdaWhit` | scalar | Smoothing penalty outside intervals |
+| `mu` | scalar | Global first-derivative penalty (baseline tension) |
+| `maxIter` | scalar | Maximum IRLS iterations |
+| `tol` | scalar | Convergence tolerance (relative baseline change) |
+
+### Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `baseline` | (n x 1) vector | Estimated baseline |
+| `weights` | (n x 1) vector | Final IRLS weights |
+
+### Example
+
+```matlab
+y = rand(100,1)*10;
+intervals = [10 20; 40 50];
+pVals = [0.01; 0.001];
+lambdasAsym = [1e4; 2e5];
+lambdaWhit = 100;
+mu = 1e3;
+maxIter = 50;
+tol = 1e-6;
+[baseline, weights] = LASLS_CL(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
+```
+
+See `test_LASLS_CL.m` for a complete working example with synthetic data and visualization.
 
 ---
 
 ## Contents
 
-Two packages are available under `Codes/`:
-
-- **`LASLS_CL/`** — Command-line function for scripted/batch use
-  - `LASLS_CL.m` — Standalone baseline correction function
-  - `test_LASLS_CL.m` — Test script with synthetic data
-- **`LASLS_GUI/`** — Interactive graphical interface
-  - `LASLS.m` — Main app class (MATLAB AppBase + uihtml)
-  - `LASLS_test.m` — Synthetic data generator for the GUI
-  - `business_logic/` — Core algorithm (`@LASLSCorrector`) and validation (`@DataValidator`)
-  - `ui/` — HTML/JS frontend
-
----
-
-## Command-Line Usage (`LASLS_CL`)
-
-    [estimatedBaseline, weights] = LASLS_CL(y, intervals, pVals, lambdasAsym, lambdaWhit, mu, maxIter, tol);
-
-See `test_LASLS_CL.m` for a full working example with synthetic data.
-
----
-
-## GUI Usage (`LASLS_GUI`)
-
-Launch the graphical interface from MATLAB:
-
-    LASLS
-
-### Quick start
-
-1. **Load data** — Click *Load* to import a matrix variable from the workspace (rows = samples, columns = channels). To try the tool without your own data, use the *Generate demo data* option in the *+* menu.
-2. **Draw intervals** — Click *Draw* and drag on the preview chart to define peak regions. Each interval gets its own local smoothing (λ) and asymmetry (p) parameters.
-3. **Tune parameters** — Use the *Global* tab to adjust baseline smoothness (λ), asymmetry (p), and tension (μ). Switch to the *Interval* tab to fine-tune parameters for individual intervals.
-4. **Preview** — The baseline estimate updates in real time as you adjust parameters. The corrected signal is shown in the bottom chart.
-5. **Apply & Export** — Click *Apply* to compute baselines for all samples, then *Export* to save corrected data and baselines to the workspace.
-
-### Features
-
-- **Signal-by-signal navigation** — Browse individual samples using the badge controls in the chart header.
-- **Per-signal parameters** — Assign different global parameters to each sample for heterogeneous datasets.
-- **Peak detection** — Automatic peak finder to help define intervals.
-- **Batch processing** — Apply correction to all samples at once.
-- **Import/Export intervals** — Save and reload interval definitions.
-- **Interactive zoom & pan** — Scroll to zoom, drag to pan on both charts.
-- **Dark mode** — Toggle via the *+* menu.
-- **Built-in tutorial** — Click *Tutorial* in the *+* menu for a step-by-step guided tour of all interface features.
+| File | Description |
+|------|-------------|
+| `LASLS_CL.m` | LAsLS baseline correction function |
+| `test_LASLS_CL.m` | Test script with synthetic data, plots, and MSE evaluation |
 
 ---
 
 ## Installation
 
-### Prerequisites
-- MATLAB R2016a or later (uses sparse matrices and solvers)
+Add to your MATLAB path:
 
-### Setup
-
-1. Add the command-line function to your MATLAB path:
-
-        addpath('path/to/LASLS_CL');
-
-2. For the GUI, add with subfolders:
-
-        addpath(genpath('path/to/LASLS_GUI'));
+```matlab
+addpath('path/to/LASLS_CL');
+```
 
 ### Dependencies
-- Built-in MATLAB functions only: `spdiags`, matrix division (`\`), `norm`, `ones`, `length`
+
+Built-in MATLAB functions only: `spdiags`, matrix division (`\`), `norm`.
 
 ---
 
@@ -87,26 +87,6 @@ Released under the **MIT License**.
 
 ## Authors
 
-- **Adrián Gómez-Sánchez** — Universitat de Barcelona & Lovelace's Square, Barcelona, Spain
-- **Berta Torres-Cobos** — University of Copenhagen, Denmark & Lovelace's Square, Barcelona, Spain
-- **Rodrigo Rocha de Oliveira** — Universitat de Barcelona & Lovelace's Square, Barcelona, Spain
-
----
-
-## Changelog
-
-- **v1.1 (2025)**: Renamed to LASLS_CL/LASLS_GUI; added co-authors; added GUI
-- **v1.0 (2024-12-16)**: Initial implementation of per-interval LAsLS baseline correction
-
----
-
-## Keywords
-
-- Baseline correction
-- Asymmetric least squares
-- AsLS
-- Local asymmetric least squares
-- LAsLS
-- Spectral preprocessing
-- MATLAB
-- Detrending
+- **Adrian Gomez-Sanchez** -- Universitat de Barcelona & Lovelace's Square, Barcelona, Spain
+- **Berta Torres-Cobos** -- University of Copenhagen, Denmark & Lovelace's Square, Barcelona, Spain
+- **Rodrigo Rocha de Oliveira** -- Universitat de Barcelona & Lovelace's Square, Barcelona, Spain

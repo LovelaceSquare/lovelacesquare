@@ -317,7 +317,9 @@ input[type="range"]::-moz-range-thumb {
     display: flex; flex-direction: column; min-height: 0; margin-bottom: 6px;
 }
 .chart-container:last-child { margin-bottom: 0; }
-.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-shrink: 0; }
+.chart-header { display: flex; justify-content: center; align-items: center; margin-bottom: 4px; flex-shrink: 0; position: relative; }
+.chart-header .chart-title { position: absolute; left: 0; }
+.chart-header .chart-header-badges { justify-content: center; }
 .chart-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
 .chart-wrapper { flex: 1; position: relative; min-height: 0; }
 .chart-wrapper canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
@@ -448,19 +450,19 @@ input[type="range"]::-moz-range-thumb {
 /* ---- Circular Chart Badges ---- */
 .chart-header-badges {
     display: flex;
-    gap: 6px;
+    gap: 10px;
     align-items: center;
 }
 .badge-group {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     align-items: center;
 }
 .badge-separator {
     width: 1px;
     height: 24px;
     background: var(--border-color);
-    margin: 0 3px;
+    margin: 0 14px;
 }
 .chart-badge.disabled {
     opacity: 0.35;
@@ -897,7 +899,7 @@ input[type="range"]::-moz-range-thumb {
                         </div>
                     </div>
                     <div class="badge-separator"></div>
-                    <!-- Group 2: Signal navigation -->
+                    <!-- Group 2: Signal mode -->
                     <div class="badge-group">
                         <div class="chart-badge chart-badge-small" id="badge-signal-mode" onclick="toggleBurgerOption('signalMode')" title="Signal-by-signal mode">
                             <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z" opacity=".35"/><path d="M3 5h18v2H3V5z"/></svg>
@@ -905,16 +907,23 @@ input[type="range"]::-moz-range-thumb {
                         <div class="chart-badge chart-badge-small disabled" id="badge-per-signal" onclick="toggleBurgerOption('perSignal')" title="Per-signal parameters">
                             <svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
                         </div>
+                    </div>
+                    <div class="badge-separator"></div>
+                    <!-- Group 3: Signal navigation -->
+                    <div class="badge-group">
                         <div class="chart-badge chart-badge-small disabled" id="badge-prev-signal" onclick="stepSignal(-1)" title="Previous signal">
                             <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        </div>
+                        <div class="chart-badge chart-badge-small disabled" id="badge-signal-index" title="Current signal (click to edit)" style="min-width:40px;font-size:11px;cursor:text;user-select:none;">
+                            <span id="signal-index-label" onclick="editSignalIndex()">1/1</span>
+                            <input id="signal-index-input" type="text" style="display:none;width:36px;border:none;background:transparent;color:inherit;font-size:11px;text-align:center;outline:none;padding:0;" onkeydown="handleSignalIndexKey(event)" onblur="commitSignalIndex()">
                         </div>
                         <div class="chart-badge chart-badge-small disabled" id="badge-next-signal" onclick="stepSignal(1)" title="Next signal">
                             <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
                         </div>
                     </div>
-                    <div class="badge-separator"></div>
-                    <!-- + Menu -->
-                    <div class="dropdown" style="position:relative">
+                    <!-- + Menu (right-aligned) -->
+                    <div class="dropdown" style="position:absolute;right:0">
                         <div class="chart-badge chart-badge-small" id="burger-btn" onclick="toggleBurgerMenu()" title="More options">
                             <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                         </div>
@@ -1204,6 +1213,7 @@ function updateBurgerChecks() {
     }
     var prevBadge = document.getElementById('badge-prev-signal');
     var nextBadge = document.getElementById('badge-next-signal');
+    var indexBadge = document.getElementById('badge-signal-index');
     if (prevBadge) {
         if (signalMode && nSamples > 1) prevBadge.classList.remove('disabled');
         else prevBadge.classList.add('disabled');
@@ -1212,6 +1222,11 @@ function updateBurgerChecks() {
         if (signalMode && nSamples > 1) nextBadge.classList.remove('disabled');
         else nextBadge.classList.add('disabled');
     }
+    if (indexBadge) {
+        if (signalMode && nSamples > 1) indexBadge.classList.remove('disabled');
+        else indexBadge.classList.add('disabled');
+    }
+    updateSignalIndexLabel();
     updateLegendSwatches();
 }
 
@@ -2227,8 +2242,68 @@ function stepSignal(dir) {
     } else {
         requestSpectrum(currentSignal);
     }
+    updateSignalIndexLabel();
 }
 
+function updateSignalIndexLabel() {
+    var lbl = document.getElementById('signal-index-label');
+    if (lbl) lbl.textContent = currentSignal + '/' + (nSamples || 1);
+}
+
+function editSignalIndex() {
+    if (!signalMode || nSamples <= 1) return;
+    var lbl = document.getElementById('signal-index-label');
+    var inp = document.getElementById('signal-index-input');
+    if (!lbl || !inp) return;
+    lbl.style.display = 'none';
+    inp.style.display = 'inline';
+    inp.value = currentSignal;
+    inp.focus();
+    inp.select();
+}
+
+function handleSignalIndexKey(e) {
+    if (e.key === 'Enter') { e.target.blur(); }
+    else if (e.key === 'Escape') {
+        var lbl = document.getElementById('signal-index-label');
+        var inp = document.getElementById('signal-index-input');
+        inp.style.display = 'none';
+        lbl.style.display = 'inline';
+    }
+}
+
+function commitSignalIndex() {
+    var lbl = document.getElementById('signal-index-label');
+    var inp = document.getElementById('signal-index-input');
+    if (!lbl || !inp) return;
+    inp.style.display = 'none';
+    lbl.style.display = 'inline';
+    var val = parseInt(inp.value);
+    if (isNaN(val) || val < 1) val = 1;
+    if (val > nSamples) val = nSamples;
+    if (val !== currentSignal) {
+        if (perSignalMode) saveCurrentSignalParams();
+        currentSignal = val;
+        if (perSignalMode) loadCurrentSignalParams();
+        if (allSpectra && allSpectra.length >= currentSignal && allSpectra[currentSignal - 1]) {
+            currentSpectrum = allSpectra[currentSignal - 1].slice();
+            baselineData = [];
+            correctedPreview = [];
+            previewView = null;
+            if (peakNavMode) {
+                detectPeaks();
+                autoCreateIntervalsFromPeaks();
+                if (peaks.length > 0) { currentPeak = 0; updatePeakLabel(); }
+            }
+            if (fastPreviewMode) { computeJSBaseline(); }
+            else { renderAll(); scheduleAutoPreview(); }
+        } else {
+            requestSpectrum(currentSignal);
+        }
+        updateSignalIndexLabel();
+        updateLegendSwatches();
+    }
+}
 
 function requestSpectrum(idx) {
     sendAction('getSpectrum', { signalIndex: idx });
@@ -2356,8 +2431,8 @@ function adjustIntervalToFit(s, e, minWidth) {
 }
 
 function addIntervalFromDraw(startX, endX) {
-    var s = Math.round(Math.min(startX, endX));
-    var e = Math.round(Math.max(startX, endX));
+    var s = xValToIdx(Math.min(startX, endX));
+    var e = xValToIdx(Math.max(startX, endX));
     s = Math.max(1, Math.min(nChannels, s));
     e = Math.max(1, Math.min(nChannels, e));
     if (e - s < 2) e = Math.min(nChannels, s + 3);
@@ -2378,7 +2453,7 @@ function addIntervalFromDraw(startX, endX) {
     switchTab('interval');
     renderAll();
     scheduleAutoPreview();
-    setStatus('success', 'Interval ' + intervals.length + ' added: [' + s + ', ' + e + ']');
+    setStatus('success', 'Interval ' + intervals.length + ' added: [' + fmtNum(idxToXVal(s)) + ', ' + fmtNum(idxToXVal(e)) + ']');
 }
 
 function deleteSelectedIntervals() {
@@ -2424,7 +2499,7 @@ function updateSelectedIntervalPanel() {
         delBtn.disabled = false;
         var intv = intervals[selectedIdx];
         document.getElementById('selected-info').textContent =
-            'Selected: Int ' + (selectedIdx+1) + '  [' + intv.startIdx + ' \u2013 ' + intv.endIdx + ']';
+            'Selected: Int ' + (selectedIdx+1) + '  [' + fmtNum(idxToXVal(intv.startIdx)) + ' \u2013 ' + fmtNum(idxToXVal(intv.endIdx)) + ']';
         document.getElementById('val-lambda-in').value = fmtNum(intv.lambda);
         // Auto-expand lambda slider range if value is out of range
         var lamLog = (intv.lambda === 0) ? sliderCfg.lambdaIn.min : Math.log10(intv.lambda);
@@ -2550,7 +2625,9 @@ function updateIntervalTable() {
     for (var di = 0; di < tableSortOrder.length; di++) {
         var i = tableSortOrder[di];
         var v = intervals[i];
-        var w = v.endIdx - v.startIdx;
+        var sVal = idxToXVal(v.startIdx);
+        var eVal = idxToXVal(v.endIdx);
+        var wVal = eVal - sVal;
         var area = v._area !== undefined ? v._area.toFixed(1) : '-';
         var mx = v._max !== undefined ? v._max.toFixed(2) : '-';
         var mn = v._min !== undefined ? v._min.toFixed(2) : '-';
@@ -2559,9 +2636,9 @@ function updateIntervalTable() {
         tr.onclick = function(idx) { return function() { selectInterval(idx); }; }(i);
         tr.innerHTML =
             '<td>' + (i+1) + '</td>' +
-            '<td>' + v.startIdx + '</td>' +
-            '<td>' + v.endIdx + '</td>' +
-            '<td>' + w + '</td>' +
+            '<td>' + fmtNum(sVal) + '</td>' +
+            '<td>' + fmtNum(eVal) + '</td>' +
+            '<td>' + fmtNum(wVal) + '</td>' +
             '<td>' + fmtNum(v.lambda) + '</td>' +
             '<td>' + v.p.toFixed(4) + '</td>' +
             '<td>' + area + '</td><td>' + mx + '</td><td>' + mn + '</td>' +
@@ -2582,9 +2659,10 @@ function removeInterval(idx) {
     if (selectedIdx === idx) selectedIdx = -1;
 
     // Also remove any peaks that fall within this interval's range
+    var startX = idxToXVal(start), endX = idxToXVal(end);
     if (peaks.length > 0) {
         peaks = peaks.filter(function(pk) {
-            return pk.x < start || pk.x > end;
+            return pk.x < startX || pk.x > endX;
         });
         // Update peak section visibility
         if (peaks.length === 0) {
@@ -2627,6 +2705,28 @@ function canvasXToData(canvas, clientX) {
     return view.xMin + frac * (view.xMax - view.xMin);
 }
 
+/* Convert x-axis value to 1-based array index (nearest match) */
+function xValToIdx(xVal) {
+    if (!wavelength || wavelength.length === 0) return Math.round(xVal);
+    // Binary search for nearest wavelength value
+    var lo = 0, hi = wavelength.length - 1;
+    while (lo < hi) {
+        var mid = Math.floor((lo + hi) / 2);
+        if (wavelength[mid] < xVal) lo = mid + 1;
+        else hi = mid;
+    }
+    // Check if lo-1 is closer
+    if (lo > 0 && Math.abs(wavelength[lo - 1] - xVal) < Math.abs(wavelength[lo] - xVal)) lo--;
+    return lo + 1; // 1-based index
+}
+
+/* Convert 1-based array index to x-axis value */
+function idxToXVal(idx) {
+    if (!wavelength || wavelength.length === 0) return idx;
+    var i = Math.max(0, Math.min(wavelength.length - 1, idx - 1));
+    return wavelength[i];
+}
+
 /* ====================================================================
    PEAK DETECTION (JS - toolbox-free findpeaks)
    ==================================================================== */
@@ -2667,17 +2767,45 @@ function detectPeaks() {
         if (taken[cands[i].idx]) continue;
         peaks.push(cands[i]);
         for (var j = 0; j < cands.length; j++) {
-            if (Math.abs(cands[j].x - cands[i].x) < minDist) taken[cands[j].idx] = true;
+            if (Math.abs(cands[j].idx - cands[i].idx) < minDist) taken[cands[j].idx] = true;
         }
     }
     peaks.sort(function(a,b) { return a.x - b.x; });
 
     for (var i = 0; i < peaks.length; i++) {
         var pk = peaks[i];
-        var half = ys[pk.idx] - 0.5 * pk.prom;
-        var jl = pk.idx; while (jl > 0 && ys[jl] > half) jl--;
-        var jr = pk.idx; while (jr < n-1 && ys[jr] > half) jr++;
-        pk.width = (wavelength[jr] || jr+1) - (wavelength[jl] || jl+1);
+        // Find peak base via valley-to-valley: descend each side until a sustained
+        // local minimum or until we drop below 5% of prominence above the floor.
+        // Use a lookahead window to avoid stopping at single-point noise reversals.
+        var threshold = ys[pk.idx] - 0.95 * pk.prom;
+        var lookAhead = Math.max(3, Math.round(n / 200)); // points to confirm a valley
+
+        // Left boundary
+        var jl = pk.idx;
+        while (jl > 0) {
+            if (ys[jl - 1] <= threshold) { jl--; break; }
+            // Check if this is a true valley: the next 'lookAhead' points don't go lower
+            var isValley = true;
+            for (var k = 1; k <= lookAhead && jl - k >= 0; k++) {
+                if (ys[jl - k] < ys[jl]) { isValley = false; break; }
+            }
+            if (isValley && jl < pk.idx) break;
+            jl--;
+        }
+        // Right boundary
+        var jr = pk.idx;
+        while (jr < n - 1) {
+            if (ys[jr + 1] <= threshold) { jr++; break; }
+            var isValley = true;
+            for (var k = 1; k <= lookAhead && jr + k < n; k++) {
+                if (ys[jr + k] < ys[jr]) { isValley = false; break; }
+            }
+            if (isValley && jr > pk.idx) break;
+            jr++;
+        }
+        pk.baseL = jl;
+        pk.baseR = jr;
+        pk.width = (wavelength[jr] || jr + 1) - (wavelength[jl] || jl + 1);
     }
 
     var peakSection = document.getElementById('peak-section');
@@ -2943,18 +3071,39 @@ function detectPeaksInSpectrum(y) {
         if (taken[cands[i].idx]) continue;
         foundPeaks.push(cands[i]);
         for (var j = 0; j < cands.length; j++) {
-            if (Math.abs(cands[j].x - cands[i].x) < minDist) taken[cands[j].idx] = true;
+            if (Math.abs(cands[j].idx - cands[i].idx) < minDist) taken[cands[j].idx] = true;
         }
     }
     foundPeaks.sort(function(a,b) { return a.x - b.x; });
 
-    // Calculate widths
+    // Calculate peak base boundaries (valley-to-valley with lookahead or 5% prominence threshold)
+    var lookAhead = Math.max(3, Math.round(n / 200));
     for (var i = 0; i < foundPeaks.length; i++) {
         var pk = foundPeaks[i];
-        var half = ys[pk.idx] - 0.5 * pk.prom;
-        var jl = pk.idx; while (jl > 0 && ys[jl] > half) jl--;
-        var jr = pk.idx; while (jr < n-1 && ys[jr] > half) jr++;
-        pk.width = (wavelength[jr] || jr+1) - (wavelength[jl] || jl+1);
+        var threshold = ys[pk.idx] - 0.95 * pk.prom;
+        var jl = pk.idx;
+        while (jl > 0) {
+            if (ys[jl - 1] <= threshold) { jl--; break; }
+            var isValley = true;
+            for (var k = 1; k <= lookAhead && jl - k >= 0; k++) {
+                if (ys[jl - k] < ys[jl]) { isValley = false; break; }
+            }
+            if (isValley && jl < pk.idx) break;
+            jl--;
+        }
+        var jr = pk.idx;
+        while (jr < n - 1) {
+            if (ys[jr + 1] <= threshold) { jr++; break; }
+            var isValley = true;
+            for (var k = 1; k <= lookAhead && jr + k < n; k++) {
+                if (ys[jr + k] < ys[jr]) { isValley = false; break; }
+            }
+            if (isValley && jr > pk.idx) break;
+            jr++;
+        }
+        pk.baseL = jl;
+        pk.baseR = jr;
+        pk.width = (wavelength[jr] || jr + 1) - (wavelength[jl] || jl + 1);
     }
 
     return foundPeaks;
@@ -2963,13 +3112,23 @@ function detectPeaksInSpectrum(y) {
 function createIntervalsFromPeaks(peakList) {
     if (!peakList || peakList.length === 0) return [];
 
+    var spacing = (wavelength.length > 1) ? Math.abs(wavelength[1] - wavelength[0]) : 1;
+    var marginPts = 3; // extra points beyond the base
     var newIntervals = [];
     for (var i = 0; i < peakList.length; i++) {
         var pk = peakList[i];
-        var width = pk.width || 20;
-        var margin = Math.max(5, width * 0.5);
-        var startIdx = Math.max(1, Math.round(pk.x - width - margin));
-        var endIdx = Math.min(wavelength.length, Math.round(pk.x + width + margin));
+        // Use valley-to-valley base if available, otherwise fall back to width estimate
+        var startIdx, endIdx;
+        if (pk.baseL !== undefined && pk.baseR !== undefined) {
+            startIdx = Math.max(1, pk.baseL + 1 - marginPts); // baseL is 0-based, convert to 1-based
+            endIdx = Math.min(wavelength.length, pk.baseR + 1 + marginPts);
+        } else {
+            var widthX = pk.width || 20;
+            var halfW = widthX / 2;
+            var marginX = Math.max(halfW * 0.3, marginPts * spacing);
+            startIdx = Math.max(1, xValToIdx(pk.x - halfW - marginX));
+            endIdx = Math.min(wavelength.length, xValToIdx(pk.x + halfW + marginX));
+        }
 
         if (endIdx - startIdx >= 3) {
             newIntervals.push({
@@ -3007,13 +3166,22 @@ function autoCreateIntervalsFromPeaks() {
     selectedIdx = -1;
 
     // Build all intervals first (without adding to the array yet)
+    var marginPts = 3;
     var newIntervals = [];
     for (var i = 0; i < peaks.length; i++) {
         var pk = peaks[i];
-        var width = pk.width || 20;
-        var margin = Math.max(5, width * 0.5);
-        var startIdx = Math.max(1, Math.round(pk.x - width - margin));
-        var endIdx = Math.min(wavelength.length, Math.round(pk.x + width + margin));
+        var startIdx, endIdx;
+        if (pk.baseL !== undefined && pk.baseR !== undefined) {
+            startIdx = Math.max(1, pk.baseL + 1 - marginPts);
+            endIdx = Math.min(wavelength.length, pk.baseR + 1 + marginPts);
+        } else {
+            var widthX = pk.width || 20;
+            var halfW = widthX / 2;
+            var spacing = (wavelength.length > 1) ? Math.abs(wavelength[1] - wavelength[0]) : 1;
+            var marginX = Math.max(halfW * 0.3, marginPts * spacing);
+            startIdx = Math.max(1, xValToIdx(pk.x - halfW - marginX));
+            endIdx = Math.min(wavelength.length, xValToIdx(pk.x + halfW + marginX));
+        }
 
         if (endIdx - startIdx >= 3) {
             newIntervals.push({
@@ -3579,7 +3747,11 @@ function updateLegendSwatches() {
     if (corrLabel) corrLabel.textContent = signalMode ? 'Corrected' : (nSamples > 1 ? 'Corrected mean' : 'Corrected');
 }
 
-var MARGIN = { top: 10, right: 16, bottom: 32, left: 60 };
+var MARGIN = { top: 10, right: 16, bottom: 48, left: 72 };
+var axisLabels = {
+    previewX: 'Channel', previewY: 'Intensity',
+    correctedX: 'Channel', correctedY: 'Intensity'
+};
 
 function setupCanvas(canvasId) {
     var canvas = document.getElementById(canvasId);
@@ -3607,7 +3779,7 @@ function getDataRange(arrays) {
     return { min: mn - pad, max: mx + pad };
 }
 
-function drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, colors) {
+function drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, colors, xLabel, yLabel) {
     var m = MARGIN, pw = w - m.left - m.right, ph = h - m.top - m.bottom;
     ctx.strokeStyle = colors.grid; ctx.lineWidth = 1;
     for (var i = 0; i <= 6; i++) {
@@ -3635,6 +3807,26 @@ function drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, colors) {
         var yVal = yMin + (yMax - yMin) * j / 4;
         var lbl = (Math.abs(yVal) < 1000 && Math.abs(yVal) > 0.01) ? yVal.toFixed(2) : yVal.toExponential(1);
         ctx.fillText(lbl, m.left - 5, m.top + ph - ph * j / 4);
+    }
+    // X-axis label
+    if (xLabel) {
+        ctx.fillStyle = colors.text; ctx.globalAlpha = 0.6;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(xLabel, m.left + pw / 2, m.top + ph + 22);
+        ctx.globalAlpha = 1.0;
+    }
+    // Y-axis label (rotated)
+    if (yLabel) {
+        ctx.save();
+        ctx.fillStyle = colors.text; ctx.globalAlpha = 0.6;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.translate(12, m.top + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+        ctx.globalAlpha = 1.0;
     }
     return { plotW: pw, plotH: ph };
 }
@@ -3689,7 +3881,8 @@ function drawIntervalShading(ctx, ints, wl, xMin, xMax, yMin, yMax, pw, ph, colo
     if (!ints || ints.length === 0) return;
     var m = MARGIN, xR = (xMax - xMin) || 1;
     for (var i = 0; i < ints.length; i++) {
-        var intv = ints[i], s = intv.startIdx, e = intv.endIdx;
+        var intv = ints[i];
+        var s = idxToXVal(intv.startIdx), e = idxToXVal(intv.endIdx);
         if (e < xMin || s > xMax) continue;
         s = Math.max(s, xMin); e = Math.min(e, xMax);
         var x1 = m.left + (s - xMin) / xR * pw;
@@ -3796,7 +3989,7 @@ function renderPreviewChart() {
     var autoY = getDataRange(allY);
     var autoX = { min: wavelength[0], max: wavelength[wavelength.length-1] };
     var view = previewView || { xMin: autoX.min, xMax: autoX.max, yMin: autoY.min, yMax: autoY.max };
-    var layout = drawGrid(c.ctx, c.w, c.h, view.xMin, view.xMax, view.yMin, view.yMax, colors);
+    var layout = drawGrid(c.ctx, c.w, c.h, view.xMin, view.xMax, view.yMin, view.yMax, colors, axisLabels.previewX, axisLabels.previewY);
 
     drawIntervalShading(c.ctx, intervals, wavelength, view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors);
 
@@ -3837,7 +4030,7 @@ function renderCorrectedChart() {
     var autoY = getDataRange([correctedPreview]);
     var autoX = { min: wavelength[0], max: wavelength[wavelength.length-1] };
     var view = correctedView || { xMin: autoX.min, xMax: autoX.max, yMin: autoY.min, yMax: autoY.max };
-    var layout = drawGrid(c.ctx, c.w, c.h, view.xMin, view.xMax, view.yMin, view.yMax, colors);
+    var layout = drawGrid(c.ctx, c.w, c.h, view.xMin, view.xMax, view.yMin, view.yMax, colors, axisLabels.correctedX, axisLabels.correctedY);
 
     // Draw horizontal zero reference line (pale red, dashed)
     if (view.yMin < 0 && view.yMax > 0) {
@@ -3942,7 +4135,7 @@ function handleMouseMove(e) {
         var idx = resizeState.intervalIdx;
 
         if (resizeState.edge === 'left') {
-            var newStart = Math.round(Math.max(1, Math.min(intervals[idx].endIdx - 3, newX)));
+            var newStart = Math.max(1, Math.min(intervals[idx].endIdx - 3, xValToIdx(newX)));
             // Prevent overlap: find nearest left neighbor
             for (var oi = 0; oi < intervals.length; oi++) {
                 if (oi === idx) continue;
@@ -3952,7 +4145,7 @@ function handleMouseMove(e) {
             }
             intervals[idx].startIdx = newStart;
         } else {
-            var newEnd = Math.round(Math.min(wavelength.length, Math.max(intervals[idx].startIdx + 3, newX)));
+            var newEnd = Math.min(wavelength.length, Math.max(intervals[idx].startIdx + 3, xValToIdx(newX)));
             // Prevent overlap: find nearest right neighbor
             for (var oi = 0; oi < intervals.length; oi++) {
                 if (oi === idx) continue;
@@ -4019,7 +4212,8 @@ function handleMouseUp(e) {
         var canvas = document.getElementById('preview-canvas');
         var endX = canvasXToData(canvas, e.clientX);
         // Keep drawing mode active - don't exit after completing a draw
-        if (Math.abs(endX - drawStart) > 1) {
+        var drawIdxSpan = Math.abs(xValToIdx(endX) - xValToIdx(drawStart));
+        if (drawIdxSpan >= 2) {
             addIntervalFromDraw(drawStart, endX);
             setStatus('processing', 'Interval added. Draw another or click elsewhere to exit.');
         } else {
@@ -4048,9 +4242,11 @@ function getIntervalEdgeAtMouse(e) {
 
     for (var i = 0; i < intervals.length; i++) {
         var intv = intervals[i];
-        // Convert interval edges to pixel positions
-        var leftPx = MARGIN.left + (intv.startIdx - view.xMin) / (view.xMax - view.xMin) * pw;
-        var rightPx = MARGIN.left + (intv.endIdx - view.xMin) / (view.xMax - view.xMin) * pw;
+        // Convert interval edges to pixel positions via x-axis values
+        var leftXVal = idxToXVal(intv.startIdx);
+        var rightXVal = idxToXVal(intv.endIdx);
+        var leftPx = MARGIN.left + (leftXVal - view.xMin) / (view.xMax - view.xMin) * pw;
+        var rightPx = MARGIN.left + (rightXVal - view.xMin) / (view.xMax - view.xMin) * pw;
 
         // Check if near left edge
         if (Math.abs(mx - leftPx) < EDGE_THRESHOLD) {
@@ -4102,11 +4298,56 @@ function handlePreviewClick(e) {
     var canvas = document.getElementById('preview-canvas');
     var xClick = canvasXToData(canvas, e.clientX);
     for (var i = 0; i < intervals.length; i++) {
-        if (xClick >= intervals[i].startIdx && xClick <= intervals[i].endIdx) {
+        if (xClick >= idxToXVal(intervals[i].startIdx) && xClick <= idxToXVal(intervals[i].endIdx)) {
             selectInterval(i);
             return;
         }
     }
+}
+
+function handleDblClick(e, chartType) {
+    var canvas = document.getElementById(chartType === 'preview' ? 'preview-canvas' : 'corrected-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left, y = e.clientY - rect.top;
+    var m = MARGIN, pw = rect.width - m.left - m.right, ph = rect.height - m.top - m.bottom;
+    // Check X-axis label area (bottom center)
+    var xLabelCx = m.left + pw / 2, xLabelCy = m.top + ph + 30;
+    if (Math.abs(x - xLabelCx) < 60 && Math.abs(y - xLabelCy) < 14) {
+        editAxisLabel(canvas, chartType, 'x', xLabelCx, xLabelCy);
+        return;
+    }
+    // Check Y-axis label area (left center, rotated)
+    if (x < m.left - 5 && y > m.top && y < m.top + ph) {
+        var yLabelCy = m.top + ph / 2;
+        editAxisLabel(canvas, chartType, 'y', 30, yLabelCy);
+        return;
+    }
+    resetZoom(chartType);
+}
+
+function editAxisLabel(canvas, chartType, axis, cx, cy) {
+    var key = (chartType === 'preview' ? 'preview' : 'corrected') + (axis === 'x' ? 'X' : 'Y');
+    var wrapper = canvas.parentElement;
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = axisLabels[key];
+    inp.style.cssText = 'position:absolute;font-size:12px;text-align:center;border:1px solid var(--accent);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);padding:2px 6px;outline:none;z-index:100;width:100px;';
+    inp.style.left = (cx - 50) + 'px';
+    inp.style.top = (cy - 10) + 'px';
+    wrapper.style.position = 'relative';
+    wrapper.appendChild(inp);
+    inp.focus();
+    inp.select();
+    function commit() {
+        axisLabels[key] = inp.value;
+        if (wrapper.contains(inp)) wrapper.removeChild(inp);
+        renderAll();
+    }
+    inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { commit(); }
+        else if (e.key === 'Escape') { if (wrapper.contains(inp)) wrapper.removeChild(inp); }
+    });
+    inp.addEventListener('blur', commit);
 }
 
 function resetZoom(chartType) {
@@ -4122,8 +4363,8 @@ document.addEventListener('DOMContentLoaded', function() {
     pc.addEventListener('mousedown', function(e) { handleMouseDown(e, 'preview'); });
     cc.addEventListener('mousedown', function(e) { handleMouseDown(e, 'corrected'); });
     pc.addEventListener('click', handlePreviewClick);
-    pc.addEventListener('dblclick', function() { resetZoom('preview'); });
-    cc.addEventListener('dblclick', function() { resetZoom('corrected'); });
+    pc.addEventListener('dblclick', function(e) { handleDblClick(e, 'preview'); });
+    cc.addEventListener('dblclick', function(e) { handleDblClick(e, 'corrected'); });
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 

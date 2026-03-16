@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmic Peak Correction</title>
+<style>
+/* ====================================================================
+   CSS Variables - Design System
+   ==================================================================== */
+:root {
+    --bg-primary: #E8EBED; --bg-secondary: #F2F4F6; --bg-tertiary: #EBF0F4;
+    --text-primary: #1E293B; --text-secondary: #64748B; --text-tertiary: #94A3B8;
+    --border-color: #E2E8F0;
+    --accent-primary: #42A5F5; --accent-secondary: #90CAF9;
+    --accent-gradient-start: #90CAF9; --accent-gradient-end: #64B5F6;
+    --button-bg: #F1F5F9; --button-border: #E2E8F0; --button-text: #475569;
+    --shadow-color: rgba(0, 0, 0, 0.05); --shadow-accent: rgba(100, 181, 246, 0.3);
+    --status-indicator: #10B981; --error-color: #EF4444; --warning-color: #F59E0B;
+    --spectrum-color: rgba(66, 165, 245, 1.0);
+    --corrected-color: rgba(16, 185, 129, 0.9);
+    --derivative-color: rgba(239, 68, 68, 0.9);
+    --threshold-color: rgba(245, 158, 11, 0.9);
+    --mean-spectrum-color: rgba(80, 80, 80, 1.0);
+    --all-spectra-color: rgba(160, 160, 160, 0.4);
+    --grid-color: rgba(0, 0, 0, 0.08);
+    --axis-text: #64748B;
+}
+body.dark-mode {
+    --bg-primary: #0F172A; --bg-secondary: #1E293B; --bg-tertiary: #334155;
+    --text-primary: #F1F5F9; --text-secondary: #CBD5E1; --text-tertiary: #94A3B8;
+    --border-color: #334155;
+    --accent-primary: #60A5FA; --accent-secondary: #93C5FD;
+    --accent-gradient-start: #60A5FA; --accent-gradient-end: #3B82F6;
+    --button-bg: #334155; --button-border: #475569; --button-text: #E2E8F0;
+    --shadow-color: rgba(0, 0, 0, 0.3); --shadow-accent: rgba(59, 130, 246, 0.4);
+    --status-indicator: #34D399; --error-color: #F87171; --warning-color: #FBBF24;
+    --spectrum-color: rgba(96, 165, 250, 1.0);
+    --corrected-color: rgba(52, 211, 153, 0.9);
+    --derivative-color: rgba(248, 113, 113, 0.9);
+    --threshold-color: rgba(251, 191, 36, 0.9);
+    --mean-spectrum-color: rgba(200, 200, 200, 1.0);
+    --all-spectra-color: rgba(160, 160, 160, 0.25);
+    --grid-color: rgba(255, 255, 255, 0.08);
+    --axis-text: #94A3B8;
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: var(--bg-primary); color: var(--text-primary);
+    overflow: hidden; height: 100vh; display: flex; flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ---- Main Layout ---- */
+.main-content { flex: 1; display: flex; gap: 0; overflow: hidden; }
+
+/* ---- Left Panel ---- */
+.controls-panel {
+    width: 380px; min-width: 260px; max-width: 560px;
+    background: var(--bg-secondary); border-right: 1px solid var(--border-color);
+    overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;
+    flex-shrink: 0;
+}
+.controls-panel::-webkit-scrollbar { width: 8px; }
+.controls-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+/* ---- Resize Handle ---- */
+.resize-handle {
+    width: 6px; cursor: col-resize; background: transparent;
+    flex-shrink: 0; position: relative; z-index: 10; transition: background 0.2s ease;
+}
+.resize-handle:hover, .resize-handle.active { background: var(--accent-primary); }
+.resize-handle::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px; height: 32px; border-radius: 1px;
+    background: var(--border-color); transition: background 0.2s ease;
+}
+.resize-handle:hover::after, .resize-handle.active::after { background: white; }
+
+/* ---- Right Panel ---- */
+.charts-panel { flex: 1; display: flex; flex-direction: column; gap: 0; padding: 8px; overflow: hidden; }
+
+/* ---- Section ---- */
+.section {
+    background: var(--bg-tertiary); border-radius: 14px; padding: 14px;
+    border: 1px solid var(--border-color); box-shadow: 0 1px 4px var(--shadow-color);
+}
+.section-title {
+    font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+}
+
+/* ---- Buttons ---- */
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-gradient-start) 0%, var(--accent-gradient-end) 100%);
+    border: none; border-radius: 12px; padding: 12px 18px; color: white;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 3px 10px var(--shadow-accent);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary:hover { box-shadow: 0 5px 16px var(--shadow-accent); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+
+.btn-secondary {
+    background: var(--button-bg); border: 1px solid var(--button-border);
+    border-radius: 12px; padding: 10px 18px; color: var(--button-text);
+    font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-secondary:hover { background: var(--accent-secondary); border-color: var(--accent-primary); color: var(--text-primary); transform: translateY(-1px); }
+.btn-secondary:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.btn-sm { padding: 8px 14px; font-size: 14px; border-radius: 10px; }
+
+/* ---- Parameter Box ---- */
+.param-box {
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 10px; padding: 12px; margin-bottom: 10px;
+}
+.param-box:last-child { margin-bottom: 0; }
+
+/* ---- Slider with nudge ---- */
+.slider-group { margin-bottom: 0; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.slider-label { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+.slider-controls { display: flex; align-items: center; gap: 5px; }
+.slider-value {
+    font-size: 14px; font-weight: 600; color: var(--accent-primary);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 6px; padding: 3px 8px; width: 85px; text-align: right;
+}
+.slider-value:focus { outline: none; border-color: var(--accent-primary); }
+.btn-nudge {
+    width: 24px; height: 18px; background: var(--button-bg); border: 1px solid var(--border-color);
+    border-radius: 4px; font-size: 10px; line-height: 1; cursor: pointer;
+    color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+    padding: 0; transition: all 0.15s ease;
+}
+.btn-nudge:hover { background: var(--accent-secondary); border-color: var(--accent-primary); }
+.nudge-pair { display: flex; flex-direction: column; gap: 3px; }
+
+input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 8px;
+    background: var(--slider-track, #CBD5E1); border-radius: 4px; outline: none;
+}
+body.dark-mode input[type="range"] { background: #475569; }
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px;
+    background: var(--accent-primary); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(66, 165, 245, 0.4); transition: all 0.2s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; background: var(--accent-primary);
+    border-radius: 50%; cursor: pointer; border: none;
+}
+.slider-ticks {
+    display: flex; justify-content: space-between; margin-top: 3px;
+    font-size: 11px; color: var(--text-tertiary);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+/* ---- Number Input ---- */
+.param-input {
+    width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 8px 12px; font-size: 14px; color: var(--text-primary);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    transition: all 0.2s ease;
+}
+.param-input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px rgba(66,165,245,0.15); }
+
+/* ---- Data Info ---- */
+.data-info-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--text-secondary); padding: 3px 0;
+}
+.data-info-label { font-weight: 500; }
+.data-info-value {
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    color: var(--text-primary); font-weight: 600;
+}
+
+/* ---- Chart Container ---- */
+.chart-container {
+    flex: 1; background: var(--bg-secondary); border-radius: 12px; padding: 8px 10px;
+    border: 1px solid var(--border-color); box-shadow: 0 1px 4px var(--shadow-color);
+    display: flex; flex-direction: column; min-height: 0; margin-bottom: 6px;
+}
+.chart-container:last-child { margin-bottom: 0; }
+.chart-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px; flex-shrink: 0; position: relative;
+}
+.chart-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.chart-header-right { display: flex; align-items: center; gap: 8px; }
+.chart-wrapper { flex: 1; position: relative; min-height: 0; }
+.chart-wrapper canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.chart-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: var(--text-tertiary); font-size: 16px; font-style: italic; gap: 12px;
+}
+.chart-empty-icon { font-size: 48px; opacity: 0.4; }
+.chart-empty-link {
+    color: var(--accent-primary); cursor: pointer; font-style: normal;
+    font-size: 14px; font-weight: 500; text-decoration: underline;
+}
+.chart-empty-link:hover { color: var(--accent-secondary); }
+.chart-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; margin-top: 3px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-swatch { width: 18px; height: 4px; border-radius: 2px; }
+
+/* ---- Burger Menu ---- */
+.dropdown { position: relative; display: inline-block; }
+.burger-menu {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 12px; padding: 5px 0; min-width: 260px; z-index: 1000;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+.burger-menu.show { display: block; }
+.burger-toggle {
+    padding: 10px 18px; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.15s ease;
+}
+.burger-toggle:hover { background: var(--bg-tertiary); }
+.burger-toggle .check { color: var(--accent-primary); font-weight: 700; width: 22px; text-align: center; }
+.dropdown-item {
+    padding: 10px 18px; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; transition: background 0.15s ease;
+}
+.dropdown-item:hover { background: var(--bg-tertiary); }
+.dropdown-sep { height: 1px; background: var(--border-color); margin: 5px 0; }
+
+/* ---- Circular Chart Badges ---- */
+.chart-header-badges { display: flex; gap: 10px; align-items: center; }
+.badge-group { display: flex; gap: 8px; align-items: center; }
+.badge-separator { width: 1px; height: 24px; background: var(--border-color); margin: 0 14px; }
+.chart-badge {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg-secondary); border: 2px solid var(--border-color);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow-color); font-size: 18px;
+    color: var(--text-secondary);
+}
+.chart-badge:hover {
+    background: var(--accent-secondary); border-color: var(--accent-primary); transform: scale(1.1);
+}
+.chart-badge.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+.chart-badge.disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.chart-badge svg { width: 20px; height: 20px; fill: currentColor; }
+.chart-badge-small { width: 34px; height: 34px; font-size: 14px; }
+
+/* ---- Status Bar ---- */
+.status-bar {
+    background: var(--bg-secondary); padding: 4px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+}
+.status-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.status-indicator {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--status-indicator); animation: pulse 2s infinite;
+}
+.status-indicator.error { background: var(--error-color); animation: none; }
+.status-indicator.processing { background: var(--warning-color); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ---- Modal Overlay ---- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+}
+.modal {
+    background: var(--bg-secondary); border-radius: 18px; padding: 24px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    min-width: 380px; max-width: 540px;
+}
+.modal-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+/* ---- Variable Selection Table ---- */
+.var-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.var-table th {
+    background: var(--bg-secondary); color: var(--text-secondary);
+    font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;
+    padding: 8px; text-align: center; position: sticky; top: 0; z-index: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+.var-table td {
+    padding: 6px 8px; border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary); text-align: center;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+.var-table tr:last-child td { border-bottom: none; }
+.var-table tr:hover { background: rgba(66, 165, 245, 0.05); }
+.var-table tr.selected { background: rgba(66, 165, 245, 0.12); }
+
+/* ---- Toast Container ---- */
+.toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 200;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.toast {
+    background: var(--bg-secondary); border-radius: 14px; padding: 16px 20px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    display: flex; align-items: center; gap: 14px; min-width: 300px; max-width: 420px;
+    animation: toastSlideIn 0.3s ease;
+}
+.toast-success { border-left: 4px solid var(--status-indicator); }
+.toast-error { border-left: 4px solid var(--error-color); }
+.toast-warning { border-left: 4px solid var(--warning-color); }
+.toast-info { border-left: 4px solid var(--accent-primary); }
+.toast-icon {
+    width: 40px; height: 40px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.toast-success .toast-icon { background: rgba(16, 185, 129, 0.15); }
+.toast-error .toast-icon { background: rgba(239, 68, 68, 0.15); }
+.toast-warning .toast-icon { background: rgba(245, 158, 11, 0.15); }
+.toast-info .toast-icon { background: rgba(66, 165, 245, 0.15); }
+.toast-content { flex: 1; }
+.toast-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+.toast-message { font-size: 13px; color: var(--text-secondary); }
+.toast-close {
+    background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+    font-size: 18px; padding: 4px; line-height: 1;
+}
+.toast-close:hover { color: var(--text-primary); }
+@keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+/* ---- Form ---- */
+.form-group { margin-bottom: 8px; }
+.form-label { font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+.form-input {
+    width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 8px 12px; font-size: 16px; color: var(--text-primary);
+    transition: all 0.2s ease; font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+.form-input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px rgba(66,165,245,0.15); }
+
+/* ---- Spinner ---- */
+.spinner {
+    width: 40px; height: 40px; border: 4px solid var(--border-color);
+    border-top-color: var(--accent-primary); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Help Modal Pagination ---- */
+.help-page { display: none; }
+.help-page.active { display: block; }
+.help-dots { display: flex; gap: 8px; justify-content: center; margin: 16px 0 8px; }
+.help-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border-color); cursor: pointer; transition: all 0.2s ease;
+}
+.help-dot.active { background: var(--accent-primary); width: 28px; border-radius: 5px; }
+
+/* ---- Progress Overlay ---- */
+.progress-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
+    z-index: 150;
+}
+.progress-box {
+    background: var(--bg-secondary); border-radius: 18px; padding: 32px 40px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    min-width: 340px; text-align: center;
+}
+.progress-title { font-size: 17px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; }
+.progress-track {
+    width: 100%; height: 10px; background: var(--border-color);
+    border-radius: 5px; overflow: hidden; margin-bottom: 10px;
+}
+.progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent-gradient-start), var(--accent-gradient-end));
+    border-radius: 5px; transition: width 0.15s ease; width: 0%;
+}
+.progress-text {
+    font-size: 14px; color: var(--text-secondary);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+/* ---- Sort checkbox ---- */
+.sort-label {
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
+    font-size: 13px; color: var(--text-secondary); user-select: none; white-space: nowrap;
+}
+.sort-label input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--accent-primary); cursor: pointer; margin: 0;
+}
+.deriv-click-hint {
+    font-size: 11px; color: var(--text-tertiary); font-style: italic;
+}
+
+/* ---- Divider ---- */
+.divider { height: 1px; background: var(--border-color); margin: 3px 0; }
+</style>
+</head>
+<body>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+    <!-- LEFT PANEL -->
+    <div class="controls-panel" id="controls-panel">
+
+        <!-- Action Buttons -->
+        <div class="section">
+            <div class="section-title">Actions</div>
+            <div class="btn-row-3">
+                <button class="btn-primary btn-sm" id="btn-load" onclick="sendAction('loadData')">Load Data</button>
+                <button class="btn-primary btn-sm" id="btn-apply" onclick="applyCorrection()" disabled>Apply</button>
+                <button class="btn-secondary btn-sm" id="btn-export" onclick="exportData()" disabled>Export</button>
+            </div>
+        </div>
+
+        <!-- Parameters -->
+        <div class="section">
+            <div class="section-title">Parameters</div>
+
+            <!-- Derivative Order -->
+            <div class="param-box">
+                <div class="slider-header">
+                    <span class="slider-label">Derivative Order</span>
+                    <input type="number" class="param-input" id="input-deriv-order" value="1" min="1" max="10" step="1" style="width:70px;text-align:center;" onchange="onParamChange()">
+                </div>
+            </div>
+
+            <!-- Channels to Remove -->
+            <div class="param-box">
+                <div class="slider-header">
+                    <span class="slider-label">Channels to Remove</span>
+                    <input type="number" class="param-input" id="input-channels" value="2" min="0" max="50" step="1" style="width:70px;text-align:center;" onchange="onParamChange()">
+                </div>
+            </div>
+
+            <!-- Threshold (log slider) -->
+            <div class="param-box">
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span class="slider-label">Threshold</span>
+                        <div class="slider-controls">
+                            <input type="text" class="slider-value" id="val-threshold" value="100">
+                            <div class="nudge-pair">
+                                <button class="btn-nudge" onclick="nudgeThreshold(1)">&#9650;</button>
+                                <button class="btn-nudge" onclick="nudgeThreshold(-1)">&#9660;</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="range" id="slider-threshold" min="0" max="1" step="0.001" value="0.5" oninput="onThresholdSlider(this.value)">
+                    <div class="slider-ticks" id="ticks-threshold"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Info -->
+        <div class="section" id="data-info-section">
+            <div class="section-title">Data Info</div>
+            <div class="data-info-row">
+                <span class="data-info-label">Variable</span>
+                <span class="data-info-value" id="info-varname">--</span>
+            </div>
+            <div class="data-info-row">
+                <span class="data-info-label">Size</span>
+                <span class="data-info-value" id="info-size">-- x --</span>
+            </div>
+            <div class="data-info-row">
+                <span class="data-info-label">Affected</span>
+                <span class="data-info-value" id="info-affected">--</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RESIZE HANDLE -->
+    <div class="resize-handle" id="resize-handle"></div>
+
+    <!-- RIGHT PANEL -->
+    <div class="charts-panel" id="charts-panel">
+
+        <!-- Spectra Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="chart-title">Spectra</span>
+                <div class="chart-header-badges" id="chart-badges" style="position:relative;">
+                    <!-- View controls -->
+                    <div class="badge-group">
+                        <div class="chart-badge chart-badge-small" onclick="resetZoom('spectra')" title="Reset view">
+                            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        </div>
+                        <div class="chart-badge chart-badge-small" id="badge-show-all" onclick="toggleShowAll()" title="Show all spectra">
+                            <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="badge-separator"></div>
+
+                    <!-- Signal mode -->
+                    <div class="badge-group">
+                        <div class="chart-badge chart-badge-small" id="badge-signal-mode" onclick="toggleSignalMode()" title="Signal-by-signal mode">
+                            <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z" opacity=".35"/><path d="M3 5h18v2H3V5z"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="badge-group">
+                        <div class="chart-badge chart-badge-small disabled" id="badge-show-corrected" onclick="toggleShowCorrected()" title="Show corrected only / both">
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="badge-separator"></div>
+
+                    <!-- Signal navigation -->
+                    <div class="badge-group" id="signal-nav">
+                        <div class="chart-badge chart-badge-small disabled" id="badge-prev" onclick="stepSignal(-1)" title="Previous signal">
+                            <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        </div>
+                        <div class="chart-badge chart-badge-small disabled" id="badge-idx" title="Current signal" style="min-width:40px;font-size:11px;cursor:text;user-select:none;">
+                            <span id="idx-label" onclick="editSignalIndex()">1/1</span>
+                            <input id="idx-input" type="text" style="display:none;width:36px;border:none;background:transparent;color:inherit;font-size:11px;text-align:center;outline:none;padding:0;" onkeydown="handleSignalIdxKey(event)" onblur="commitSignalIndex()">
+                        </div>
+                        <div class="chart-badge chart-badge-small disabled" id="badge-next" onclick="stepSignal(1)" title="Next signal">
+                            <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="chart-legend" id="spectra-legend" style="display:none;margin-left:8px;">
+                        <div class="legend-item"><div class="legend-swatch" id="swatch-spectrum"></div><span id="legend-spectrum-label">Mean spectrum</span></div>
+                        <div class="legend-item" id="legend-corrected-item" style="display:none;"><div class="legend-swatch" id="swatch-corrected"></div><span>Corrected</span></div>
+                    </div>
+
+                    <!-- + Menu -->
+                    <div class="dropdown" style="position:absolute;right:0;">
+                        <div class="chart-badge chart-badge-small" id="burger-btn" onclick="toggleBurgerMenu()" title="More options">
+                            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        </div>
+                        <div class="burger-menu" id="burger-menu">
+                            <div class="burger-toggle" onclick="toggleDarkMode()">
+                                <span>Dark mode</span><span class="check" id="chk-darkMode"></span>
+                            </div>
+                            <div class="dropdown-sep"></div>
+                            <div class="dropdown-item" onclick="showHelp(); closeBurger();">Help</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-wrapper" id="spectra-wrapper">
+                <canvas id="spectra-canvas"></canvas>
+                <div class="chart-empty" id="spectra-empty">
+                    <div class="chart-empty-icon">&#128200;</div>
+                    <div>Load spectral data to begin</div>
+                    <div class="chart-empty-link" onclick="sendAction('createDemoData')">Try demo data</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Derivative Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="chart-title">Derivative Analysis</span>
+                <div class="chart-header-badges">
+                    <div class="badge-group">
+                        <div class="chart-badge chart-badge-small" onclick="resetZoom('derivative')" title="Reset view">
+                            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        </div>
+                    </div>
+                    <div class="badge-separator"></div>
+                    <label class="sort-label" title="Sort derivative values high to low (helps pick threshold)">
+                        <input type="checkbox" id="chk-sort-max" checked onchange="toggleSortByMax()">
+                        Sort &#8595;
+                    </label>
+                    <div class="badge-separator"></div>
+                    <div class="chart-legend" id="deriv-legend" style="display:none;">
+                        <div class="legend-item"><div class="legend-swatch" id="swatch-derivative"></div><span>Max |deriv|</span></div>
+                        <div class="legend-item"><div class="legend-swatch" id="swatch-threshold"></div><span>Threshold</span></div>
+                    </div>
+                    <span class="deriv-click-hint" id="deriv-click-hint" style="display:none;">Click chart to set threshold</span>
+                </div>
+            </div>
+            <div class="chart-wrapper" id="deriv-wrapper">
+                <canvas id="deriv-canvas"></canvas>
+                <div class="chart-empty" id="deriv-empty">
+                    <div class="chart-empty-icon">&#128270;</div>
+                    <div>Derivative analysis will appear here</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+    <div class="status-left">
+        <div class="status-indicator" id="status-indicator"></div>
+        <span id="status-message">Ready</span>
+    </div>
+</div>
+
+<script>
+"use strict";
+/* ====================================================================
+   STATE
+   ==================================================================== */
+var htmlComponent = null;
+var lastTimestamp = -1;
+
+/* Data */
+var wavelength = [];
+var meanSpectrum = [];
+var allSpectra = [];
+var allCorrected = [];
+var correctedMean = [];
+var varName = '';
+var nSamples = 0;
+var nChannels = 0;
+var autoThreshold = 100;
+
+/* Signal navigation */
+var signalMode = false;
+var currentSignal = 1;
+var showAllSpectra = false;
+var showCorrectedOnly = false;
+var showEveryN = 1;
+var BIG_RENDER_THRESHOLD = 200;
+
+/* Derivative cache (always computed across ALL samples) */
+var sortByMax = true;
+var cachedDerivMax = [];     /* pointwise max |deriv| across all samples, per channel */
+var cachedAllDerivs = [];    /* cachedAllDerivs[s] = |deriv| array for sample s */
+
+/* Threshold slider range (log) */
+var THRESH_LOG_MIN = -2;
+var THRESH_LOG_MAX = 6;
+var THRESH_NUDGE_STEP = 0.05;
+
+/* View state (null = auto-fit) */
+var spectraView = null;
+var derivView = null;
+var panState = null;
+
+/* Chart margins */
+var MARGIN = { top: 10, right: 16, bottom: 48, left: 72 };
+
+/* ====================================================================
+   THEME
+   ==================================================================== */
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    var isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('cosmicpeak_darkMode', isDark);
+    var chk = document.getElementById('chk-darkMode');
+    if (chk) chk.textContent = isDark ? '\u2713' : '';
+    updateLegendSwatches();
+    renderAll();
+}
+
+function restoreDarkMode() {
+    if (localStorage.getItem('cosmicpeak_darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+    var chk = document.getElementById('chk-darkMode');
+    if (chk) chk.textContent = document.body.classList.contains('dark-mode') ? '\u2713' : '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleDarkMode(); }
+});
+
+/* ====================================================================
+   BURGER MENU
+   ==================================================================== */
+function toggleBurgerMenu() {
+    var bm = document.getElementById('burger-menu');
+    var wasOpen = bm.classList.contains('show');
+    closeAllMenus();
+    if (!wasOpen) bm.classList.add('show');
+}
+function closeBurger() { document.getElementById('burger-menu').classList.remove('show'); }
+function closeAllMenus() {
+    var menus = document.querySelectorAll('.burger-menu');
+    for (var i = 0; i < menus.length; i++) menus[i].classList.remove('show');
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#burger-btn') && !e.target.closest('.burger-menu')) closeAllMenus();
+});
+
+/* ====================================================================
+   SIGNAL-BY-SIGNAL & SHOW ALL
+   ==================================================================== */
+function toggleSignalMode() {
+    signalMode = !signalMode;
+    var badge = document.getElementById('badge-signal-mode');
+    if (signalMode) badge.classList.add('active'); else badge.classList.remove('active');
+    var navBadges = document.querySelectorAll('#signal-nav .chart-badge');
+    for (var i = 0; i < navBadges.length; i++) {
+        if (signalMode && nSamples > 0) navBadges[i].classList.remove('disabled');
+        else navBadges[i].classList.add('disabled');
+    }
+    updateSignalLabel();
+    if (signalMode) {
+        currentSignal = 1;
+        updateSignalNav();
+    }
+    spectraView = null;
+    derivView = null;
+    renderAll();
+    updateDerivativeInfo();
+}
+
+function toggleShowCorrected() {
+    if (correctedMean.length === 0) {
+        showToast('warning', 'No Correction', 'Apply correction first to toggle this view.');
+        return;
+    }
+    showCorrectedOnly = !showCorrectedOnly;
+    var badge = document.getElementById('badge-show-corrected');
+    if (showCorrectedOnly) badge.classList.add('active'); else badge.classList.remove('active');
+    spectraView = null;
+    renderSpectraChart();
+}
+
+function toggleShowAll() {
+    if (showAllSpectra) {
+        showAllSpectra = false;
+        showEveryN = 1;
+        document.getElementById('badge-show-all').classList.remove('active');
+        spectraView = null;
+        renderAll();
+        return;
+    }
+    if (allSpectra.length === 0) {
+        showToast('warning', 'Not Available', 'Dataset too large to cache individual spectra.');
+        return;
+    }
+    if (nSamples > BIG_RENDER_THRESHOLD) {
+        showBigDatasetModal();
+    } else {
+        activateShowAll(1);
+    }
+}
+
+function activateShowAll(everyN) {
+    showEveryN = Math.max(1, everyN);
+    showAllSpectra = true;
+    document.getElementById('badge-show-all').classList.add('active');
+    spectraView = null;
+    renderAll();
+}
+
+function showBigDatasetModal() {
+    var suggested = Math.max(2, Math.round(nSamples / 100));
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    var md = document.createElement('div');
+    md.className = 'modal';
+    md.style.maxWidth = '440px';
+    var html = '<div class="modal-title">Large Dataset</div>';
+    html += '<div style="margin-bottom:16px;color:var(--text-secondary);font-size:15px;line-height:1.6;">';
+    html += 'This dataset has <b>' + nSamples + '</b> spectra. Rendering all may be slow.</div>';
+    html += '<div style="margin-bottom:18px;"><div style="display:flex;align-items:center;gap:10px;">';
+    html += '<label style="font-size:14px;color:var(--text-secondary);white-space:nowrap;">Show every</label>';
+    html += '<input type="number" class="form-input" id="big-ds-every-n" value="' + suggested + '" min="1" max="' + nSamples + '" style="width:80px;text-align:center;">';
+    html += '<label style="font-size:14px;color:var(--text-secondary);white-space:nowrap;">spectra (' + Math.ceil(nSamples / suggested) + ' lines)</label>';
+    html += '</div></div>';
+    html += '<div class="modal-btns" style="display:flex;gap:8px;justify-content:flex-end;">';
+    html += '<button class="btn-secondary btn-sm" id="big-ds-cancel">Don\'t show</button>';
+    html += '<button class="btn-primary btn-sm" id="big-ds-every">Show subset</button>';
+    html += '<button class="btn-secondary btn-sm" id="big-ds-all">Show all (' + nSamples + ')</button>';
+    html += '</div>';
+    md.innerHTML = html;
+    ov.appendChild(md);
+    document.body.appendChild(ov);
+    var inp = document.getElementById('big-ds-every-n');
+    inp.addEventListener('input', function() {
+        var n = parseInt(inp.value) || 1;
+        var count = Math.ceil(nSamples / Math.max(1, n));
+        var label = inp.parentElement.querySelectorAll('label')[1];
+        if (label) label.textContent = 'spectra (' + count + ' lines)';
+    });
+    document.getElementById('big-ds-cancel').onclick = function() { ov.remove(); };
+    document.getElementById('big-ds-every').onclick = function() {
+        var n = parseInt(inp.value) || 1;
+        ov.remove();
+        activateShowAll(Math.max(1, n));
+    };
+    document.getElementById('big-ds-all').onclick = function() { ov.remove(); activateShowAll(1); };
+    ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+}
+
+function stepSignal(dir) {
+    if (!signalMode || nSamples <= 1) return;
+    currentSignal = Math.max(1, Math.min(nSamples, currentSignal + dir));
+    updateSignalLabel();
+    updateSignalNav();
+    spectraView = null;
+    derivView = null;
+    renderAll();
+    updateDerivativeInfo();
+}
+
+function editSignalIndex() {
+    if (!signalMode || nSamples <= 1) return;
+    var lbl = document.getElementById('idx-label');
+    var inp = document.getElementById('idx-input');
+    lbl.style.display = 'none';
+    inp.style.display = 'inline';
+    inp.value = currentSignal;
+    inp.focus();
+    inp.select();
+}
+function handleSignalIdxKey(e) {
+    if (e.key === 'Enter') commitSignalIndex();
+    if (e.key === 'Escape') {
+        document.getElementById('idx-input').style.display = 'none';
+        document.getElementById('idx-label').style.display = 'inline';
+    }
+}
+function commitSignalIndex() {
+    var lbl = document.getElementById('idx-label');
+    var inp = document.getElementById('idx-input');
+    var newIdx = parseInt(inp.value, 10);
+    inp.style.display = 'none';
+    lbl.style.display = 'inline';
+    if (isNaN(newIdx) || newIdx < 1 || newIdx > nSamples) return;
+    if (newIdx === currentSignal) return;
+    currentSignal = newIdx;
+    updateSignalLabel();
+    updateSignalNav();
+    spectraView = null;
+    derivView = null;
+    renderAll();
+    updateDerivativeInfo();
+}
+function updateSignalNav() {
+    document.getElementById('idx-label').textContent = currentSignal + '/' + nSamples;
+    var prev = document.getElementById('badge-prev');
+    var next = document.getElementById('badge-next');
+    if (currentSignal <= 1) prev.classList.add('disabled'); else prev.classList.remove('disabled');
+    if (currentSignal >= nSamples) next.classList.add('disabled'); else next.classList.remove('disabled');
+}
+
+/* ====================================================================
+   THRESHOLD SLIDER (LOGARITHMIC)
+   ==================================================================== */
+function threshPosToValue(pos) {
+    var logVal = THRESH_LOG_MIN + parseFloat(pos) * (THRESH_LOG_MAX - THRESH_LOG_MIN);
+    return Math.pow(10, logVal);
+}
+function valueToThreshPos(val) {
+    if (val <= 0) return 0;
+    var logVal = Math.log10(val);
+    return (logVal - THRESH_LOG_MIN) / (THRESH_LOG_MAX - THRESH_LOG_MIN);
+}
+function onThresholdSlider(pos) {
+    var val = threshPosToValue(pos);
+    document.getElementById('val-threshold').value = fmtSci(val);
+    onParamChange();
+}
+function nudgeThreshold(dir) {
+    var el = document.getElementById('val-threshold');
+    var val = parseSci(el.value);
+    if (isNaN(val) || val <= 0) val = autoThreshold;
+    var logVal = Math.log10(val) + dir * THRESH_NUDGE_STEP;
+    logVal = Math.max(THRESH_LOG_MIN, Math.min(THRESH_LOG_MAX, logVal));
+    val = Math.pow(10, logVal);
+    el.value = fmtSci(val);
+    document.getElementById('slider-threshold').value = valueToThreshPos(val);
+    onParamChange();
+}
+function syncThresholdFromInput() {
+    var el = document.getElementById('val-threshold');
+    var val = parseSci(el.value);
+    if (isNaN(val) || val <= 0) return;
+    val = Math.max(Math.pow(10, THRESH_LOG_MIN), Math.min(Math.pow(10, THRESH_LOG_MAX), val));
+    el.value = fmtSci(val);
+    document.getElementById('slider-threshold').value = valueToThreshPos(val);
+    onParamChange();
+}
+function initThresholdTicks() {
+    var container = document.getElementById('ticks-threshold');
+    var ticks = ['0.01', '1', '100', '10k', '1M'];
+    var html = '';
+    for (var i = 0; i < ticks.length; i++) html += '<span>' + ticks[i] + '</span>';
+    container.innerHTML = html;
+}
+
+/* ====================================================================
+   NUMBER FORMATTING
+   ==================================================================== */
+function fmtSci(v) {
+    if (v === 0) return '0';
+    return v.toExponential(2);
+}
+function parseSci(s) { return parseFloat(s); }
+
+/* ====================================================================
+   READ CURRENT PARAMETERS
+   ==================================================================== */
+function getCurrentParams() {
+    return {
+        derivativeOrder: parseInt(document.getElementById('input-deriv-order').value) || 1,
+        channelsToRemove: parseInt(document.getElementById('input-channels').value) || 2,
+        threshold: parseSci(document.getElementById('val-threshold').value) || autoThreshold
+    };
+}
+
+/* ====================================================================
+   JS-SIDE DERIVATIVE COMPUTATION
+   ==================================================================== */
+function computeDerivative(row, order) {
+    var result = row.slice();
+    for (var d = 0; d < order; d++) {
+        var next = [];
+        for (var i = 0; i < result.length - 1; i++) {
+            next.push(result[i + 1] - result[i]);
+        }
+        result = next;
+    }
+    return result.map(function(v) { return Math.abs(v); });
+}
+
+function computeMeanDerivative() {
+    if (allSpectra.length === 0 || wavelength.length === 0) return [];
+    var order = getCurrentParams().derivativeOrder;
+    var nC = wavelength.length;
+    if (order >= nC) return [];
+    var derivLen = nC - order;
+    var sum = new Array(derivLen).fill(0);
+    var count = allSpectra.length;
+    for (var s = 0; s < count; s++) {
+        var d = computeDerivative(allSpectra[s], order);
+        for (var i = 0; i < derivLen; i++) sum[i] += d[i];
+    }
+    for (var i = 0; i < derivLen; i++) sum[i] /= count;
+    return sum;
+}
+
+function computeSignalDerivative(idx) {
+    if (idx < 0 || idx >= allSpectra.length) return [];
+    return computeDerivative(allSpectra[idx], getCurrentParams().derivativeOrder);
+}
+
+function getDerivativeWavelength() {
+    var order = getCurrentParams().derivativeOrder;
+    return wavelength.slice(order);
+}
+
+function countAffectedSamples() {
+    if (cachedAllDerivs.length === 0) return 0;
+    var thresh = getCurrentParams().threshold;
+    var count = 0;
+    for (var s = 0; s < cachedAllDerivs.length; s++) {
+        var d = cachedAllDerivs[s];
+        for (var i = 0; i < d.length; i++) {
+            if (d[i] > thresh) { count++; break; }
+        }
+    }
+    return count;
+}
+
+function onParamChange() {
+    recomputeMaxDerivatives();
+    derivView = null;
+    renderDerivativeChart();
+    updateDerivativeInfo();
+}
+
+function updateDerivativeInfo() {
+    if (allSpectra.length === 0) {
+        document.getElementById('info-affected').textContent = '--';
+        return;
+    }
+    var affected = countAffectedSamples();
+    document.getElementById('info-affected').textContent = affected + ' / ' + nSamples;
+}
+
+/* ====================================================================
+   SORT BY MAX DERIVATIVE
+   ==================================================================== */
+function toggleSortByMax() {
+    sortByMax = document.getElementById('chk-sort-max').checked;
+    derivView = null;
+    renderDerivativeChart();
+    updateDerivativeInfo();
+}
+
+function recomputeMaxDerivatives() {
+    if (allSpectra.length === 0) {
+        cachedDerivMax = []; cachedAllDerivs = [];
+        return;
+    }
+    var order = getCurrentParams().derivativeOrder;
+    var derivLen = wavelength.length - order;
+    if (derivLen <= 0) { cachedDerivMax = []; cachedAllDerivs = []; return; }
+    cachedDerivMax = new Array(derivLen).fill(0);
+    cachedAllDerivs = [];
+    for (var s = 0; s < allSpectra.length; s++) {
+        var d = computeDerivative(allSpectra[s], order);
+        cachedAllDerivs.push(d);
+        for (var j = 0; j < derivLen; j++) {
+            if (d[j] > cachedDerivMax[j]) cachedDerivMax[j] = d[j];
+        }
+    }
+}
+
+function getActualSignalIndex() {
+    return currentSignal - 1;
+}
+
+function updateSignalLabel() {
+    var lbl = document.getElementById('legend-spectrum-label');
+    if (!lbl) return;
+    if (signalMode) {
+        lbl.textContent = 'Signal ' + currentSignal + '/' + nSamples;
+    } else if (showAllSpectra) {
+        lbl.textContent = 'All spectra (' + nSamples + ')';
+    } else {
+        lbl.textContent = 'Mean spectrum';
+    }
+}
+
+function setThresholdFromClick(e) {
+    var canvas = document.getElementById('deriv-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+    var view = derivView || getAutoView('derivative');
+    var mouseY = e.clientY - rect.top;
+    var fracY = 1 - (mouseY - MARGIN.top) / ph;
+    if (fracY < 0 || fracY > 1) return;
+    var val = view.yMin + (view.yMax - view.yMin) * fracY;
+    if (val <= 0) val = Math.pow(10, THRESH_LOG_MIN);
+    val = Math.max(Math.pow(10, THRESH_LOG_MIN), Math.min(Math.pow(10, THRESH_LOG_MAX), val));
+    document.getElementById('val-threshold').value = fmtSci(val);
+    document.getElementById('slider-threshold').value = valueToThreshPos(val);
+    onParamChange();
+    showToast('info', 'Threshold Set', fmtSci(val), 2000);
+}
+
+/* ====================================================================
+   ACTIONS -> MATLAB
+   ==================================================================== */
+function sendAction(action, extra) {
+    if (!htmlComponent) return;
+    var payload = extra || {};
+    payload.action = action;
+    payload.timestamp = Date.now();
+    htmlComponent.Data = payload;
+}
+
+function applyCorrection() {
+    var params = getCurrentParams();
+    setStatus('processing', 'Applying correction...');
+    showProgressOverlay('Applying correction...', 0, 0, nSamples);
+    sendAction('apply', params);
+}
+
+function exportData() {
+    showProgressOverlay('Exporting...', 50, 0, 0);
+    sendAction('prepareExport');
+}
+
+/* ====================================================================
+   MATLAB RESPONSE HANDLER
+   ==================================================================== */
+function handleMatlabResponse(data) {
+    if (!data || !data.response) return;
+    if (data.timestamp !== undefined && data.timestamp <= lastTimestamp) return;
+    lastTimestamp = data.timestamp;
+    var payload = data.payload || {};
+
+    switch (data.response) {
+        case 'ready':
+            setStatus('success', payload.message || 'Ready');
+            break;
+        case 'error':
+            hideProgressOverlay();
+            setStatus('error', payload.message || 'Unknown error');
+            showToast('error', 'Error', payload.message || 'Unknown error');
+            break;
+        case 'showVarList':
+            hideProgressOverlay();
+            showVariableSelectionModal(payload);
+            break;
+        case 'dataLoaded':
+            onDataLoaded(payload);
+            break;
+        case 'progress':
+            onProgress(payload);
+            break;
+        case 'correctionApplied':
+            onCorrectionApplied(payload);
+            break;
+        case 'showExportDialog':
+            hideProgressOverlay();
+            showExportModal(payload);
+            break;
+        case 'exportCompleted':
+            onExportCompleted(payload);
+            break;
+        case 'spectrumLoaded':
+            onSpectrumLoaded(payload);
+            break;
+    }
+}
+
+/* ---- Response handlers ---- */
+function onDataLoaded(p) {
+    hideProgressOverlay();
+    wavelength = toArray(p.wavelength);
+    meanSpectrum = toArray(p.meanSpectrum);
+    nSamples = p.nSamples || 0;
+    nChannels = p.nChannels || 0;
+    varName = p.varName || '';
+    autoThreshold = p.autoThreshold || 100;
+    correctedMean = [];
+    allCorrected = [];
+
+    /* Cache all spectra if provided */
+    if (p.allSpectra) {
+        allSpectra = [];
+        var raw = p.allSpectra;
+        var keys = Object.keys(raw);
+        for (var i = 0; i < keys.length; i++) allSpectra.push(toArray(raw[keys[i]]));
+    } else {
+        allSpectra = [];
+    }
+
+    /* Set threshold slider to auto value */
+    document.getElementById('val-threshold').value = fmtSci(autoThreshold);
+    document.getElementById('slider-threshold').value = valueToThreshPos(autoThreshold);
+
+    /* Compute per-sample max derivatives (for both sort modes) */
+    recomputeMaxDerivatives();
+
+    /* Update signal mode state */
+    if (signalMode && allSpectra.length > 0) {
+        currentSignal = 1;
+        updateSignalNav();
+        updateSignalLabel();
+    }
+
+    /* Reset views */
+    spectraView = null;
+    derivView = null;
+
+    /* Show all spectra by default */
+    if (allSpectra.length > 0) {
+        if (nSamples > BIG_RENDER_THRESHOLD) {
+            showEveryN = Math.max(2, Math.round(nSamples / 100));
+        } else {
+            showEveryN = 1;
+        }
+        showAllSpectra = true;
+        var badge = document.getElementById('badge-show-all');
+        if (badge) badge.classList.add('active');
+    } else {
+        showAllSpectra = false;
+        showEveryN = 1;
+        var badge = document.getElementById('badge-show-all');
+        if (badge) badge.classList.remove('active');
+    }
+
+    /* Update info */
+    document.getElementById('info-varname').textContent = varName || '--';
+    document.getElementById('info-size').textContent = nSamples + ' x ' + nChannels;
+
+    /* Enable buttons */
+    document.getElementById('btn-apply').disabled = false;
+    document.getElementById('btn-export').disabled = true;
+    document.getElementById('legend-corrected-item').style.display = 'none';
+    showCorrectedOnly = false;
+    var corrBadge = document.getElementById('badge-show-corrected');
+    corrBadge.classList.add('disabled'); corrBadge.classList.remove('active');
+
+    /* Render */
+    updateLegendSwatches();
+    renderAll();
+    updateDerivativeInfo();
+
+    setStatus('success', 'Loaded: ' + varName + ' (' + nSamples + ' x ' + nChannels + ')');
+    showToast('success', 'Data Loaded', varName + ' (' + nSamples + ' samples, ' + nChannels + ' channels)');
+
+    if (nSamples > 1000 || nSamples * nChannels > 5000000) {
+        showToast('warning', 'Large Dataset', nSamples + ' x ' + nChannels + ' — correction may take a moment.', 6000);
+    }
+}
+
+function onCorrectionApplied(p) {
+    hideProgressOverlay();
+    if (p.meanCorrected) correctedMean = toArray(p.meanCorrected);
+    if (p.allCorrected) {
+        allCorrected = [];
+        var raw = p.allCorrected;
+        var keys = Object.keys(raw);
+        for (var i = 0; i < keys.length; i++) allCorrected.push(toArray(raw[keys[i]]));
+    }
+    document.getElementById('btn-export').disabled = false;
+    document.getElementById('legend-corrected-item').style.display = 'flex';
+    document.getElementById('badge-show-corrected').classList.remove('disabled');
+    spectraView = null;
+    updateLegendSwatches();
+    renderSpectraChart();
+    var nCorr = p.nCorrectedSamples || 0;
+    setStatus('success', nCorr + ' / ' + nSamples + ' samples corrected');
+    showToast('success', 'Correction Applied', nCorr + ' / ' + nSamples + ' samples had cosmic peaks');
+}
+
+function onExportCompleted(p) {
+    hideProgressOverlay();
+    showToast('success', 'Export Complete', 'Exported to workspace: ' + (p.exportedName || ''));
+    setStatus('success', 'Exported: ' + (p.exportedName || ''));
+}
+
+function onSpectrumLoaded(p) {
+    /* For when allSpectra not cached; update rendering */
+    if (p.signalIndex) {
+        currentSignal = p.signalIndex;
+        updateSignalNav();
+        updateSignalLabel();
+    }
+    spectraView = null;
+    renderSpectraChart();
+}
+
+function onProgress(p) {
+    var title = p.title || 'Processing...';
+    var current = p.current || 0;
+    var total = p.total || 0;
+    var pct;
+    if (p.percent !== undefined && p.percent !== null) pct = Math.round(p.percent);
+    else if (total > 0) pct = Math.round(current / total * 100);
+    else pct = 0;
+    showProgressOverlay(title, pct, total > 0 ? current : 0, total);
+}
+
+function showProgressOverlay(title, pct, current, total) {
+    var ov = document.getElementById('progress-overlay');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.className = 'progress-overlay';
+        ov.id = 'progress-overlay';
+        ov.innerHTML =
+            '<div class="progress-box">' +
+                '<div class="progress-title" id="progress-title"></div>' +
+                '<div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>' +
+                '<div class="progress-text" id="progress-text"></div>' +
+            '</div>';
+        document.body.appendChild(ov);
+    }
+    document.getElementById('progress-title').textContent = title;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    if (total > 0) document.getElementById('progress-text').textContent = current + ' / ' + total + '  (' + pct + '%)';
+    else document.getElementById('progress-text').textContent = pct > 0 ? pct + '%' : '';
+}
+
+function hideProgressOverlay() {
+    var ov = document.getElementById('progress-overlay');
+    if (ov) ov.remove();
+}
+
+/* ====================================================================
+   VARIABLE SELECTION MODAL
+   ==================================================================== */
+function showVariableSelectionModal(payload) {
+    var vars = payload.variables || [];
+    var vectors = payload.vectors || [];
+    var isEmpty = (vars.length === 0);
+
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    var md = document.createElement('div');
+    md.className = 'modal';
+    md.style.minWidth = '400px';
+    md.style.maxWidth = '500px';
+    md.style.maxHeight = '85vh';
+    md.style.display = 'flex';
+    md.style.flexDirection = 'column';
+
+    var html = '<div class="modal-title">Load Data from Workspace</div>';
+    if (isEmpty) {
+        html += '<div style="padding:40px 20px;text-align:center;color:var(--text-secondary);">';
+        html += '<div style="font-size:48px;margin-bottom:16px;">&#128202;</div>';
+        html += '<div style="font-size:16px;font-weight:500;margin-bottom:8px;">No numeric matrices found</div>';
+        html += '<div style="font-size:14px;">Load spectral data into the MATLAB workspace first.</div></div>';
+        html += '<div class="modal-btns"><button class="btn-secondary btn-sm" id="var-modal-cancel">Close</button></div>';
+    } else {
+        html += '<div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Select a spectral data matrix:</div>';
+        html += '<div style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;margin-bottom:12px;">';
+        html += '<table class="var-table"><thead><tr>';
+        html += '<th style="width:40px;"></th><th>Variable</th><th>Size</th><th>Rows</th><th>Cols</th>';
+        html += '</tr></thead><tbody>';
+        for (var i = 0; i < vars.length; i++) {
+            var v = vars[i];
+            html += '<tr class="var-row" data-varname="' + v.name + '" style="cursor:pointer;">';
+            html += '<td><input type="radio" name="var-select" value="' + v.name + '"' + (i === 0 ? ' checked' : '') + '></td>';
+            html += '<td style="font-weight:600;text-align:left;padding-left:12px;">' + v.name + '</td>';
+            html += '<td>' + v.size + '</td><td>' + v.rows + '</td><td>' + v.cols + '</td></tr>';
+        }
+        html += '</tbody></table></div>';
+        html += '<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">';
+        html += '<label style="font-size:13px;color:var(--text-secondary);white-space:nowrap;">X-axis (optional):</label>';
+        html += '<select id="xaxis-select" style="flex:1;padding:5px 8px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;">';
+        html += '<option value="">Channel indices (1, 2, 3, ...)</option>';
+        for (var j = 0; j < vectors.length; j++) {
+            html += '<option value="' + vectors[j].name + '">' + vectors[j].name + ' (' + vectors[j].length + ')</option>';
+        }
+        html += '</select></div>';
+        html += '<div class="modal-btns">';
+        html += '<button class="btn-secondary btn-sm" id="var-modal-cancel">Cancel</button>';
+        html += '<button class="btn-primary btn-sm" id="var-modal-load">Load</button></div>';
+    }
+    md.innerHTML = html;
+    ov.appendChild(md);
+    document.body.appendChild(ov);
+
+    if (!isEmpty) {
+        var rows = md.querySelectorAll('.var-row');
+        for (var k = 0; k < rows.length; k++) {
+            rows[k].onclick = function() {
+                this.querySelector('input[type="radio"]').checked = true;
+                var allRows = md.querySelectorAll('.var-row');
+                for (var m = 0; m < allRows.length; m++) allRows[m].classList.remove('selected');
+                this.classList.add('selected');
+            };
+            rows[k].ondblclick = function() {
+                var vn = this.dataset.varname;
+                var xSel = document.getElementById('xaxis-select');
+                var xAxis = xSel ? xSel.value : '';
+                document.body.removeChild(ov);
+                showProgressOverlay('Loading ' + vn + '...', 0, 0, 0);
+                var params = { varName: vn };
+                if (xAxis) params.xAxisVar = xAxis;
+                sendAction('loadVariable', params);
+            };
+        }
+        if (rows.length > 0) rows[0].classList.add('selected');
+        document.getElementById('var-modal-load').onclick = function() {
+            var selected = md.querySelector('input[name="var-select"]:checked');
+            if (selected) {
+                var vn = selected.value;
+                var xSel = document.getElementById('xaxis-select');
+                var xAxis = xSel ? xSel.value : '';
+                document.body.removeChild(ov);
+                showProgressOverlay('Loading ' + vn + '...', 0, 0, 0);
+                var params = { varName: vn };
+                if (xAxis) params.xAxisVar = xAxis;
+                sendAction('loadVariable', params);
+            }
+        };
+    }
+    document.getElementById('var-modal-cancel').onclick = function() { document.body.removeChild(ov); };
+    ov.onclick = function(e) { if (e.target === ov) document.body.removeChild(ov); };
+    var escHandler = function(e) {
+        if (e.key === 'Escape') {
+            if (ov.parentElement) document.body.removeChild(ov);
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+/* ====================================================================
+   EXPORT MODAL
+   ==================================================================== */
+function showExportModal(info) {
+    var sugName = info.suggestedName || 'cosmicCorrectedData';
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    var md = document.createElement('div');
+    md.className = 'modal';
+    md.style.minWidth = '400px';
+    var html = '<div class="modal-title">Export to Workspace</div>';
+    html += '<div style="margin-bottom:16px;color:var(--text-secondary);font-size:14px;">Choose a variable name for corrected data:</div>';
+    html += '<div class="form-group"><label class="form-label">Variable Name</label>';
+    html += '<input type="text" class="form-input" id="export-name" value="' + sugName + '"></div>';
+    html += '<div class="modal-btns">';
+    html += '<button class="btn-secondary btn-sm" id="export-cancel">Cancel</button>';
+    html += '<button class="btn-primary btn-sm" id="export-confirm">Export</button></div>';
+    md.innerHTML = html;
+    ov.appendChild(md);
+    document.body.appendChild(ov);
+    document.getElementById('export-cancel').onclick = function() { ov.remove(); };
+    document.getElementById('export-confirm').onclick = function() {
+        var name = document.getElementById('export-name').value.trim();
+        if (!name) { showToast('warning', 'Missing Name', 'Please provide a variable name.'); return; }
+        ov.remove();
+        sendAction('doExport', { exportName: name });
+    };
+    ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+}
+
+/* ====================================================================
+   HELP MODAL (4 pages)
+   ==================================================================== */
+function showHelp() {
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    var md = document.createElement('div');
+    md.className = 'modal';
+    md.style.maxWidth = '520px';
+    var currentPage = 0;
+    var totalPages = 4;
+    var stepStyle = 'display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;';
+    var stepBadge = 'width:28px;height:28px;border-radius:50%;background:var(--accent-primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;';
+    var trBorder = 'padding:6px 0;border-top:1px solid var(--border-color);';
+    var pages = [
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Quick Start</div>' +
+        '<div style="' + stepStyle + '"><div style="' + stepBadge + '">1</div>' +
+        '<div><b>Load Data</b> &mdash; Click "Load Data" to select a spectral matrix from the MATLAB workspace. You can also choose an optional x-axis vector. Or try <b>"Demo data"</b> to explore.</div></div>' +
+        '<div style="' + stepStyle + '"><div style="' + stepBadge + '">2</div>' +
+        '<div><b>Tune Parameters</b> &mdash; Adjust derivative order, channels to remove, and threshold. The derivative chart updates instantly as you change values.</div></div>' +
+        '<div style="' + stepStyle + '"><div style="' + stepBadge + '">3</div>' +
+        '<div><b>Apply</b> &mdash; Click "Apply" to run the correction on all spectra. Detected spikes are replaced by linear interpolation.</div></div>' +
+        '<div style="display:flex;gap:12px;align-items:flex-start;"><div style="' + stepBadge + '">4</div>' +
+        '<div><b>Export</b> &mdash; Export the corrected data to the MATLAB workspace.</div></div></div>',
+
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Parameters</div>' +
+        '<div style="margin-bottom:14px;"><div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Derivative Order</div>' +
+        '<div>Order of the finite difference used for spike detection. <b>1st derivative</b> detects sharp jumps; higher orders detect more subtle features but are noisier.</div>' +
+        '<div style="font-size:13px;color:var(--text-tertiary);margin-top:4px;">Typical: 1 or 2</div></div>' +
+        '<div style="margin-bottom:14px;"><div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Channels to Remove</div>' +
+        '<div>Number of channels to expand on each side of a detected spike. Set higher if spikes affect neighboring channels.</div>' +
+        '<div style="font-size:13px;color:var(--text-tertiary);margin-top:4px;">Typical: 1&ndash;5</div></div>' +
+        '<div><div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Threshold</div>' +
+        '<div>Detection threshold for the absolute derivative. Points with |derivative| above this value are flagged as spikes. The auto-threshold provides a data-driven starting point.</div>' +
+        '<div style="font-size:13px;color:var(--text-tertiary);margin-top:4px;">Use the slider for coarse adjustment and nudge arrows for fine-tuning.</div></div></div>',
+
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Chart Tools</div>' +
+        '<div style="font-size:14px;color:var(--text-tertiary);margin-bottom:12px;">The circular badges above the spectra chart control viewing modes.</div>' +
+        '<table style="width:100%;font-size:14px;border-collapse:collapse;">' +
+        '<tr><td style="padding:8px 0;font-weight:600;color:var(--text-primary);width:40%;">Reset view</td><td style="padding:8px 0;">Reset zoom and pan to fit all data.</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Show all spectra</td><td style="' + trBorder + '">Overlay all individual spectra behind the mean. For large datasets a dialog lets you subsample.</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Signal-by-signal</td><td style="' + trBorder + '">Switch to individual spectrum view. The derivative chart shows the selected signal\'s derivative.</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Signal navigation</td><td style="' + trBorder + '">Use arrows to step through spectra. Click the index to jump to a specific sample.</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">+ menu</td><td style="' + trBorder + '">Toggle dark mode or open this help.</td></tr>' +
+        '</table></div>',
+
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Shortcuts &amp; Tips</div>' +
+        '<table style="width:100%;font-size:14px;border-collapse:collapse;">' +
+        '<tr><td style="padding:6px 0;font-weight:600;color:var(--text-primary);width:40%;">Ctrl + D</td><td style="padding:6px 0;">Toggle dark mode</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Mouse wheel</td><td style="' + trBorder + '">Zoom in/out on chart</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Click + drag</td><td style="' + trBorder + '">Pan across chart</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Double-click chart</td><td style="' + trBorder + '">Reset zoom to fit all data</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Resize handle</td><td style="' + trBorder + '">Drag the divider between panels to resize</td></tr>' +
+        '</table>' +
+        '<div style="margin-top:14px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;font-size:13px;color:var(--text-secondary);line-height:1.6;">' +
+        '<b style="color:var(--text-primary);">Tip:</b> The derivative chart shows where spikes are detected in real time. Adjust the <b>threshold</b> until only genuine cosmic peaks are above the line, not real spectral features.' +
+        '</div></div>'
+    ];
+
+    function buildHTML() {
+        var h = '<div class="modal-title">Cosmic Peak Correction &mdash; Help</div>';
+        for (var i = 0; i < totalPages; i++) {
+            h += '<div class="help-page' + (i === currentPage ? ' active' : '') + '" id="help-page-' + i + '">' + pages[i] + '</div>';
+        }
+        h += '<div class="help-dots">';
+        for (var i = 0; i < totalPages; i++) {
+            h += '<div class="help-dot' + (i === currentPage ? ' active' : '') + '" data-page="' + i + '"></div>';
+        }
+        h += '</div><div class="modal-btns">';
+        if (currentPage > 0) h += '<button class="btn-secondary btn-sm" id="help-prev">Previous</button>';
+        if (currentPage < totalPages - 1) h += '<button class="btn-primary btn-sm" id="help-next">Next</button>';
+        else h += '<button class="btn-primary btn-sm" id="help-close">Close</button>';
+        h += '</div>';
+        return h;
+    }
+    function render() {
+        md.innerHTML = buildHTML();
+        var dots = md.querySelectorAll('.help-dot');
+        for (var i = 0; i < dots.length; i++) {
+            dots[i].onclick = function() { currentPage = parseInt(this.dataset.page); render(); };
+        }
+        var prevBtn = document.getElementById('help-prev');
+        var nextBtn = document.getElementById('help-next');
+        var closeBtn = document.getElementById('help-close');
+        if (prevBtn) prevBtn.onclick = function() { currentPage--; render(); };
+        if (nextBtn) nextBtn.onclick = function() { currentPage++; render(); };
+        if (closeBtn) closeBtn.onclick = function() { ov.remove(); };
+    }
+    md.innerHTML = '';
+    ov.appendChild(md);
+    document.body.appendChild(ov);
+    render();
+    ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+}
+
+/* ====================================================================
+   TOAST NOTIFICATIONS
+   ==================================================================== */
+function showToast(type, title, message, duration) {
+    duration = duration || 4000;
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    var icons = { success: '&#10003;', error: '&#10007;', info: '&#8505;', warning: '&#9888;' };
+    toast.innerHTML =
+        '<div class="toast-icon">' + (icons[type] || '&#8226;') + '</div>' +
+        '<div class="toast-content"><div class="toast-title">' + title + '</div>' +
+        '<div class="toast-message">' + message + '</div></div>' +
+        '<button class="toast-close" onclick="this.parentElement.remove()">&#215;</button>';
+    container.appendChild(toast);
+    setTimeout(function() {
+        toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+        setTimeout(function() { if (toast.parentElement) toast.remove(); }, 300);
+    }, duration);
+}
+
+/* ====================================================================
+   STATUS BAR
+   ==================================================================== */
+function setStatus(type, message) {
+    var ind = document.getElementById('status-indicator');
+    document.getElementById('status-message').textContent = message || '';
+    ind.className = 'status-indicator';
+    if (type === 'error') ind.classList.add('error');
+    else if (type === 'processing' || type === 'loading') ind.classList.add('processing');
+}
+
+/* ====================================================================
+   CANVAS 2D DRAWING UTILITIES
+   ==================================================================== */
+function getColors() {
+    var cs = getComputedStyle(document.documentElement);
+    return {
+        spectrum: cs.getPropertyValue('--spectrum-color').trim(),
+        meanSpectrum: cs.getPropertyValue('--mean-spectrum-color').trim(),
+        corrected: cs.getPropertyValue('--corrected-color').trim(),
+        derivative: cs.getPropertyValue('--derivative-color').trim(),
+        threshold: cs.getPropertyValue('--threshold-color').trim(),
+        allSpectra: cs.getPropertyValue('--all-spectra-color').trim(),
+        grid: cs.getPropertyValue('--grid-color').trim(),
+        text: cs.getPropertyValue('--axis-text').trim()
+    };
+}
+
+function updateLegendSwatches() {
+    var c = getColors();
+    var s;
+    s = document.getElementById('swatch-spectrum'); if (s) s.style.background = c.spectrum;
+    s = document.getElementById('swatch-corrected'); if (s) s.style.background = c.corrected;
+    s = document.getElementById('swatch-derivative'); if (s) s.style.background = c.derivative;
+    s = document.getElementById('swatch-threshold'); if (s) s.style.background = c.threshold;
+}
+
+function setupCanvas(canvasId) {
+    var canvas = document.getElementById(canvasId);
+    var rect = canvas.parentElement.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    var w = Math.round(rect.width);
+    var h = Math.round(rect.height);
+    if (w < 10 || h < 10) return null;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx: ctx, w: w, h: h };
+}
+
+function getDataRange(datasets) {
+    var mn = Infinity, mx = -Infinity;
+    for (var d = 0; d < datasets.length; d++) {
+        var arr = datasets[d];
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i] < mn) mn = arr[i];
+            if (arr[i] > mx) mx = arr[i];
+        }
+    }
+    if (mn === Infinity) { mn = 0; mx = 1; }
+    var pad = (mx - mn) * 0.05 || 0.1;
+    return { min: mn - pad, max: mx + pad };
+}
+
+function drawGrid(ctx, w, h, xMin, xMax, yMin, yMax, colors, xLabel, yLabel) {
+    var m = MARGIN;
+    var pw = w - m.left - m.right;
+    var ph = h - m.top - m.bottom;
+    ctx.strokeStyle = colors.grid; ctx.lineWidth = 1;
+    for (var i = 0; i <= 6; i++) {
+        var xPx = m.left + pw * i / 6;
+        ctx.beginPath(); ctx.moveTo(xPx, m.top); ctx.lineTo(xPx, m.top + ph); ctx.stroke();
+    }
+    for (var j = 0; j <= 4; j++) {
+        var yPx = m.top + ph - ph * j / 4;
+        ctx.beginPath(); ctx.moveTo(m.left, yPx); ctx.lineTo(m.left + pw, yPx); ctx.stroke();
+    }
+    ctx.strokeStyle = colors.text; ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.moveTo(m.left, m.top + ph); ctx.lineTo(m.left + pw, m.top + ph);
+    ctx.moveTo(m.left, m.top); ctx.lineTo(m.left, m.top + ph);
+    ctx.stroke(); ctx.globalAlpha = 1.0;
+    ctx.fillStyle = colors.text;
+    ctx.font = '13px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var i = 0; i <= 6; i++) {
+        var xVal = xMin + (xMax - xMin) * i / 6;
+        ctx.fillText(xVal.toFixed(0), m.left + pw * i / 6, m.top + ph + 5);
+    }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (var j = 0; j <= 4; j++) {
+        var yVal = yMin + (yMax - yMin) * j / 4;
+        var lbl;
+        if (Math.abs(yVal) < 1000 && Math.abs(yVal) > 0.01) lbl = yVal.toFixed(2);
+        else lbl = yVal.toExponential(1);
+        ctx.fillText(lbl, m.left - 5, m.top + ph - ph * j / 4);
+    }
+    ctx.fillStyle = colors.text; ctx.globalAlpha = 0.6;
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(xLabel || 'Channel', m.left + pw / 2, m.top + ph + 22);
+    ctx.globalAlpha = 1.0;
+    ctx.save();
+    ctx.fillStyle = colors.text; ctx.globalAlpha = 0.6;
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.translate(12, m.top + ph / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yLabel || 'Intensity', 0, 0);
+    ctx.restore(); ctx.globalAlpha = 1.0;
+    return { plotW: pw, plotH: ph };
+}
+
+function drawLine(ctx, xData, yData, xMin, xMax, yMin, yMax, pw, ph, color, lw, dash) {
+    var m = MARGIN;
+    var xR = (xMax - xMin) || 1;
+    var yR = (yMax - yMin) || 1;
+    ctx.strokeStyle = color; ctx.lineWidth = lw || 1.5;
+    if (dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+    var iStart = 0, iEnd = xData.length - 1;
+    while (iStart < xData.length && xData[iStart] < xMin) iStart++;
+    while (iEnd >= 0 && xData[iEnd] > xMax) iEnd--;
+    if (iStart > 0) iStart--;
+    if (iEnd < xData.length - 1) iEnd++;
+    var visibleCount = iEnd - iStart + 1;
+    var maxPoints = pw * 2;
+    ctx.beginPath();
+    if (visibleCount > maxPoints && visibleCount > 4) {
+        var bucketSize = visibleCount / (maxPoints / 2);
+        var started = false;
+        for (var b = 0; b < maxPoints / 2; b++) {
+            var bStart = iStart + Math.floor(b * bucketSize);
+            var bEnd = Math.min(iStart + Math.floor((b + 1) * bucketSize), iEnd + 1);
+            var minY = Infinity, maxY = -Infinity, minI = bStart, maxI = bStart;
+            for (var j = bStart; j < bEnd; j++) {
+                if (yData[j] < minY) { minY = yData[j]; minI = j; }
+                if (yData[j] > maxY) { maxY = yData[j]; maxI = j; }
+            }
+            var pts = minI < maxI ? [minI, maxI] : [maxI, minI];
+            for (var k = 0; k < 2; k++) {
+                var x = m.left + (xData[pts[k]] - xMin) / xR * pw;
+                var y = m.top + ph - (yData[pts[k]] - yMin) / yR * ph;
+                if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+            }
+        }
+    } else {
+        var started = false;
+        for (var i = iStart; i <= iEnd; i++) {
+            var x = m.left + (xData[i] - xMin) / xR * pw;
+            var y = m.top + ph - (yData[i] - yMin) / yR * ph;
+            if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        }
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+}
+
+/* ====================================================================
+   CHART RENDERING
+   ==================================================================== */
+function getAutoView(chartType) {
+    if (chartType === 'spectra') {
+        var allY = [];
+        if (showAllSpectra && allSpectra.length > 0) {
+            for (var i = 0; i < allSpectra.length; i += showEveryN) allY.push(allSpectra[i]);
+        } else if (meanSpectrum.length > 0) {
+            allY.push(meanSpectrum);
+        }
+        /* In signal mode, always include the selected signal */
+        if (signalMode && allSpectra.length > 0) {
+            var sigIdx = getActualSignalIndex();
+            allY.push(allSpectra[sigIdx]);
+            if (allCorrected.length > sigIdx) allY.push(allCorrected[sigIdx]);
+        }
+        if (allCorrected.length > 0) {
+            for (var i = 0; i < allCorrected.length; i += showEveryN) allY.push(allCorrected[i]);
+        } else if (correctedMean.length > 0) {
+            allY.push(correctedMean);
+        }
+        if (allY.length === 0 && meanSpectrum.length > 0) allY.push(meanSpectrum);
+        var yr = getDataRange(allY);
+        return { xMin: wavelength[0], xMax: wavelength[wavelength.length - 1], yMin: yr.min, yMax: yr.max };
+    } else {
+        var deriv = cachedDerivMax.length > 0 ? cachedDerivMax :
+                    (signalMode && allSpectra.length > 0 ? computeSignalDerivative(currentSignal - 1) : computeMeanDerivative());
+        if (deriv.length === 0) return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+        var yr = getDataRange([deriv]);
+        var thresh = getCurrentParams().threshold;
+        if (thresh > yr.max) yr.max = thresh * 1.1;
+        if (sortByMax) {
+            return { xMin: 0.5, xMax: deriv.length + 0.5, yMin: 0, yMax: yr.max };
+        }
+        var dw = getDerivativeWavelength();
+        return { xMin: dw[0], xMax: dw[dw.length - 1], yMin: 0, yMax: yr.max };
+    }
+}
+
+function renderSpectraChart() {
+    var canvas = document.getElementById('spectra-canvas');
+    var emptyEl = document.getElementById('spectra-empty');
+    if (meanSpectrum.length === 0 && allSpectra.length === 0) {
+        canvas.style.display = 'none'; emptyEl.style.display = 'flex';
+        document.getElementById('spectra-legend').style.display = 'none';
+        return;
+    }
+    emptyEl.style.display = 'none'; canvas.style.display = 'block';
+    document.getElementById('spectra-legend').style.display = 'flex';
+
+    var c = setupCanvas('spectra-canvas');
+    if (!c) return;
+    var colors = getColors();
+    c.ctx.clearRect(0, 0, c.w, c.h);
+
+    var view = spectraView || getAutoView('spectra');
+    var layout = drawGrid(c.ctx, c.w, c.h, view.xMin, view.xMax, view.yMin, view.yMax, colors);
+
+    var hasCorrected = allCorrected.length > 0 || correctedMean.length > 0;
+
+    /* --- Original spectra --- */
+    if (!showCorrectedOnly || !hasCorrected) {
+        if (showAllSpectra && allSpectra.length > 0) {
+            /* Draw all individual spectra */
+            for (var i = 0; i < allSpectra.length; i += showEveryN) {
+                drawLine(c.ctx, wavelength, allSpectra[i], view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.allSpectra, 0.5);
+            }
+        } else if (meanSpectrum.length > 0) {
+            /* Fallback: draw mean if "show all" is off or allSpectra not available */
+            drawLine(c.ctx, wavelength, meanSpectrum, view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.spectrum, 1.5);
+        }
+        /* In signal mode, highlight the selected signal bold */
+        if (signalMode && allSpectra.length > 0) {
+            var sigIdx = getActualSignalIndex();
+            drawLine(c.ctx, wavelength, allSpectra[sigIdx], view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.spectrum, 2);
+        }
+    }
+
+    /* --- Corrected spectra --- */
+    if (hasCorrected) {
+        if (showAllSpectra && allCorrected.length > 0) {
+            /* Draw all individual corrected spectra */
+            for (var i = 0; i < allCorrected.length; i += showEveryN) {
+                drawLine(c.ctx, wavelength, allCorrected[i], view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.corrected, showCorrectedOnly ? 0.6 : 1.0);
+            }
+        } else if (correctedMean.length > 0) {
+            /* Fallback: draw corrected mean */
+            drawLine(c.ctx, wavelength, correctedMean, view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.corrected, 1.5);
+        }
+        /* In signal mode, highlight the selected corrected signal bold */
+        if (signalMode && allCorrected.length > 0) {
+            var sigIdx = getActualSignalIndex();
+            drawLine(c.ctx, wavelength, allCorrected[sigIdx], view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.corrected, 2.5);
+        }
+    }
+
+    /* Update legend label */
+    var lbl = document.getElementById('legend-spectrum-label');
+    if (lbl) {
+        if (signalMode) lbl.textContent = 'Signal ' + currentSignal + '/' + nSamples;
+        else if (showAllSpectra) lbl.textContent = 'All spectra (' + nSamples + ')';
+        else lbl.textContent = 'Mean spectrum';
+    }
+}
+
+function renderDerivativeChart() {
+    var canvas = document.getElementById('deriv-canvas');
+    var emptyEl = document.getElementById('deriv-empty');
+    var clickHint = document.getElementById('deriv-click-hint');
+    if (allSpectra.length === 0 && meanSpectrum.length === 0) {
+        canvas.style.display = 'none'; emptyEl.style.display = 'flex';
+        document.getElementById('deriv-legend').style.display = 'none';
+        if (clickHint) clickHint.style.display = 'none';
+        return;
+    }
+    emptyEl.style.display = 'none'; canvas.style.display = 'block';
+    document.getElementById('deriv-legend').style.display = 'flex';
+    if (clickHint) clickHint.style.display = 'inline';
+
+    var c = setupCanvas('deriv-canvas');
+    if (!c) return;
+    var colors = getColors();
+    c.ctx.clearRect(0, 0, c.w, c.h);
+    var m = MARGIN;
+    var view = derivView || getAutoView('derivative');
+    var thresh = getCurrentParams().threshold;
+    var dw = getDerivativeWavelength();
+
+    /* Use cached pointwise-max across all samples (the bold line) */
+    var mainDeriv = cachedDerivMax;
+    if (mainDeriv.length === 0 || dw.length === 0) return;
+
+    /* Build x/y data: sort ON = max values sorted descending, sort OFF = channel order */
+    var xData, yData, xAxisLabel;
+    if (sortByMax) {
+        yData = mainDeriv.slice().sort(function(a, b) { return b - a; });
+        xData = [];
+        for (var i = 0; i < yData.length; i++) xData.push(i + 1);
+        xAxisLabel = 'Rank';
+    } else {
+        yData = mainDeriv;
+        xData = dw;
+        xAxisLabel = 'Channel';
+    }
+
+    var layout = drawGrid(c.ctx, c.w, c.h, view.xMin, view.xMax, view.yMin, view.yMax, colors, xAxisLabel, '|Derivative|');
+
+    /* Draw all individual sample derivatives as faded background (only in channel mode) */
+    if (!sortByMax && cachedAllDerivs.length > 0) {
+        var everyN = cachedAllDerivs.length > BIG_RENDER_THRESHOLD ? Math.ceil(cachedAllDerivs.length / 100) : 1;
+        for (var s = 0; s < cachedAllDerivs.length; s += everyN) {
+            drawLine(c.ctx, dw, cachedAllDerivs[s], view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.allSpectra, 0.5);
+        }
+    }
+
+    /* Draw bold main line: pointwise max across all samples */
+    drawLine(c.ctx, xData, yData, view.xMin, view.xMax, view.yMin, view.yMax, layout.plotW, layout.plotH, colors.derivative, 2);
+
+    /* Draw threshold line */
+    var yR = (view.yMax - view.yMin) || 1;
+    var threshY = m.top + layout.plotH - (thresh - view.yMin) / yR * layout.plotH;
+    if (threshY >= m.top && threshY <= m.top + layout.plotH) {
+        c.ctx.save();
+        c.ctx.strokeStyle = colors.threshold;
+        c.ctx.lineWidth = 2;
+        c.ctx.setLineDash([8, 4]);
+        c.ctx.beginPath();
+        c.ctx.moveTo(m.left, threshY);
+        c.ctx.lineTo(m.left + layout.plotW, threshY);
+        c.ctx.stroke();
+        c.ctx.restore();
+        c.ctx.fillStyle = colors.threshold;
+        c.ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+        c.ctx.textAlign = 'right';
+        c.ctx.textBaseline = 'bottom';
+        var affected = countAffectedSamples();
+        c.ctx.fillText(affected + '/' + nSamples + ' affected \u2014 Threshold: ' + fmtSci(thresh), m.left + layout.plotW - 5, threshY - 3);
+    }
+}
+
+function renderAll() {
+    renderSpectraChart();
+    renderDerivativeChart();
+}
+
+/* ====================================================================
+   ZOOM / PAN
+   ==================================================================== */
+function handleWheel(e, chartType) {
+    e.preventDefault();
+    var view = (chartType === 'spectra') ? spectraView : derivView;
+    if (!view) view = getAutoView(chartType);
+    var factor = e.deltaY > 0 ? 1.15 : 0.87;
+    var canvasId = (chartType === 'spectra') ? 'spectra-canvas' : 'deriv-canvas';
+    var canvas = document.getElementById(canvasId);
+    var rect = canvas.getBoundingClientRect();
+    var pw = rect.width - MARGIN.left - MARGIN.right;
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+    var fracX = Math.max(0, Math.min(1, (e.clientX - rect.left - MARGIN.left) / pw));
+    var fracY = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top - MARGIN.top) / ph));
+    var xAt = view.xMin + (view.xMax - view.xMin) * fracX;
+    var yAt = view.yMin + (view.yMax - view.yMin) * fracY;
+    var nxr = (view.xMax - view.xMin) * factor;
+    var nyr = (view.yMax - view.yMin) * factor;
+    var nv = { xMin: xAt - nxr * fracX, xMax: xAt + nxr * (1 - fracX), yMin: yAt - nyr * fracY, yMax: yAt + nyr * (1 - fracY) };
+    if (chartType === 'spectra') { spectraView = nv; renderSpectraChart(); }
+    else { derivView = nv; renderDerivativeChart(); }
+}
+
+function handleMouseDown(e, chartType) {
+    if (e.button !== 0) return;
+    var view = (chartType === 'spectra') ? spectraView : derivView;
+    if (!view) view = getAutoView(chartType);
+    panState = { chart: chartType, startX: e.clientX, startY: e.clientY, origView: JSON.parse(JSON.stringify(view)) };
+}
+
+function handleMouseMove(e) {
+    if (!panState) return;
+    var canvasId = (panState.chart === 'spectra') ? 'spectra-canvas' : 'deriv-canvas';
+    var canvas = document.getElementById(canvasId);
+    var rect = canvas.getBoundingClientRect();
+    var pw = rect.width - MARGIN.left - MARGIN.right;
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+    var ov = panState.origView;
+    var dx = e.clientX - panState.startX;
+    var dy = e.clientY - panState.startY;
+    var xShift = -(dx / pw) * (ov.xMax - ov.xMin);
+    var yShift = (dy / ph) * (ov.yMax - ov.yMin);
+    var nv = { xMin: ov.xMin + xShift, xMax: ov.xMax + xShift, yMin: ov.yMin + yShift, yMax: ov.yMax + yShift };
+    if (panState.chart === 'spectra') { spectraView = nv; renderSpectraChart(); }
+    else { derivView = nv; renderDerivativeChart(); }
+}
+
+function handleMouseUp(e) {
+    if (panState && e) {
+        var dx = e.clientX - panState.startX;
+        var dy = e.clientY - panState.startY;
+        if (Math.abs(dx) < 5 && Math.abs(dy) < 5 && panState.chart === 'derivative') {
+            setThresholdFromClick(e);
+        }
+    }
+    panState = null;
+}
+
+function resetZoom(chartType) {
+    if (chartType === 'spectra') { spectraView = null; renderSpectraChart(); }
+    else { derivView = null; renderDerivativeChart(); }
+}
+
+function bindChartEvents(wrapperId, chartType) {
+    var wrapper = document.getElementById(wrapperId);
+    wrapper.addEventListener('wheel', function(e) { handleWheel(e, chartType); }, { passive: false });
+    wrapper.addEventListener('mousedown', function(e) { handleMouseDown(e, chartType); });
+    wrapper.addEventListener('dblclick', function() { resetZoom(chartType); });
+}
+
+document.addEventListener('mousemove', function(e) { handleMouseMove(e); });
+document.addEventListener('mouseup', function(e) { handleMouseUp(e); });
+
+/* ====================================================================
+   RESIZE HANDLE
+   ==================================================================== */
+var isResizing = false;
+
+function initResizeHandle() {
+    var handle = document.getElementById('resize-handle');
+    var panel = document.getElementById('controls-panel');
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        isResizing = true;
+        handle.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        var newWidth = e.clientX;
+        if (newWidth < 220) newWidth = 220;
+        if (newWidth > 560) newWidth = 560;
+        panel.style.width = newWidth + 'px';
+        renderAll();
+    });
+    document.addEventListener('mouseup', function() {
+        if (isResizing) {
+            isResizing = false;
+            var h = document.getElementById('resize-handle');
+            if (h) h.classList.remove('active');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            renderAll();
+        }
+    });
+}
+
+/* ====================================================================
+   UTILITY
+   ==================================================================== */
+function toArray(obj) {
+    if (Array.isArray(obj)) return obj;
+    if (!obj) return [];
+    var arr = [];
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) arr.push(obj[keys[i]]);
+    return arr;
+}
+
+/* ====================================================================
+   SETUP + POLLING
+   ==================================================================== */
+function setup(component) {
+    htmlComponent = component;
+    component.addEventListener('DataChanged', function() {
+        handleMatlabResponse(component.Data);
+    });
+    setInterval(function() {
+        if (htmlComponent && htmlComponent.Data) handleMatlabResponse(htmlComponent.Data);
+    }, 150);
+    updateLegendSwatches();
+    renderAll();
+    setStatus('success', 'Interface ready');
+    /* Signal MATLAB that JS is ready to receive data */
+    sendAction('uiReady');
+}
+
+/* ====================================================================
+   INITIALIZATION
+   ==================================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    restoreDarkMode();
+    initThresholdTicks();
+    document.getElementById('slider-threshold').value = valueToThreshPos(100);
+    document.getElementById('val-threshold').addEventListener('change', function() { syncThresholdFromInput(); });
+    bindChartEvents('spectra-wrapper', 'spectra');
+    bindChartEvents('deriv-wrapper', 'derivative');
+    initResizeHandle();
+    var resizeTimeout = null;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() { renderAll(); }, 150);
+    });
+    updateLegendSwatches();
+    renderAll();
+});
+</script>
+</body>
+</html>

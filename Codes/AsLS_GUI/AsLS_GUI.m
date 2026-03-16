@@ -1,30 +1,91 @@
 classdef AsLS_GUI < matlab.apps.AppBase
-    % ASLS_GUI Interactive baseline correction using Asymmetric Least Squares
-    %
-    %   Estimates and removes baselines from spectral datasets using the
-    %   AsLS (Asymmetric Least Squares Smoothing) algorithm with two
-    %   parameters: lambda (smoothness) and p (asymmetry weight).
-    %
-    %   Uses the AppBase + uihtml architecture: HTML/CSS/JS frontend with
-    %   a MATLAB backend. Sliders update the preview in real time.
-    %
-    %   Usage:
-    %       app = AsLS_GUI();              % Empty (load from GUI)
-    %       app = AsLS_GUI(spectra);       % Direct numeric matrix
-    %       app = AsLS_GUI(s);             % Struct with .data, .wavelength
-    %
-    %   Inputs:
-    %       spectra    - Numeric matrix (samples x channels)
-    %       s          - Struct with fields:
-    %                    .data       - Numeric matrix (samples x channels)
-    %                    .wavelength - 1D vector (optional)
-    %                    .varName    - Character vector (optional)
-    %
-    %   See also: AsLSCorrector, DataValidator
-    %
-    % Author: Adrian Gomez-Sanchez
-    % Date: 2026-03-08
-    % License: Non-Commercial Copyleft (Lovelace's Square)
+% AsLS_GUI. Interactive baseline correction using Asymmetric Least Squares.
+%
+% Author: Adrian Gomez-Sanchez
+% Date Created: 2026-03-16
+% License: MIT
+% Reviewed by Lovelace's Square: Yes
+% Version: v 2.0
+%
+% Estimates and removes baselines from spectral datasets using the AsLS
+% (Asymmetric Least Squares Smoothing) algorithm. The method fits a smooth
+% baseline below the signal using penalized least squares with asymmetric
+% weights, controlled by two parameters: lambda (smoothness) and p
+% (asymmetry weight).
+%
+% The GUI provides real-time baseline preview as sliders are dragged, with
+% all spectra overlaid, signal-by-signal browsing, and before/after views.
+%
+% Uses the AppBase + uihtml architecture: HTML/CSS/JS frontend with a
+% MATLAB backend. Charts rendered with Canvas 2D (no MATLAB axes).
+%
+% ALGORITHM:
+%   Solves (I + lambda * D' * D) * z = y with asymmetric weights, where:
+%   - I is the identity matrix
+%   - D is a difference matrix of order d
+%   - y is the input signal
+%   - Weights are updated iteratively: w_i = p if y_i > z_i, else (1 - p)
+%
+% PARAMETERS:
+%   lambda   - Smoothness penalty (default: 1e6, range: 10^3 -- 10^8)
+%   p        - Asymmetry weight (default: 1e-3, range: 10^-4 -- 10^-1)
+%   maxIter  - Maximum iterations (default: 10)
+%
+% GUI FEATURES:
+%   - Real-time baseline preview as sliders are dragged
+%   - Logarithmic sliders for lambda and p with manual numeric input
+%   - Signal-by-signal navigation with bold highlight
+%   - Show all spectra overlay with subsampling for large datasets
+%   - Batch correction across all spectra with progress bar
+%   - Zoom (mouse wheel) and pan (click-drag) on both charts
+%   - Large dataset guard with subsampling options (> 1000 samples)
+%   - Export corrected data and baselines to MATLAB workspace
+%   - Dark mode toggle (Ctrl+D)
+%   - Resizable control/chart panels via drag handle
+%   - Demo data with synthetic spectra and polynomial baselines
+%
+% USAGE:
+%   app = AsLS_GUI();              % Empty (load from GUI)
+%   app = AsLS_GUI(spectra);       % Direct numeric matrix
+%   app = AsLS_GUI(s);             % Struct with .data, .wavelength
+%
+% INPUTS:
+%   spectra    - Numeric matrix [nSamples x nChannels]
+%   s          - Struct with fields:
+%                .data       - Numeric matrix [nSamples x nChannels]
+%                .wavelength - 1D vector [1 x nChannels] (optional)
+%                .varName    - Character vector (optional)
+%
+% PUBLIC API:
+%   app.setInputData(s)       - Load data programmatically
+%   app.getData()             - Retrieve corrected data (struct with
+%                               .data, .baselines, .wavelength)
+%   app.waitForOrchestrator() - Block until user clicks Next or closes
+%
+% EXAMPLE:
+%   % Generate demo data and launch GUI
+%   AsLS_test;
+%   s.data = spectra; s.wavelength = wavelength;
+%   app = AsLS_GUI(s);
+%
+%   % Use in a pipeline (orchestrator mode)
+%   app = AsLS_GUI(s);
+%   app.waitForOrchestrator();
+%   result = app.getData();
+%   correctedSpectra = result.data;
+%
+% REFERENCES:
+%   Eilers, P. H. C. (2003). A Perfect Smoother. Analytical Chemistry,
+%   75(14), 3631-3636.
+%
+%   Eilers, P. H. C. & Boelens, H. F. M. (2005). Baseline Correction
+%   with Asymmetric Least Squares Smoothing.
+%
+% See also: AsLSCorrector, DataValidator
+%
+% Disclaimer:
+%   Author and Lovelace's Square are not responsible for any issues,
+%   inaccuracies, or data loss arising from the use of this software.
 
     properties (Access = public)
         UIFigure        matlab.ui.Figure
@@ -42,7 +103,9 @@ classdef AsLS_GUI < matlab.apps.AppBase
         DataLoaded      logical = false
         IsClosed        logical = false
         IsWaiting       logical = false
+        NextClicked     logical = false
         ResponseCounter double = 0
+        PendingPayload  struct = struct.empty
     end
 
     methods (Access = public)
@@ -54,7 +117,9 @@ classdef AsLS_GUI < matlab.apps.AppBase
             if nargin >= 1
                 try
                     setInputData(app, inputData);
-                catch
+                catch ME
+                    warning('AsLS_GUI:inputError', ...
+                        'Could not load input data: %s', ME.message);
                 end
             end
 
@@ -139,6 +204,7 @@ classdef AsLS_GUI < matlab.apps.AppBase
 
                 action = char(string(data.action));
                 switch action
+                    case 'uiReady',             handleUiReady(app);
                     case 'loadData',            handleLoadData(app);
                     case 'loadVariable',        handleLoadVariable(app, data);
                     case {'preview', 'previewBaseline'}, handlePreview(app, data);
@@ -299,6 +365,12 @@ classdef AsLS_GUI < matlab.apps.AppBase
             payload.spectrum = app.OriginalData(idx, :);
             payload.wavelength = app.Wavelength;
             payload.nSamples = size(app.OriginalData, 1);
+            if ~isempty(app.CorrectedData)
+                payload.correctedSpectrum = app.CorrectedData(idx, :);
+            end
+            if ~isempty(app.BaselineData)
+                payload.baseline = app.BaselineData(idx, :);
+            end
             sendResponse(app, 'spectrumLoaded', payload);
         end
 
@@ -481,7 +553,16 @@ classdef AsLS_GUI < matlab.apps.AppBase
             sendResponse(app, 'dataLoaded', payload);
         end
 
+        function handleUiReady(app)
+            % Send any pending data that was queued during construction
+            if ~isempty(app.PendingPayload)
+                sendResponse(app, 'dataLoaded', app.PendingPayload);
+                app.PendingPayload = struct.empty;
+            end
+        end
+
         function handleNext(app)
+            app.NextClicked = true;
             if app.IsWaiting
                 try uiresume(app.UIFigure); catch; end
             end
@@ -642,17 +723,24 @@ classdef AsLS_GUI < matlab.apps.AppBase
             payload.p = 1e-3;
             payload.maxIter = 10;
 
+            % Store as pending (sent when JS fires 'uiReady') or send now
+            app.PendingPayload = payload;
             if ~isempty(app.HTMLComponent) && isvalid(app.HTMLComponent)
-                sendResponse(app, 'dataLoaded', payload);
+                try
+                    sendResponse(app, 'dataLoaded', payload);
+                catch
+                end
             end
         end
 
         function waitForOrchestrator(app)
+        % waitForOrchestrator  Block until user clicks Next or window closes.
             app.IsWaiting = true;
-            while ~app.IsClosed
+            app.NextClicked = false;
+            while ~app.IsClosed && ~app.NextClicked
                 uiwait(app.UIFigure);
-                if app.IsClosed, break; end
             end
+            app.IsWaiting = false;
         end
     end
 end

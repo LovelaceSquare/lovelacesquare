@@ -2342,6 +2342,8 @@ function setup(component) {
     updateLegendSwatches();
     renderAll();
     setStatus('success', 'Interface ready');
+    /* Signal MATLAB that JS is ready to receive data */
+    sendAction('uiReady');
 }
 
 /* ====================================================================

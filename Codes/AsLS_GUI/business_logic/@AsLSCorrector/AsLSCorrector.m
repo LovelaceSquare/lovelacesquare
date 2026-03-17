@@ -1,5 +1,29 @@
 ﻿classdef AsLSCorrector
-    % ASLSCORRECTOR Core AsLS operations used by the GUI backend.
+% AsLSCorrector. Core AsLS operations used by the GUI backend.
+%
+% Author: Adrian Gomez-Sanchez
+% Date Created: 2026-03-16
+% License: MIT
+% Reviewed by Lovelace's Square: Yes
+% Version: v 2.0
+%
+% Implements the Asymmetric Least Squares Smoothing algorithm (Eilers &
+% Boelens, 2005) for baseline estimation. Solves the penalized system
+% (I + lambda * D' * D) * z = y with iteratively reweighted asymmetric
+% weights. Supports preview on mean spectrum and batch correction.
+%
+% METHODS:
+%   previewBaseline - Compute baseline for the mean spectrum (real-time)
+%   correct         - Apply baseline correction to all spectra
+%
+% EXAMPLE:
+%   corrector = AsLSCorrector();
+%   [meanSpec, baseline] = corrector.previewBaseline(data, 1e6, 1e-3, struct.empty, false, 1e5, 10);
+%   [corrected, baselines] = corrector.correct(data, 1e6, 1e-3, struct.empty, false, 1e5, 10);
+%
+% Disclaimer:
+%   Author and Lovelace's Square are not responsible for any issues,
+%   inaccuracies, or data loss arising from the use of this software.
 
     methods (Access = public)
         function [meanSpectrum, baseline] = previewBaseline(obj, data, lambda, p, intervals, smoothEnabled, smoothLambda, maxIter)

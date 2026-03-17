@@ -24,7 +24,7 @@ Uses the **AppBase + uihtml** architecture: HTML/CSS/JS frontend with MATLAB bac
 Add the `AsLS` folder to your MATLAB path:
 
 ```matlab
-addpath('path/to/AsLS');
+addpath('path/to/AsLS_GUI');
 ```
 
 ## Quick Start
@@ -124,4 +124,4 @@ Adrian Gomez-Sanchez
 
 ## License
 
-Non-Commercial Copyleft (Lovelace's Square)
+MIT

@@ -1,5 +1,18 @@
 ﻿classdef DataValidator
-    % DATAVALIDATOR Validation utilities for AsLS baseline correction GUI.
+% DataValidator. Validation utilities for AsLS_GUI.
+%
+% Author: Adrian Gomez-Sanchez
+% Date Created: 2026-03-16
+% License: MIT
+% Reviewed by Lovelace's Square: Yes
+% Version: v 2.0
+%
+% Validates input data matrices and correction parameters before
+% processing. All methods are static.
+%
+% METHODS (Static):
+%   validateData   - Validate input data matrix (numeric, 2D, finite)
+%   validateParams - Validate lambda, p, maxIter parameters
 
     methods (Static)
         function [isValid, msg] = validateData(data)

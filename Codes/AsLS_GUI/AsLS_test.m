@@ -1,13 +1,26 @@
-%% AsLS_test - Generate synthetic spectra with baselines for testing
-% Creates spectra with polynomial baselines and Gaussian peaks.
-% Use as demo data for the AsLS Baseline Correction GUI.
+% AsLS_test. Generate synthetic spectra with baselines for testing.
 %
-% Output variables:
-%   spectra    - 30x500 matrix (samples x wavelengths)
-%   wavelength - 1x500 vector
-%
-% Authors: Adrian Gomez-Sanchez
+% Author: Adrian Gomez-Sanchez
+% Date Created: 2026-03-16
 % License: MIT
+% Reviewed by Lovelace's Square: Yes
+% Version: v 2.0
+%
+% Creates spectra with polynomial baselines and Gaussian peaks. Use as
+% demo data for the AsLS_GUI baseline correction tool.
+%
+% OUTPUT (left in workspace):
+%   spectra    - [3000 x 500] double (samples x channels)
+%   wavelength - [1 x 500] double
+%
+% EXAMPLE:
+%   AsLS_test;
+%   s.data = spectra; s.wavelength = wavelength;
+%   app = AsLS_GUI(s);
+%
+% Disclaimer:
+%   Author and Lovelace's Square are not responsible for any issues,
+%   inaccuracies, or data loss arising from the use of this script.
 
 rng(42);
 

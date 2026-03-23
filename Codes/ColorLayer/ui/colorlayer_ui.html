@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+/* =======================================================================
+   CSS VARIABLES — DESIGN SYSTEM
+   ======================================================================= */
+
+:root {
+    --bg-primary: #E8EBED; --bg-secondary: #F2F4F6; --bg-tertiary: #EBF0F4;
+    --text-primary: #1E293B; --text-secondary: #64748B; --text-tertiary: #94A3B8;
+    --border-color: #E2E8F0;
+    --accent-primary: #42A5F5; --accent-secondary: #90CAF9;
+    --accent-gradient-start: #90CAF9; --accent-gradient-end: #64B5F6;
+    --button-bg: #F1F5F9; --button-border: #E2E8F0; --button-text: #475569;
+    --shadow-color: rgba(0, 0, 0, 0.05); --shadow-accent: rgba(100, 181, 246, 0.3);
+    --color-success: #10B981; --color-error: #EF4444; --color-warning: #F59E0B; --color-info: #3B82F6;
+    /* Channel colors */
+    --ch-red: #EF4444; --ch-green: #22C55E; --ch-blue: #3B82F6;
+    --ch-yellow: #EAB308; --ch-cyan: #06B6D4; --ch-magenta: #D946EF;
+    /* Typography */
+    --font-xxs: 11px; --font-xs: 12px; --font-sm: 14px;
+    --font-base: 16px; --font-md: 18px; --font-xl: 24px;
+    /* Spacing */
+    --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px;
+    /* Radii */
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+}
+body.dark-mode {
+    --bg-primary: #0F172A; --bg-secondary: #1E293B; --bg-tertiary: #334155;
+    --text-primary: #F1F5F9; --text-secondary: #CBD5E1; --text-tertiary: #94A3B8;
+    --border-color: #334155;
+    --accent-primary: #60A5FA; --accent-secondary: #93C5FD;
+    --accent-gradient-start: #60A5FA; --accent-gradient-end: #3B82F6;
+    --button-bg: #334155; --button-border: #475569; --button-text: #E2E8F0;
+    --shadow-color: rgba(0, 0, 0, 0.3); --shadow-accent: rgba(59, 130, 246, 0.4);
+    --color-success: #34D399; --color-error: #F87171; --color-warning: #FBBF24; --color-info: #60A5FA;
+}
+
+/* =======================================================================
+   RESET & BASE
+   ======================================================================= */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: var(--bg-primary); color: var(--text-primary);
+    overflow: hidden; height: 100vh; display: flex; flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =======================================================================
+   LAYOUT — resizable 2-column
+   ======================================================================= */
+
+.main-content {
+    flex: 1; display: flex; overflow: hidden;
+}
+
+/* --- Left Panel (controls) --- */
+.controls-panel {
+    background: var(--bg-secondary); border-right: 1px solid var(--border-color);
+    overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;
+    width: 440px; min-width: 340px; flex-shrink: 0;
+}
+.controls-panel::-webkit-scrollbar { width: 8px; }
+.controls-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+/* --- Resize handle --- */
+.resize-handle {
+    width: 5px; cursor: col-resize; background: transparent;
+    flex-shrink: 0; position: relative; z-index: 10;
+    transition: background 0.2s ease;
+}
+.resize-handle:hover, .resize-handle.active {
+    background: var(--accent-primary);
+}
+
+/* --- Right Panel (charts) --- */
+.charts-panel {
+    flex: 1; display: flex; flex-direction: column; gap: 0;
+    padding: 8px; overflow: hidden;
+}
+
+/* --- Section wrapper (LASLS pattern) --- */
+.section {
+    background: var(--bg-tertiary); border-radius: 14px; padding: 14px;
+    border: 1px solid var(--border-color); box-shadow: 0 1px 4px var(--shadow-color);
+}
+.section-title {
+    font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+}
+
+/* =======================================================================
+   PANEL TOOLBAR (LASLS pattern)
+   ======================================================================= */
+
+.panel-toolbar {
+    display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+    padding-bottom: 4px; border-bottom: 1px solid var(--border-color);
+}
+.panel-toolbar-row {
+    display: flex; align-items: center; gap: 6px;
+}
+
+/* ---- Dropdown Buttons (LASLS pattern) ---- */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-btn {
+    background: linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end));
+    border: none; border-radius: 12px; padding: 8px 18px;
+    color: white; font-size: 16px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    box-shadow: 0 2px 8px var(--shadow-accent);
+    transition: all 0.2s ease;
+}
+.dropdown-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--shadow-accent); }
+.dropdown-btn .arrow { font-size: 10px; opacity: 0.8; }
+.dropdown-btn--secondary {
+    background: var(--button-bg); color: var(--button-text);
+    border: 1px solid var(--button-border); box-shadow: none;
+}
+.dropdown-btn--secondary:hover { border-color: var(--accent-primary); transform: translateY(-1px); }
+.dropdown-menu {
+    display: none; position: absolute; top: 100%; left: 0; margin-top: 4px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 12px; padding: 5px 0; min-width: 200px; z-index: 1000;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+.dropdown-menu.show { display: block; }
+.dropdown-item {
+    padding: 10px 18px; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; transition: background 0.15s ease;
+}
+.dropdown-item:hover { background: var(--bg-tertiary); }
+.dropdown-sep { height: 1px; background: var(--border-color); margin: 5px 0; }
+
+/* ---- Burger Menu (LASLS pattern) ---- */
+.burger-menu {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 12px; padding: 5px 0; min-width: 260px; z-index: 1000;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+.burger-menu.show { display: block; }
+.burger-toggle {
+    padding: 10px 18px; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.15s ease;
+}
+.burger-toggle:hover { background: var(--bg-tertiary); }
+.burger-toggle .check { color: var(--accent-primary); font-weight: 700; width: 22px; text-align: center; }
+.burger-section-label {
+    padding: 6px 18px 2px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-tertiary);
+}
+.burger-control {
+    padding: 4px 18px 6px;
+}
+.burger-control select {
+    width: 100%; padding: 6px 10px; font-size: 14px; border-radius: 8px;
+    border: 1px solid var(--border-color); background: var(--bg-primary);
+    color: var(--text-primary); cursor: pointer;
+}
+
+/* ---- Chart Badge Buttons (LASLS pattern) ---- */
+.chart-header-badges {
+    display: flex; gap: 10px; align-items: center;
+}
+.chart-badge-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--bg-secondary); border: 2px solid var(--border-color);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    font-size: 18px; font-weight: 600; color: var(--text-primary);
+    line-height: 1;
+}
+.chart-badge-btn:hover {
+    background: var(--accent-secondary); border-color: var(--accent-primary);
+    transform: scale(1.1);
+}
+
+/* ---- Buttons (LASLS pattern) ---- */
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-gradient-start) 0%, var(--accent-gradient-end) 100%);
+    border: none; border-radius: 12px; padding: 12px 18px; color: white;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 3px 10px var(--shadow-accent);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary:hover { box-shadow: 0 5px 16px var(--shadow-accent); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+    background: var(--button-bg); border: 1px solid var(--button-border);
+    border-radius: 12px; padding: 10px 18px; color: var(--button-text);
+    font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-secondary:hover { background: var(--accent-secondary); border-color: var(--accent-primary); color: var(--text-primary); transform: translateY(-1px); }
+
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.btn-sm { padding: 8px 14px; font-size: 14px; border-radius: 10px; }
+
+/* =======================================================================
+   CHANNEL PANELS — 3x2 grid (LASLS section style)
+   ======================================================================= */
+
+.channels-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.channel-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.channel-card:hover {
+    box-shadow: 0 2px 8px var(--shadow-color);
+}
+.channel-card.selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(66, 165, 245, 0.2);
+}
+.channel-card.disabled {
+    opacity: 0.45;
+}
+
+.channel-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.channel-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.channel-name {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.channel-enable {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+.channel-enable:checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+.channel-enable:checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.channel-controls {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 3px 6px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.channel-controls label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 30px;
+}
+
+.channel-controls select {
+    font-size: 14px;
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+/* ---- Sliders (LASLS pattern: 8px track, 22px thumb) ---- */
+
+input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 8px;
+    background: var(--slider-track, #CBD5E1); border-radius: 4px; outline: none;
+}
+body.dark-mode input[type="range"] {
+    background: #475569;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px;
+    background: var(--accent-primary); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(66, 165, 245, 0.4); transition: all 0.2s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; background: var(--accent-primary);
+    border-radius: 50%; cursor: pointer; border: none;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.slider-value {
+    font-size: 14px; font-weight: 600; color: var(--accent-primary);
+    font-family: 'SF Mono','Consolas',monospace;
+    min-width: 38px;
+    text-align: right;
+}
+
+/* =======================================================================
+   GLOBAL OPTIONS
+   ======================================================================= */
+
+.option-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.option-row:last-child { margin-bottom: 0; }
+
+.option-row label {
+    font-size: 14px; color: var(--text-primary); min-width: 100px; font-weight: 500;
+}
+
+.option-row select {
+    flex: 1; font-size: 14px; padding: 6px 10px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 8px; color: var(--text-primary); cursor: pointer;
+}
+
+.checkbox-row {
+    display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px;
+}
+.checkbox-row:last-child { margin-bottom: 0; }
+
+.checkbox-row input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border-color); border-radius: 4px;
+    cursor: pointer; transition: all 0.2s ease;
+    position: relative; flex-shrink: 0;
+}
+.checkbox-row input[type="checkbox"]:checked {
+    background: var(--accent-primary); border-color: var(--accent-primary);
+}
+.checkbox-row input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute; left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid white; border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* =======================================================================
+   RIGHT PANEL — CANVAS (LASLS chart-container pattern)
+   ======================================================================= */
+
+.chart-container {
+    flex: 1; background: var(--bg-secondary); border-radius: 12px; padding: 8px 10px;
+    border: 1px solid var(--border-color); box-shadow: 0 1px 4px var(--shadow-color);
+    display: flex; flex-direction: column; min-height: 0; margin-bottom: 6px;
+}
+.chart-container:last-child { margin-bottom: 0; }
+
+.chart-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px; flex-shrink: 0;
+}
+
+.chart-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+.chart-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 12px; font-weight: 500;
+    background: var(--bg-tertiary); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s ease; user-select: none;
+}
+.badge:hover { transform: scale(1.08); }
+.badge.disabled {
+    opacity: 0.35;
+}
+
+.badge-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.canvas-wrapper {
+    flex: 1; position: relative; min-height: 0; cursor: grab;
+}
+.canvas-wrapper:active { cursor: grabbing; }
+
+.canvas-wrapper canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+}
+
+/* Histogram panel (right panel, below composite) */
+.histogram-panel {
+    background: var(--bg-secondary); border-radius: 12px;
+    padding: 8px 12px; border: 1px solid var(--border-color);
+    box-shadow: 0 1px 4px var(--shadow-color);
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+/* =======================================================================
+   STATUS BAR (LASLS pattern)
+   ======================================================================= */
+
+.status-bar {
+    background: var(--bg-secondary); padding: 4px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+}
+.status-left {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--color-success); animation: pulse 2s infinite;
+}
+.status-dot.error { background: var(--color-error); animation: none; }
+.status-dot.processing { background: var(--color-warning); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* =======================================================================
+   MODALS
+   ======================================================================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+}
+
+.modal-header h3 {
+    font-size: var(--font-md);
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: var(--font-xl);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+.modal-close:hover { color: var(--text-primary); }
+
+.modal-body {
+    margin-bottom: var(--space-md);
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    flex-shrink: 0;
+}
+
+/* Variable list in modal */
+.var-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.var-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.var-item:hover {
+    background: var(--accent-secondary);
+}
+.var-item.selected {
+    border: 2px solid var(--accent-primary);
+}
+
+.var-name { font-weight: 600; font-size: var(--font-sm); }
+.var-info { font-size: var(--font-xs); color: var(--text-secondary); }
+
+/* Input field in modal */
+.modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-base);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+.modal-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+    outline: none;
+}
+
+.modal-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+.modal-row label {
+    min-width: 120px;
+    font-size: var(--font-sm);
+    color: var(--text-primary);
+}
+
+/* Help modal */
+.help-content {
+    font-size: var(--font-sm);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+.help-content h4 {
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-xs);
+    color: var(--accent-primary);
+}
+.help-content ul {
+    padding-left: var(--space-lg);
+    margin-bottom: var(--space-sm);
+}
+
+/* =======================================================================
+   TOAST NOTIFICATIONS
+   ======================================================================= */
+
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    pointer-events: none;
+}
+
+.toast {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: white;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    pointer-events: auto;
+    max-width: 350px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.toast.show { transform: translateX(0); }
+.toast-success { background: var(--color-success); }
+.toast-error { background: var(--color-error); }
+.toast-info { background: var(--accent-primary); }
+.toast-warning { background: var(--color-warning); color: #1E293B; }
+
+/* =======================================================================
+   EMPTY STATE
+   ======================================================================= */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: var(--space-md);
+    color: var(--text-tertiary);
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: var(--font-sm);
+    text-align: center;
+    max-width: 250px;
+}
+
+/* =======================================================================
+   HISTOGRAM
+   ======================================================================= */
+
+.histogram-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px var(--shadow-color);
+}
+
+.histogram-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs);
+}
+
+.histogram-header span {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.histogram-actions {
+    display: flex;
+    gap: var(--space-xs);
+}
+
+.histogram-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--button-border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: var(--font-xxs);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.histogram-btn:hover {
+    background: var(--accent-secondary);
+    color: var(--text-primary);
+}
+
+.histogram-canvas-wrapper {
+    position: relative;
+    height: 60px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.histogram-canvas-wrapper canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+
+.histogram-range {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--font-xxs);
+    color: var(--text-tertiary);
+}
+
+.histogram-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: 4px;
+}
+
+.histogram-controls label {
+    font-size: var(--font-xxs);
+    color: var(--text-secondary);
+    min-width: 28px;
+}
+
+.histogram-input {
+    width: 60px;
+    padding: 2px 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: var(--font-xxs);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+.histogram-input:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+.histogram-dual-slider {
+    flex: 1;
+    position: relative;
+    height: 16px;
+}
+
+.histogram-dual-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    top: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+    outline: none;
+}
+
+.histogram-dual-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    pointer-events: auto;
+}
+
+.histogram-dual-slider .track {
+    position: absolute;
+    height: 4px;
+    top: 6px;
+    left: 0;
+    right: 0;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+}
+
+.histogram-dual-slider .track-fill {
+    position: absolute;
+    height: 4px;
+    top: 6px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    opacity: 0.4;
+}
+
+/* =======================================================================
+   PIXEL READOUT
+   ======================================================================= */
+
+.pixel-readout {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-md);
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-height: 22px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.pixel-readout .coords {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 80px;
+}
+
+.pixel-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.pixel-values {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.pixel-val {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.pixel-val-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+/* =======================================================================
+   RESPONSIVE
+   ======================================================================= */
+
+@media (max-width: 900px) {
+    .controls-panel { width: 340px; min-width: 280px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="main-content">
+    <!-- ===== LEFT PANEL ===== -->
+    <div class="controls-panel">
+        <!-- Toolbar (LASLS pattern: dropdown rows) -->
+        <div class="panel-toolbar">
+            <div class="panel-toolbar-row">
+                <div class="dropdown">
+                    <div class="dropdown-btn" onclick="onLoadData()">
+                        Load Data <span class="arrow">&#9662;</span>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <div class="dropdown-btn dropdown-btn--secondary" onclick="toggleExportMenu()" id="exportMenuBtn">
+                        Export <span class="arrow">&#9662;</span>
+                    </div>
+                    <div class="dropdown-menu" id="exportMenu">
+                        <div class="dropdown-item" onclick="onExportPng(); closeAllMenus()">Export as PNG</div>
+                        <div class="dropdown-item" onclick="onExportEmf(); closeAllMenus()">Export as EMF</div>
+                        <div class="dropdown-item" onclick="openExportWsModal(); closeAllMenus()">Export to Workspace</div>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <div class="dropdown-btn dropdown-btn--secondary" onclick="togglePresetMenu()" id="presetMenuBtn">
+                        Preset <span class="arrow">&#9662;</span>
+                    </div>
+                    <div class="dropdown-menu" id="presetMenu">
+                        <div class="dropdown-item" onclick="onSavePreset(); closeAllMenus()">Save Preset</div>
+                        <div class="dropdown-item" onclick="onLoadPreset(); closeAllMenus()">Load Preset</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Channel Panels (6x1 list) -->
+        <div class="section">
+            <div class="section-title">Channels</div>
+            <div class="channels-grid" id="channelPanels"></div>
+        </div>
+
+        <!-- Background Transparency -->
+        <div class="section">
+            <div class="section-title">Background transparency</div>
+            <div class="option-row">
+                <div class="slider-container" style="flex:1">
+                    <input type="range" id="bgAlpha" min="0" max="1" step="0.01" value="0.7"
+                           oninput="onSettingsChanged(); document.getElementById('bgAlphaVal').textContent = parseFloat(this.value).toFixed(2)">
+                    <span class="slider-value" id="bgAlphaVal">0.70</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resize handle -->
+    <div class="resize-handle" id="resizeHandle"></div>
+
+    <!-- ===== RIGHT PANEL ===== -->
+    <div class="charts-panel">
+        <!-- Composite Preview -->
+        <div class="chart-container" id="compositeContainer">
+            <div class="chart-header">
+                <span class="chart-title">Composite Image</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div class="chart-badges" id="channelBadges"></div>
+                    <div class="dropdown" style="position:relative">
+                        <div class="chart-badge-btn" id="burger-btn" onclick="toggleBurgerMenu()" title="More options"><svg viewBox="0 0 24 24" width="20" height="20" style="fill:currentColor;display:block;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+                        <div class="burger-menu" id="burger-menu">
+                            <div class="burger-toggle" onclick="toggleDarkMode()">
+                                <span>Dark mode</span><span class="check" id="chk-darkMode"></span>
+                            </div>
+                            <div class="dropdown-sep"></div>
+                            <div class="burger-section-label">Normalization</div>
+                            <div class="burger-control">
+                                <select id="normMode" onchange="onSettingsChanged()">
+                                    <option value="None">None</option>
+                                    <option value="Global mat2gray" selected>Global mat2gray</option>
+                                    <option value="Per-channel normalize">Per-channel normalize</option>
+                                </select>
+                            </div>
+                            <div class="burger-toggle" onclick="document.getElementById('perMapNorm').checked = !document.getElementById('perMapNorm').checked; onSettingsChanged();">
+                                <span>Per-map pre-norm</span><span class="check" id="chk-perMapNorm"></span>
+                            </div>
+                            <input type="checkbox" id="perMapNorm" style="display:none" onchange="onSettingsChanged(); document.getElementById('chk-perMapNorm').textContent = this.checked ? '\u2713' : '';">
+                            <div class="dropdown-sep"></div>
+                            <div class="burger-toggle" onclick="toggleShowAllChannels()">
+                                <span>Show all channels</span><span class="check" id="chk-allChannels"></span>
+                            </div>
+                            <div class="burger-toggle" onclick="toggleColorblindMode()">
+                                <span>Colorblind palette</span><span class="check" id="chk-colorblind"></span>
+                            </div>
+                            <div class="dropdown-sep"></div>
+                            <div class="dropdown-item" onclick="openHelpModal(); closeBurger()">Help</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="canvas-wrapper" id="compositeWrapper">
+                <canvas id="compositeCanvas"></canvas>
+                <div class="empty-state" id="compositeEmpty">
+                    <div class="empty-state-icon">&#128444;</div>
+                    <div class="empty-state-text">Load data to generate composite preview</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pixel Readout -->
+        <div class="pixel-readout" id="pixelReadout">
+            <span class="coords" id="pixelCoords">--</span>
+            <div class="pixel-swatch" id="pixelSwatch"></div>
+            <div class="pixel-values" id="pixelValues">
+                <span style="color:var(--text-tertiary)">Hover over image for pixel values</span>
+            </div>
+        </div>
+
+        <!-- Histogram (below composite) -->
+        <div class="histogram-panel" id="histogramPanel">
+            <div class="histogram-header">
+                <span>Histogram</span>
+                <div class="histogram-actions">
+                    <button class="histogram-btn" onclick="autoStretch(2, 98)" title="Auto-stretch to 2nd-98th percentile">Auto 2-98%</button>
+                    <button class="histogram-btn" onclick="autoStretch(1, 99)" title="Auto-stretch to 1st-99th percentile">1-99%</button>
+                    <button class="histogram-btn" onclick="resetStretch()" title="Reset to full range">Reset</button>
+                </div>
+            </div>
+            <div class="histogram-canvas-wrapper">
+                <canvas id="histogramCanvas"></canvas>
+            </div>
+            <div class="histogram-range">
+                <span id="histMin" ondblclick="editHistLimit('min')" style="cursor:pointer;" title="Double-click to edit">0.00</span>
+                <span style="color:var(--text-secondary); font-weight:500">selected channel histogram</span>
+                <span id="histMax" ondblclick="editHistLimit('max')" style="cursor:pointer;" title="Double-click to edit">1.00</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Status Bar (LASLS pattern: outside main-content) -->
+<div class="status-bar">
+    <div class="status-left">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Ready</span>
+    </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Load Data Modal -->
+<div class="modal-overlay" id="loadModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Load Data</h3>
+            <button class="modal-close" onclick="closeModal('loadModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:var(--font-sm); color:var(--text-secondary); margin-bottom:var(--space-md)">
+                Select the maps variable (cell array) and optional background image.
+            </p>
+            <div style="margin-bottom:var(--space-sm); font-size:var(--font-xs); font-weight:600; color:var(--text-secondary)">
+                MAPS VARIABLE (cell array)
+            </div>
+            <div class="var-list" id="mdisVarList"></div>
+            <div style="margin-top:var(--space-md); margin-bottom:var(--space-sm); font-size:var(--font-xs); font-weight:600; color:var(--text-secondary)">
+                BACKGROUND VARIABLE (optional)
+            </div>
+            <div class="var-list" id="bgVarList"></div>
+            <div style="margin-top:var(--space-md); text-align:center">
+                <button class="btn-secondary" onclick="onLoadFromFile()" style="width:100%">Load from .mat file instead</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('loadModal')">Cancel</button>
+            <button class="btn-primary" onclick="confirmLoadVariable()">Load</button>
+        </div>
+    </div>
+</div>
+
+<!-- Limits Modal -->
+<div class="modal-overlay" id="limitsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Customize Slider Limits</h3>
+            <button class="modal-close" onclick="closeModal('limitsModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-row">
+                <label>Brightness Min</label>
+                <input class="modal-input" type="number" id="limBrightMin" value="0.1" step="0.1" style="width:100px">
+            </div>
+            <div class="modal-row">
+                <label>Brightness Max</label>
+                <input class="modal-input" type="number" id="limBrightMax" value="3.0" step="0.1" style="width:100px">
+            </div>
+            <div class="modal-row">
+                <label>Saturation Min</label>
+                <input class="modal-input" type="number" id="limSatMin" value="0.1" step="0.1" style="width:100px">
+            </div>
+            <div class="modal-row">
+                <label>Saturation Max</label>
+                <input class="modal-input" type="number" id="limSatMax" value="2.0" step="0.1" style="width:100px">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('limitsModal')">Cancel</button>
+            <button class="btn-primary" onclick="applyLimits()">Apply</button>
+        </div>
+    </div>
+</div>
+
+<!-- Export to Workspace Modal -->
+<div class="modal-overlay" id="exportWsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Export to Workspace</h3>
+            <button class="modal-close" onclick="closeModal('exportWsModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-row">
+                <label>Variable name</label>
+                <input class="modal-input" type="text" id="exportVarName" value="compositeImage" style="flex:1">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('exportWsModal')">Cancel</button>
+            <button class="btn-primary" onclick="confirmExportToWorkspace()">Export</button>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal (paginated) -->
+<div class="modal-overlay" id="helpModal">
+    <div class="modal-content" style="max-width:560px">
+        <div class="modal-header">
+            <h3 id="helpTitle">ColorLayer Help</h3>
+            <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
+        </div>
+        <div class="modal-body help-content" id="helpBody">
+            <!-- Pages injected by JS -->
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+            <span id="helpPageIndicator" style="font-size:var(--font-xs); color:var(--text-tertiary)"></span>
+            <div style="display:flex; gap:var(--space-sm)">
+                <button class="btn-secondary btn-sm" id="helpPrev" onclick="helpChangePage(-1)">Previous</button>
+                <button class="btn-primary btn-sm" id="helpNext" onclick="helpChangePage(1)">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+/* =======================================================================
+   STATE
+   ======================================================================= */
+
+var htmlComponent = null;
+var lastResponseCounter = -1;
+
+// Data state
+var mapData = [];        // Array of Float64Arrays, one per map
+var mapWidth = 0;
+var mapHeight = 0;
+var nMaps = 0;
+var bgData = null;       // Float64Array of RGB triplets (H*W*3), or null
+var hasBackground = false;
+var backgroundEnabled = true;  // Toggle via badge; only applies if hasBackground
+var dataLoaded = false;
+
+// Channel state
+// Default palette
+var DEFAULT_NAMES = ['Red', 'Green', 'Blue', 'Yellow', 'Cyan', 'Magenta'];
+var DEFAULT_COLORS = ['#EF4444', '#22C55E', '#3B82F6', '#EAB308', '#06B6D4', '#D946EF'];
+var DEFAULT_RGB = [[1,0,0], [0,1,0], [0,0,1], [1,1,0], [0,1,1], [1,0,1]];
+
+// Colorblind-safe palette (Wong 2011 / Okabe-Ito)
+var CB_NAMES = ['Orange', 'Sky Blue', 'Blush Green', 'Amber', 'Deep Blue', 'Vermilion'];
+var CB_COLORS = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00'];
+var CB_RGB = [[0.90,0.62,0], [0.34,0.71,0.91], [0,0.62,0.45], [0.94,0.89,0.26], [0,0.45,0.70], [0.84,0.37,0]];
+
+// Active palette (swapped by colorblind mode)
+var CHANNEL_NAMES = DEFAULT_NAMES.slice();
+var CHANNEL_COLORS = DEFAULT_COLORS.slice();
+var CHANNEL_RGB = DEFAULT_RGB.map(function(a) { return a.slice(); });
+var colorblindMode = false;
+var showAllChannels = false;
+var visibleChannels = 6;  // Set to Math.min(nMaps, 6) on data load
+
+var channels = [];
+for (var i = 0; i < 6; i++) {
+    channels.push({
+        enabled: false,
+        mapIndex: 1,
+        brightness: 1.0,
+        saturation: 2.0,  // Max = no clipping (sent as -1 to MATLAB)
+        gamma: 1.0,       // Gamma correction (1.0 = linear)
+        contrastMin: 0.0, // Min contrast limit (percentile-based)
+        contrastMax: 1.0   // Max contrast limit
+    });
+}
+
+var selectedChannel = -1;  // For solo preview
+
+// Zoom/pan state for composite canvas
+var zoomLevel = 1.0;
+var panX = 0;
+var panY = 0;
+var isDragging = false;
+var dragStartX = 0;
+var dragStartY = 0;
+var panStartX = 0;
+var panStartY = 0;
+
+// Slider limits
+var brightnessMin = 0.1;
+var brightnessMax = 3.0;
+var saturationMin = 0.1;
+var saturationMax = 2.0;
+
+// Load modal state
+var selectedMdisVar = '';
+var selectedBgVar = '';
+
+/* =======================================================================
+   MATLAB COMMUNICATION
+   ======================================================================= */
+
+function setup(component) {
+    htmlComponent = component;
+}
+
+function sendAction(action, extra) {
+    if (!htmlComponent) return;
+    var payload = { action: action, timestamp: Date.now() };
+    if (extra) {
+        for (var key in extra) {
+            if (extra.hasOwnProperty(key)) payload[key] = extra[key];
+        }
+    }
+    htmlComponent.Data = payload;
+}
+
+function handleMatlabResponse(data) {
+    if (!data || data.source !== 'matlab') return;
+    if (data.counter !== undefined && data.counter <= lastResponseCounter) return;
+    if (data.counter !== undefined) lastResponseCounter = data.counter;
+
+    switch (data.type) {
+        case 'ready':
+            setStatus('Ready', 'info');
+            break;
+        case 'showVarList':
+            populateVarList(data.variables);
+            break;
+        case 'dataLoaded':
+            onDataLoaded(data);
+            break;
+        case 'presetLoaded':
+            onPresetLoaded(data);
+            break;
+        case 'exportCompleted':
+            showToast(data.message, 'success');
+            setStatus(data.message, 'success');
+            break;
+        case 'statusUpdate':
+            showToast(data.message, 'info');
+            setStatus(data.message, 'info');
+            break;
+        case 'limitsUpdated':
+            brightnessMin = data.brightnessMin;
+            brightnessMax = data.brightnessMax;
+            saturationMin = data.saturationMin;
+            saturationMax = data.saturationMax;
+            updateSliderRanges();
+            showToast('Slider limits updated', 'success');
+            break;
+        case 'error':
+            showToast(data.message, 'error');
+            setStatus(data.message, 'error');
+            break;
+    }
+}
+
+// Polling for MATLAB responses (uihtml uses Data property)
+setInterval(function() {
+    if (!htmlComponent) return;
+    try {
+        var data = htmlComponent.Data;
+        handleMatlabResponse(data);
+    } catch(e) {}
+}, 100);
+
+/* =======================================================================
+   DATA LOADING
+   ======================================================================= */
+
+function onDataLoaded(data) {
+    // Store maps as Float64Arrays
+    nMaps = data.nMaps;
+    mapWidth = data.mapWidth;
+    mapHeight = data.mapHeight;
+    mapData = [];
+
+    var maps = data.maps;
+    for (var i = 0; i < nMaps; i++) {
+        var flat = maps[i];
+        // MATLAB sends as regular array; convert to Float64Array
+        if (flat instanceof Float64Array) {
+            mapData.push(flat);
+        } else {
+            mapData.push(new Float64Array(flat));
+        }
+    }
+
+    // Background
+    hasBackground = !!data.hasBackground;
+    if (hasBackground && data.background) {
+        var bg = data.background;
+        bgData = (bg instanceof Float64Array) ? bg : new Float64Array(bg);
+    } else {
+        bgData = null;
+    }
+
+    // Update channel settings from MATLAB
+    if (data.channels) {
+        for (var i = 0; i < 6; i++) {
+            var ch = data.channels[i];
+            if (ch) {
+                channels[i].enabled = !!ch.enabled;
+                channels[i].mapIndex = ch.mapIndex || 1;
+                channels[i].brightness = ch.brightness || 1.0;
+                channels[i].saturation = (ch.saturation < 0) ? saturationMax : (ch.saturation || saturationMax);
+            }
+        }
+    }
+
+    dataLoaded = true;
+    backgroundEnabled = true;
+    if (!showAllChannels) {
+        visibleChannels = Math.min(nMaps, 6);
+    }
+    closeModal('loadModal');
+
+    // Update UI
+    buildChannelPanels();
+    updateChannelBadges();
+
+    // Reset zoom
+    zoomLevel = 1.0;
+    panX = 0;
+    panY = 0;
+
+    // Hide empty state
+    document.getElementById('compositeEmpty').style.display = 'none';
+
+    // Render
+    computeAndRenderComposite();
+
+    setStatus('Loaded ' + nMaps + ' maps (' + mapWidth + 'x' + mapHeight + ')', 'success');
+    showToast('Data loaded: ' + nMaps + ' maps', 'success');
+}
+
+/* =======================================================================
+   CHANNEL PANEL UI
+   ======================================================================= */
+
+function buildChannelPanels() {
+    var container = document.getElementById('channelPanels');
+    container.innerHTML = '';
+
+    for (var i = 0; i < 6; i++) {
+        var ch = channels[i];
+        var card = document.createElement('div');
+        card.className = 'channel-card' + (ch.enabled ? '' : ' disabled') + (i === selectedChannel ? ' selected' : '');
+        card.setAttribute('data-ch', i);
+        if (i >= visibleChannels) {
+            card.style.display = 'none';
+        }
+        card.onclick = (function(idx) {
+            return function(e) {
+                // Don't trigger on control clicks
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+                selectChannel(idx);
+            };
+        })(i);
+
+        // Header
+        var header = document.createElement('div');
+        header.className = 'channel-header';
+
+        var swatch = document.createElement('div');
+        swatch.className = 'channel-swatch';
+        swatch.style.background = CHANNEL_COLORS[i];
+
+        var name = document.createElement('span');
+        name.className = 'channel-name';
+        name.textContent = CHANNEL_NAMES[i];
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'channel-enable';
+        cb.checked = ch.enabled;
+        cb.setAttribute('data-ch', i);
+        cb.onchange = (function(idx) {
+            return function() {
+                channels[idx].enabled = this.checked;
+                var card = this.closest('.channel-card');
+                if (this.checked) {
+                    card.classList.remove('disabled');
+                    selectChannel(idx, true);
+                } else {
+                    card.classList.add('disabled');
+                }
+                onSettingsChanged();
+            };
+        })(i);
+
+        header.appendChild(swatch);
+        header.appendChild(name);
+        header.appendChild(cb);
+        card.appendChild(header);
+
+        // Controls
+        var controls = document.createElement('div');
+        controls.className = 'channel-controls';
+
+        // Map selector
+        var mapLabel = document.createElement('label');
+        mapLabel.textContent = 'Map';
+
+        var mapSelect = document.createElement('select');
+        mapSelect.id = 'chMap' + i;
+        for (var m = 1; m <= nMaps; m++) {
+            var opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            if (m === ch.mapIndex) opt.selected = true;
+            mapSelect.appendChild(opt);
+        }
+        mapSelect.onchange = (function(idx) {
+            return function() {
+                channels[idx].mapIndex = parseInt(this.value);
+                onSettingsChanged();
+            };
+        })(i);
+
+        var mapDummy = document.createElement('span');
+        controls.appendChild(mapLabel);
+        controls.appendChild(mapSelect);
+        controls.appendChild(mapDummy);
+
+        // Brightness slider
+        var bLabel = document.createElement('label');
+        bLabel.textContent = 'Bright';
+
+        var bSliderC = document.createElement('div');
+        bSliderC.className = 'slider-container';
+
+        var bSlider = document.createElement('input');
+        bSlider.type = 'range';
+        bSlider.id = 'chBright' + i;
+        bSlider.min = brightnessMin;
+        bSlider.max = brightnessMax;
+        bSlider.step = 0.01;
+        bSlider.value = ch.brightness;
+
+        var bVal = document.createElement('span');
+        bVal.className = 'slider-value';
+        bVal.id = 'chBrightVal' + i;
+        bVal.textContent = ch.brightness.toFixed(2);
+
+        bSlider.oninput = (function(idx, valSpan) {
+            return function() {
+                channels[idx].brightness = parseFloat(this.value);
+                valSpan.textContent = parseFloat(this.value).toFixed(2);
+                onSettingsChanged();
+            };
+        })(i, bVal);
+
+        bSliderC.appendChild(bSlider);
+        bSliderC.appendChild(bVal);
+        controls.appendChild(bLabel);
+        controls.appendChild(bSliderC);
+        controls.appendChild(document.createElement('span'));
+
+        // Saturation slider
+        var sLabel = document.createElement('label');
+        sLabel.textContent = 'Satur';
+
+        var sSliderC = document.createElement('div');
+        sSliderC.className = 'slider-container';
+
+        var sSlider = document.createElement('input');
+        sSlider.type = 'range';
+        sSlider.id = 'chSat' + i;
+        sSlider.min = saturationMin;
+        sSlider.max = saturationMax;
+        sSlider.step = 0.01;
+        sSlider.value = ch.saturation;
+
+        var sVal = document.createElement('span');
+        sVal.className = 'slider-value';
+        sVal.id = 'chSatVal' + i;
+        sVal.textContent = ch.saturation >= saturationMax ? 'Inf' : ch.saturation.toFixed(2);
+
+        sSlider.oninput = (function(idx, valSpan) {
+            return function() {
+                channels[idx].saturation = parseFloat(this.value);
+                valSpan.textContent = parseFloat(this.value) >= saturationMax ? 'Inf' : parseFloat(this.value).toFixed(2);
+                onSettingsChanged();
+            };
+        })(i, sVal);
+
+        sSliderC.appendChild(sSlider);
+        sSliderC.appendChild(sVal);
+        controls.appendChild(sLabel);
+        controls.appendChild(sSliderC);
+        controls.appendChild(document.createElement('span'));
+
+        // Gamma slider
+        var gLabel = document.createElement('label');
+        gLabel.textContent = 'Gamma';
+
+        var gSliderC = document.createElement('div');
+        gSliderC.className = 'slider-container';
+
+        var gSlider = document.createElement('input');
+        gSlider.type = 'range';
+        gSlider.id = 'chGamma' + i;
+        gSlider.min = 0.1;
+        gSlider.max = 3.0;
+        gSlider.step = 0.01;
+        gSlider.value = ch.gamma;
+
+        var gVal = document.createElement('span');
+        gVal.className = 'slider-value';
+        gVal.id = 'chGammaVal' + i;
+        gVal.textContent = ch.gamma.toFixed(2);
+
+        gSlider.oninput = (function(idx, valSpan) {
+            return function() {
+                channels[idx].gamma = parseFloat(this.value);
+                valSpan.textContent = parseFloat(this.value).toFixed(2);
+                onSettingsChanged();
+            };
+        })(i, gVal);
+
+        gSliderC.appendChild(gSlider);
+        gSliderC.appendChild(gVal);
+        controls.appendChild(gLabel);
+        controls.appendChild(gSliderC);
+        controls.appendChild(document.createElement('span'));
+
+        card.appendChild(controls);
+        container.appendChild(card);
+    }
+}
+
+function selectChannel(idx, forceSelect) {
+    if (!forceSelect && selectedChannel === idx) {
+        selectedChannel = -1;  // Deselect
+    } else {
+        selectedChannel = idx;
+    }
+
+    // Update card selection visuals
+    var cards = document.querySelectorAll('.channel-card');
+    cards.forEach(function(card) {
+        var chIdx = parseInt(card.getAttribute('data-ch'));
+        if (chIdx === selectedChannel) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+
+syncHistogramControls();
+    renderHistogram();
+}
+
+function updateChannelBadges() {
+    var container = document.getElementById('channelBadges');
+    container.innerHTML = '';
+
+    for (var i = 0; i < visibleChannels; i++) {
+        var badge = document.createElement('span');
+        badge.className = 'badge' + (channels[i].enabled ? '' : ' disabled');
+        badge.title = (channels[i].enabled ? 'Disable ' : 'Enable ') + CHANNEL_NAMES[i];
+        badge.setAttribute('data-ch', i);
+        badge.onclick = (function(idx) {
+            return function(e) {
+                e.stopPropagation();
+                toggleChannelFromBadge(idx);
+            };
+        })(i);
+        var dot = document.createElement('span');
+        dot.className = 'badge-dot';
+        dot.style.background = CHANNEL_COLORS[i];
+        badge.appendChild(dot);
+        badge.appendChild(document.createTextNode(CHANNEL_NAMES[i]));
+        container.appendChild(badge);
+    }
+
+    // Background badge (only when background data exists)
+    if (hasBackground) {
+        var bgBadge = document.createElement('span');
+        bgBadge.className = 'badge badge-bg' + (backgroundEnabled ? '' : ' disabled');
+        bgBadge.title = (backgroundEnabled ? 'Disable' : 'Enable') + ' background';
+        bgBadge.onclick = function(e) {
+            e.stopPropagation();
+            backgroundEnabled = !backgroundEnabled;
+            onSettingsChanged();
+        };
+        var bgDot = document.createElement('span');
+        bgDot.className = 'badge-dot';
+        bgDot.style.background = '#9CA3AF';
+        bgBadge.appendChild(bgDot);
+        bgBadge.appendChild(document.createTextNode('Bg'));
+        container.appendChild(bgBadge);
+    }
+}
+
+function toggleChannelFromBadge(idx) {
+    channels[idx].enabled = !channels[idx].enabled;
+    // Sync the checkbox in the channel panel
+    var cb = document.querySelector('.channel-card[data-ch="' + idx + '"] .channel-enable');
+    if (cb) {
+        cb.checked = channels[idx].enabled;
+        var card = cb.closest('.channel-card');
+        if (channels[idx].enabled) { card.classList.remove('disabled'); }
+        else { card.classList.add('disabled'); }
+    }
+    // Auto-select this channel for histogram when enabling
+    if (channels[idx].enabled) {
+        selectChannel(idx, true);
+    }
+    onSettingsChanged();
+}
+
+function updateSliderRanges() {
+    for (var i = 0; i < 6; i++) {
+        var bSlider = document.getElementById('chBright' + i);
+        var sSlider = document.getElementById('chSat' + i);
+        if (bSlider) {
+            bSlider.min = brightnessMin;
+            bSlider.max = brightnessMax;
+            // Clamp value
+            var bv = parseFloat(bSlider.value);
+            if (bv < brightnessMin) bSlider.value = brightnessMin;
+            if (bv > brightnessMax) bSlider.value = brightnessMax;
+            channels[i].brightness = parseFloat(bSlider.value);
+        }
+        if (sSlider) {
+            sSlider.min = saturationMin;
+            sSlider.max = saturationMax;
+            var sv = parseFloat(sSlider.value);
+            if (sv < saturationMin) sSlider.value = saturationMin;
+            if (sv > saturationMax) sSlider.value = saturationMax;
+            channels[i].saturation = parseFloat(sSlider.value);
+        }
+    }
+    onSettingsChanged();
+}
+
+/* =======================================================================
+   JS COMPOSITING ENGINE
+   ======================================================================= */
+
+function mat2gray(arr) {
+    // Normalize array to [0,1]
+    var minVal = Infinity;
+    var maxVal = -Infinity;
+    for (var i = 0; i < arr.length; i++) {
+        if (arr[i] < minVal) minVal = arr[i];
+        if (arr[i] > maxVal) maxVal = arr[i];
+    }
+    var out = new Float64Array(arr.length);
+    if (maxVal === minVal) {
+        // Constant — return zeros
+        return out;
+    }
+    var range = maxVal - minVal;
+    for (var i = 0; i < arr.length; i++) {
+        out[i] = (arr[i] - minVal) / range;
+    }
+    return out;
+}
+
+function computeComposite() {
+    if (!dataLoaded || nMaps === 0) return null;
+
+    var totalPixels = mapWidth * mapHeight;
+    var R = new Float64Array(totalPixels);
+    var G = new Float64Array(totalPixels);
+    var B = new Float64Array(totalPixels);
+
+    var perMapNorm = document.getElementById('perMapNorm').checked;
+    var normMode = document.getElementById('normMode').value;
+
+    for (var c = 0; c < 6; c++) {
+        var ch = channels[c];
+        if (!ch.enabled) continue;
+        if (ch.mapIndex < 1 || ch.mapIndex > nMaps) continue;
+
+        // Get map data (already flat row-major)
+        var M = new Float64Array(mapData[ch.mapIndex - 1]);
+
+        // Per-map normalization
+        if (perMapNorm) {
+            M = mat2gray(M);
+        }
+
+        // Apply saturation clipping
+        if (ch.saturation < saturationMax) {
+            for (var p = 0; p < totalPixels; p++) {
+                if (M[p] > ch.saturation) M[p] = ch.saturation;
+            }
+        }
+
+        // Normalize to [0,1] if not already
+        if (!perMapNorm) {
+            M = mat2gray(M);
+        }
+
+        // Apply contrast limits (min/max clipping + rescale)
+        var cMin = ch.contrastMin;
+        var cMax = ch.contrastMax;
+        if (cMax > cMin && (cMin > 0 || cMax < 1)) {
+            var cRange = cMax - cMin;
+            for (var p = 0; p < totalPixels; p++) {
+                M[p] = Math.max(0, Math.min(1, (M[p] - cMin) / cRange));
+            }
+        }
+
+        // Apply gamma correction
+        var gamma = ch.gamma;
+        if (gamma !== 1.0 && gamma > 0) {
+            for (var p = 0; p < totalPixels; p++) {
+                M[p] = Math.pow(M[p], gamma);
+            }
+        }
+
+        // Apply brightness
+        var brightness = ch.brightness;
+
+        // Add to RGB channels based on channel color
+        var rgb = CHANNEL_RGB[c];
+        for (var p = 0; p < totalPixels; p++) {
+            var val = M[p] * brightness;
+            R[p] += val * rgb[0];
+            G[p] += val * rgb[1];
+            B[p] += val * rgb[2];
+        }
+    }
+
+    // Final normalization
+    switch (normMode) {
+        case 'None':
+            // Just clamp
+            for (var p = 0; p < totalPixels; p++) {
+                R[p] = Math.max(0, Math.min(1, R[p]));
+                G[p] = Math.max(0, Math.min(1, G[p]));
+                B[p] = Math.max(0, Math.min(1, B[p]));
+            }
+            break;
+
+        case 'Global mat2gray':
+            // Find global min/max across all channels
+            var gMin = Infinity, gMax = -Infinity;
+            for (var p = 0; p < totalPixels; p++) {
+                if (R[p] < gMin) gMin = R[p]; if (R[p] > gMax) gMax = R[p];
+                if (G[p] < gMin) gMin = G[p]; if (G[p] > gMax) gMax = G[p];
+                if (B[p] < gMin) gMin = B[p]; if (B[p] > gMax) gMax = B[p];
+            }
+            if (gMax > gMin) {
+                var gRange = gMax - gMin;
+                for (var p = 0; p < totalPixels; p++) {
+                    R[p] = (R[p] - gMin) / gRange;
+                    G[p] = (G[p] - gMin) / gRange;
+                    B[p] = (B[p] - gMin) / gRange;
+                }
+            }
+            break;
+
+        case 'Per-channel normalize':
+            R = mat2gray(R);
+            G = mat2gray(G);
+            B = mat2gray(B);
+            break;
+    }
+
+    // Background blending
+    if (hasBackground && backgroundEnabled && bgData) {
+        var alpha = parseFloat(document.getElementById('bgAlpha').value);
+        var oneMinusAlpha = 1 - alpha;
+        for (var p = 0; p < totalPixels; p++) {
+            var bgIdx = p * 3;
+            R[p] = Math.max(0, Math.min(1, alpha * R[p] + oneMinusAlpha * bgData[bgIdx]));
+            G[p] = Math.max(0, Math.min(1, alpha * G[p] + oneMinusAlpha * bgData[bgIdx + 1]));
+            B[p] = Math.max(0, Math.min(1, alpha * B[p] + oneMinusAlpha * bgData[bgIdx + 2]));
+        }
+    }
+
+    return { R: R, G: G, B: B };
+}
+
+/* =======================================================================
+   CANVAS RENDERING
+   ======================================================================= */
+
+function renderImageToCanvas(canvasId, rgbData, w, h, zoom, px, py) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas || !rgbData) return;
+
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var cw = canvas.clientWidth;
+    var ch = canvas.clientHeight;
+
+    canvas.width = cw * dpr;
+    canvas.height = ch * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Clear with background
+    var isDark = document.body.classList.contains('dark-mode');
+    ctx.fillStyle = isDark ? '#0F172A' : '#E8EBED';
+    ctx.fillRect(0, 0, cw, ch);
+
+    // Create ImageData at image resolution
+    var imgData = ctx.createImageData(w, h);
+    var pixels = imgData.data;
+    var totalPixels = w * h;
+
+    for (var p = 0; p < totalPixels; p++) {
+        var idx = p * 4;
+        pixels[idx]     = Math.round(rgbData.R[p] * 255);
+        pixels[idx + 1] = Math.round(rgbData.G[p] * 255);
+        pixels[idx + 2] = Math.round(rgbData.B[p] * 255);
+        pixels[idx + 3] = 255;
+    }
+
+    // Draw to offscreen canvas at full resolution
+    var offscreen = document.createElement('canvas');
+    offscreen.width = w;
+    offscreen.height = h;
+    var offCtx = offscreen.getContext('2d');
+    offCtx.putImageData(imgData, 0, 0);
+
+    // Calculate fit-to-canvas scale
+    var scaleX = cw / w;
+    var scaleY = ch / h;
+    var fitScale = Math.min(scaleX, scaleY);
+
+    // Apply zoom
+    var drawScale = fitScale * zoom;
+    var drawW = w * drawScale;
+    var drawH = h * drawScale;
+
+    // Center + pan
+    var drawX = (cw - drawW) / 2 + px;
+    var drawY = (ch - drawH) / 2 + py;
+
+    // Disable image smoothing for pixel-perfect zoom
+    ctx.imageSmoothingEnabled = zoom > 3 ? false : true;
+
+    ctx.drawImage(offscreen, drawX, drawY, drawW, drawH);
+
+    // Draw checkerboard border indicator for zoom level
+    if (zoom > 1.01) {
+        ctx.save();
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.fillStyle = isDark ? 'rgba(241,245,249,0.6)' : 'rgba(30,41,59,0.6)';
+        ctx.textAlign = 'right';
+        ctx.fillText(zoom.toFixed(1) + 'x', cw - 8, ch - 8);
+        ctx.restore();
+    }
+}
+
+function computeAndRenderComposite() {
+    if (!dataLoaded) return;
+    var rgb = computeComposite();
+    if (rgb) {
+        renderImageToCanvas('compositeCanvas', rgb, mapWidth, mapHeight, zoomLevel, panX, panY);
+    }
+    updateChannelBadges();
+}
+
+var renderTimer = null;
+
+function onSettingsChanged() {
+    if (!dataLoaded) return;
+    // Debounce rendering for slider moves
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(function() {
+        computeAndRenderComposite();
+        renderHistogram();
+    }, 16);  // ~60fps cap
+}
+
+/* =======================================================================
+   ZOOM / PAN (Composite Canvas)
+   ======================================================================= */
+
+(function() {
+    var wrapper;
+
+    function initZoomPan() {
+        wrapper = document.getElementById('compositeWrapper');
+        if (!wrapper) return;
+
+        wrapper.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            var zoomFactor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+            var oldZoom = zoomLevel;
+            zoomLevel = Math.max(0.1, Math.min(50, zoomLevel * zoomFactor));
+
+            // Zoom toward cursor: adjust pan so point under cursor stays fixed
+            var rect = wrapper.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+            var cx = rect.width / 2;
+            var cy = rect.height / 2;
+
+            var ratio = zoomLevel / oldZoom;
+            panX = (mx - cx) - ratio * ((mx - cx) - panX);
+            panY = (my - cy) - ratio * ((my - cy) - panY);
+
+            computeAndRenderComposite();
+        }, { passive: false });
+
+        wrapper.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            panStartX = panX;
+            panStartY = panY;
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            panX = panStartX + (e.clientX - dragStartX);
+            panY = panStartY + (e.clientY - dragStartY);
+            computeAndRenderComposite();
+        });
+
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+
+        wrapper.addEventListener('dblclick', function() {
+            zoomLevel = 1.0;
+            panX = 0;
+            panY = 0;
+            computeAndRenderComposite();
+        });
+    }
+
+    // Wait for DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initZoomPan);
+    } else {
+        initZoomPan();
+    }
+})();
+
+/* =======================================================================
+   TOOLBAR ACTIONS
+   ======================================================================= */
+
+function onLoadData() {
+    sendAction('loadData');
+    // Modal will be opened when we receive showVarList response
+}
+
+function populateVarList(variables) {
+    selectedMdisVar = '';
+    selectedBgVar = '';
+
+    var mdisListEl = document.getElementById('mdisVarList');
+    var bgListEl = document.getElementById('bgVarList');
+    mdisListEl.innerHTML = '';
+    bgListEl.innerHTML = '';
+
+    if (!variables || variables.length === 0) {
+        mdisListEl.innerHTML = '<div style="padding:12px; text-align:center; color:var(--text-tertiary); font-size:var(--font-sm)">No cell arrays or matrices found in workspace</div>';
+        bgListEl.innerHTML = '<div style="padding:12px; text-align:center; color:var(--text-tertiary); font-size:var(--font-sm)">No variables found</div>';
+    } else {
+        for (var i = 0; i < variables.length; i++) {
+            var v = variables[i];
+
+            // Add to mdis list (prefer cell arrays)
+            var item1 = createVarItem(v, 'mdis');
+            mdisListEl.appendChild(item1);
+
+            // Add to bg list (prefer matrices)
+            var item2 = createVarItem(v, 'bg');
+            bgListEl.appendChild(item2);
+        }
+    }
+
+    openModal('loadModal');
+}
+
+function createVarItem(v, listType) {
+    var item = document.createElement('div');
+    item.className = 'var-item';
+    item.setAttribute('data-name', v.name);
+    item.setAttribute('data-list', listType);
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'var-name';
+    nameSpan.textContent = v.name;
+
+    var infoSpan = document.createElement('span');
+    infoSpan.className = 'var-info';
+    infoSpan.textContent = v.class + ' [' + v.size + ']';
+
+    item.appendChild(nameSpan);
+    item.appendChild(infoSpan);
+
+    item.onclick = function() {
+        // Deselect siblings
+        var siblings = item.parentElement.querySelectorAll('.var-item');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        item.classList.add('selected');
+
+        if (listType === 'mdis') {
+            selectedMdisVar = v.name;
+        } else {
+            selectedBgVar = v.name;
+        }
+    };
+
+    return item;
+}
+
+function confirmLoadVariable() {
+    if (!selectedMdisVar) {
+        showToast('Please select a maps variable', 'warning');
+        return;
+    }
+    sendAction('loadVariable', {
+        mdisVar: selectedMdisVar,
+        bgVar: selectedBgVar
+    });
+}
+
+function onLoadFromFile() {
+    closeModal('loadModal');
+    sendAction('loadFromFile');
+}
+
+function onExportPng() {
+    if (!dataLoaded) { showToast('No data loaded', 'warning'); return; }
+    var payload = getExportPayload();
+    payload.format = 'png';
+    sendAction('exportImage', payload);
+}
+
+function onExportEmf() {
+    if (!dataLoaded) { showToast('No data loaded', 'warning'); return; }
+    var payload = getExportPayload();
+    payload.format = 'emf';
+    sendAction('exportImage', payload);
+}
+
+function onSavePreset() {
+    sendAction('savePreset', getExportPayload());
+}
+
+function onLoadPreset() {
+    sendAction('loadPreset');
+}
+
+function onPresetLoaded(data) {
+    if (data.channels) {
+        for (var i = 0; i < 6; i++) {
+            var ch = data.channels[i];
+            if (ch) {
+                channels[i].enabled = !!ch.enabled;
+                channels[i].mapIndex = ch.mapIndex || 1;
+                channels[i].brightness = ch.brightness || 1.0;
+                channels[i].saturation = (ch.saturation < 0) ? saturationMax : (ch.saturation || saturationMax);
+            }
+        }
+    }
+    if (data.normMode) {
+        document.getElementById('normMode').value = data.normMode;
+    }
+    if (data.perMapNorm !== undefined) {
+        document.getElementById('perMapNorm').checked = !!data.perMapNorm;
+    }
+    buildChannelPanels();
+    onSettingsChanged();
+    showToast('Preset loaded', 'success');
+}
+
+function getExportPayload() {
+    var chData = [];
+    for (var i = 0; i < 6; i++) {
+        var ch = channels[i];
+        chData.push({
+            enabled: ch.enabled,
+            mapIndex: ch.mapIndex,
+            brightness: ch.brightness,
+            saturation: ch.saturation >= saturationMax ? -1 : ch.saturation,
+            gamma: ch.gamma,
+            contrastMin: ch.contrastMin,
+            contrastMax: ch.contrastMax,
+            rgb: CHANNEL_RGB[i]
+        });
+    }
+    return {
+        channels: chData,
+        normMode: document.getElementById('normMode').value,
+        perMapNorm: document.getElementById('perMapNorm').checked,
+        bgAlpha: parseFloat(document.getElementById('bgAlpha').value),
+        backgroundEnabled: backgroundEnabled
+    };
+}
+
+/* =======================================================================
+   LIMITS
+   ======================================================================= */
+
+function openLimitsModal() {
+    document.getElementById('limBrightMin').value = brightnessMin;
+    document.getElementById('limBrightMax').value = brightnessMax;
+    document.getElementById('limSatMin').value = saturationMin;
+    document.getElementById('limSatMax').value = saturationMax;
+    openModal('limitsModal');
+}
+
+function applyLimits() {
+    var bMin = parseFloat(document.getElementById('limBrightMin').value);
+    var bMax = parseFloat(document.getElementById('limBrightMax').value);
+    var sMin = parseFloat(document.getElementById('limSatMin').value);
+    var sMax = parseFloat(document.getElementById('limSatMax').value);
+
+    if (bMin >= bMax || sMin >= sMax) {
+        showToast('Min values must be less than Max values', 'error');
+        return;
+    }
+
+    brightnessMin = bMin;
+    brightnessMax = bMax;
+    saturationMin = sMin;
+    saturationMax = sMax;
+
+    updateSliderRanges();
+    closeModal('limitsModal');
+
+    sendAction('updateLimits', {
+        brightnessMin: bMin, brightnessMax: bMax,
+        saturationMin: sMin, saturationMax: sMax
+    });
+}
+
+/* =======================================================================
+   EXPORT TO WORKSPACE
+   ======================================================================= */
+
+function openExportWsModal() {
+    if (!dataLoaded) {
+        showToast('No data loaded', 'warning');
+        return;
+    }
+    openModal('exportWsModal');
+}
+
+function confirmExportToWorkspace() {
+    var varName = document.getElementById('exportVarName').value.trim();
+    if (!varName) {
+        showToast('Please enter a variable name', 'warning');
+        return;
+    }
+    var payload = getExportPayload();
+    payload.varName = varName;
+    sendAction('exportToWorkspace', payload);
+    closeModal('exportWsModal');
+}
+
+/* =======================================================================
+   MODALS
+   ======================================================================= */
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function openHelpModal() {
+    helpCurrentPage = 0;
+    renderHelpPage();
+    openModal('helpModal');
+}
+
+// Close modal on overlay click
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// Escape key closes modals + menus
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var modals = document.querySelectorAll('.modal-overlay.active');
+        modals.forEach(function(m) { m.classList.remove('active'); });
+        closeAllMenus();
+    }
+});
+
+/* =======================================================================
+   DROPDOWN / BURGER MENU LOGIC (LASLS pattern)
+   ======================================================================= */
+
+function closeAllMenus() {
+    var menus = document.querySelectorAll('.dropdown-menu, .burger-menu');
+    for (var i = 0; i < menus.length; i++) menus[i].classList.remove('show');
+}
+
+function toggleBurgerMenu() {
+    var bm = document.getElementById('burger-menu');
+    var wasOpen = bm.classList.contains('show');
+    closeAllMenus();
+    if (!wasOpen) bm.classList.add('show');
+}
+
+function closeBurger() {
+    document.getElementById('burger-menu').classList.remove('show');
+}
+
+function toggleExportMenu() {
+    var menu = document.getElementById('exportMenu');
+    var wasOpen = menu.classList.contains('show');
+    closeAllMenus();
+    if (!wasOpen) menu.classList.add('show');
+}
+
+function togglePresetMenu() {
+    var menu = document.getElementById('presetMenu');
+    var wasOpen = menu.classList.contains('show');
+    closeAllMenus();
+    if (!wasOpen) menu.classList.add('show');
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#burger-btn') && !e.target.closest('.burger-menu') &&
+        !e.target.closest('#exportMenuBtn') && !e.target.closest('#exportMenu') &&
+        !e.target.closest('#presetMenuBtn') && !e.target.closest('#presetMenu')) {
+        closeAllMenus();
+    }
+});
+
+/* =======================================================================
+   TOAST NOTIFICATIONS
+   ======================================================================= */
+
+function showToast(message, type) {
+    type = type || 'info';
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    document.getElementById('toast-container').appendChild(toast);
+
+    setTimeout(function() { toast.classList.add('show'); }, 10);
+    setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 300);
+    }, 3000);
+}
+
+/* =======================================================================
+   STATUS BAR
+   ======================================================================= */
+
+function setStatus(message, type) {
+    document.getElementById('statusText').textContent = message;
+    var dot = document.getElementById('statusDot');
+    dot.className = 'status-dot';
+    if (type === 'error') dot.classList.add('error');
+    else if (type === 'success') dot.classList.add('success');
+}
+
+/* =======================================================================
+   DARK MODE (LASLS pattern)
+   ======================================================================= */
+
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    var isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('colorlayer_darkMode', isDark);
+    var chk = document.getElementById('chk-darkMode');
+    if (chk) chk.textContent = isDark ? '\u2713' : '';
+
+    // Re-render canvases with new background
+    if (dataLoaded) {
+        computeAndRenderComposite();
+    }
+    renderHistogram();
+}
+
+function toggleShowAllChannels() {
+    showAllChannels = !showAllChannels;
+    var chk = document.getElementById('chk-allChannels');
+    if (chk) chk.textContent = showAllChannels ? '\u2713' : '';
+    if (showAllChannels) {
+        visibleChannels = 6;
+    } else {
+        visibleChannels = Math.min(nMaps, 6);
+        // Disable channels beyond visible range
+        for (var i = visibleChannels; i < 6; i++) {
+            channels[i].enabled = false;
+        }
+    }
+    buildChannelPanels();
+    updateChannelBadges();
+    onSettingsChanged();
+}
+
+function toggleColorblindMode() {
+    colorblindMode = !colorblindMode;
+    var chk = document.getElementById('chk-colorblind');
+    if (chk) chk.textContent = colorblindMode ? '\u2713' : '';
+    if (colorblindMode) {
+        CHANNEL_NAMES = CB_NAMES.slice();
+        CHANNEL_COLORS = CB_COLORS.slice();
+        CHANNEL_RGB = CB_RGB.map(function(a) { return a.slice(); });
+    } else {
+        CHANNEL_NAMES = DEFAULT_NAMES.slice();
+        CHANNEL_COLORS = DEFAULT_COLORS.slice();
+        CHANNEL_RGB = DEFAULT_RGB.map(function(a) { return a.slice(); });
+    }
+    buildChannelPanels();
+    updateChannelBadges();
+    onSettingsChanged();
+    showToast(colorblindMode ? 'Colorblind palette enabled' : 'Default palette restored', 'info');
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        toggleDarkMode();
+    }
+});
+
+// Restore dark mode on load
+if (localStorage.getItem('colorlayer_darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+}
+(function() {
+    var chk = document.getElementById('chk-darkMode');
+    if (chk) chk.textContent = document.body.classList.contains('dark-mode') ? '\u2713' : '';
+})();
+
+/* =======================================================================
+   WINDOW RESIZE
+   ======================================================================= */
+
+window.addEventListener('resize', function() {
+    if (dataLoaded) {
+        computeAndRenderComposite();
+    }
+});
+
+/* =======================================================================
+   HISTOGRAM
+   ======================================================================= */
+
+function computeHistogram(arr, nBins) {
+    nBins = nBins || 256;
+    var bins = new Float64Array(nBins);
+    var minVal = Infinity, maxVal = -Infinity;
+    for (var i = 0; i < arr.length; i++) {
+        if (arr[i] < minVal) minVal = arr[i];
+        if (arr[i] > maxVal) maxVal = arr[i];
+    }
+    if (maxVal === minVal) {
+        bins[0] = arr.length;
+        return { bins: bins, min: minVal, max: maxVal };
+    }
+    var range = maxVal - minVal;
+    for (var i = 0; i < arr.length; i++) {
+        var idx = Math.floor(((arr[i] - minVal) / range) * (nBins - 1));
+        bins[idx]++;
+    }
+    return { bins: bins, min: minVal, max: maxVal };
+}
+
+function renderHistogram() {
+    var canvas = document.getElementById('histogramCanvas');
+    if (!canvas) return;
+
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var cw = canvas.clientWidth;
+    var ch = canvas.clientHeight;
+    canvas.width = cw * dpr;
+    canvas.height = ch * dpr;
+    ctx.scale(dpr, dpr);
+
+    var isDark = document.body.classList.contains('dark-mode');
+    ctx.fillStyle = isDark ? '#334155' : '#EBF0F4';
+    ctx.fillRect(0, 0, cw, ch);
+
+    if (!dataLoaded || selectedChannel < 0 || selectedChannel >= 6) {
+        // Draw placeholder text
+        ctx.fillStyle = isDark ? '#94A3B8' : '#94A3B8';
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Select a channel to view histogram', cw/2, ch/2 + 4);
+        document.getElementById('histMin').textContent = '--';
+        document.getElementById('histMax').textContent = '--';
+        return;
+    }
+
+    var chObj = channels[selectedChannel];
+    if (!chObj.enabled || chObj.mapIndex < 1 || chObj.mapIndex > nMaps) return;
+
+    // Get the raw map data for this channel
+    var rawMap = mapData[chObj.mapIndex - 1];
+    // Normalize it the same way compositing does
+    var perMapNorm = document.getElementById('perMapNorm').checked;
+    var M = new Float64Array(rawMap);
+    if (perMapNorm) { M = mat2gray(M); }
+
+    // Apply saturation clipping before histogram
+    if (chObj.saturation < saturationMax) {
+        for (var p = 0; p < M.length; p++) {
+            if (M[p] > chObj.saturation) M[p] = chObj.saturation;
+        }
+    }
+
+    if (!perMapNorm) { M = mat2gray(M); }
+
+    var nBins = Math.min(256, cw);
+    var hist = computeHistogram(M, nBins);
+
+    // Find max bin for scaling (use 99th percentile of bin heights to avoid spikes)
+    var sortedBins = Array.from(hist.bins).sort(function(a,b) { return a - b; });
+    var maxBin = sortedBins[Math.floor(sortedBins.length * 0.99)] || 1;
+
+    // Draw bars
+    var barWidth = cw / nBins;
+    var color = CHANNEL_COLORS[selectedChannel];
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.7;
+
+    for (var i = 0; i < nBins; i++) {
+        var barH = Math.min(ch, (hist.bins[i] / maxBin) * ch);
+        ctx.fillRect(i * barWidth, ch - barH, barWidth + 0.5, barH);
+    }
+
+    ctx.globalAlpha = 1.0;
+
+    // Draw contrast limit markers
+    var cMin = chObj.contrastMin;
+    var cMax = chObj.contrastMax;
+    if (cMin > 0 || cMax < 1) {
+        ctx.strokeStyle = isDark ? '#F1F5F9' : '#1E293B';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+
+        // Left marker (min)
+        var xMin = cMin * cw;
+        ctx.beginPath();
+        ctx.moveTo(xMin, 0);
+        ctx.lineTo(xMin, ch);
+        ctx.stroke();
+
+        // Right marker (max)
+        var xMax = cMax * cw;
+        ctx.beginPath();
+        ctx.moveTo(xMax, 0);
+        ctx.lineTo(xMax, ch);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+
+        // Shade excluded regions
+        ctx.fillStyle = isDark ? 'rgba(15,23,42,0.5)' : 'rgba(232,235,237,0.5)';
+        ctx.fillRect(0, 0, xMin, ch);
+        ctx.fillRect(xMax, 0, cw - xMax, ch);
+    }
+
+    // Draw draggable handle triangles at the bottom
+    var handleY = ch - 1;
+    var handleSize = 7;
+
+    // Left handle (contrastMin)
+    var xMinHandle = cMin * cw;
+    ctx.fillStyle = isDark ? '#F1F5F9' : '#1E293B';
+    ctx.beginPath();
+    ctx.moveTo(xMinHandle, handleY);
+    ctx.lineTo(xMinHandle - handleSize, handleY - handleSize * 1.4);
+    ctx.lineTo(xMinHandle + handleSize, handleY - handleSize * 1.4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right handle (contrastMax)
+    var xMaxHandle = cMax * cw;
+    ctx.beginPath();
+    ctx.moveTo(xMaxHandle, handleY);
+    ctx.lineTo(xMaxHandle - handleSize, handleY - handleSize * 1.4);
+    ctx.lineTo(xMaxHandle + handleSize, handleY - handleSize * 1.4);
+    ctx.closePath();
+    ctx.fill();
+
+    document.getElementById('histMin').textContent = hist.min.toFixed(3);
+    document.getElementById('histMax').textContent = hist.max.toFixed(3);
+}
+
+/* =======================================================================
+   PERCENTILE AUTO-STRETCH
+   ======================================================================= */
+
+function autoStretch(pLow, pHigh) {
+    if (!dataLoaded || selectedChannel < 0) {
+        showToast('Select a channel first', 'warning');
+        return;
+    }
+
+    var chObj = channels[selectedChannel];
+    if (!chObj.enabled || chObj.mapIndex < 1 || chObj.mapIndex > nMaps) {
+        showToast('Channel is not enabled or has no valid map', 'warning');
+        return;
+    }
+
+    // Get normalized map data
+    var rawMap = mapData[chObj.mapIndex - 1];
+    var M = new Float64Array(rawMap);
+    var perMapNorm = document.getElementById('perMapNorm').checked;
+    if (perMapNorm) { M = mat2gray(M); }
+
+    if (chObj.saturation < saturationMax) {
+        for (var p = 0; p < M.length; p++) {
+            if (M[p] > chObj.saturation) M[p] = chObj.saturation;
+        }
+    }
+    if (!perMapNorm) { M = mat2gray(M); }
+
+    // Sort a copy to find percentiles
+    var sorted = Array.from(M).sort(function(a,b) { return a - b; });
+    var n = sorted.length;
+    var lowIdx = Math.floor(n * pLow / 100);
+    var highIdx = Math.floor(n * pHigh / 100);
+    if (highIdx >= n) highIdx = n - 1;
+
+    var newMin = sorted[lowIdx];
+    var newMax = sorted[highIdx];
+
+    if (newMax <= newMin) {
+        showToast('Data range too narrow for stretch', 'warning');
+        return;
+    }
+
+    chObj.contrastMin = newMin;
+    chObj.contrastMax = newMax;
+
+    syncHistogramControls();
+    onSettingsChanged();
+    renderHistogram();
+    showToast(CHANNEL_NAMES[selectedChannel] + ': stretch ' + pLow + '-' + pHigh + '% applied', 'info');
+}
+
+function resetStretch() {
+    if (selectedChannel < 0) return;
+    channels[selectedChannel].contrastMin = 0.0;
+    channels[selectedChannel].contrastMax = 1.0;
+    syncHistogramControls();
+    onSettingsChanged();
+    renderHistogram();
+    showToast(CHANNEL_NAMES[selectedChannel] + ': contrast reset', 'info');
+}
+
+/* =======================================================================
+   HISTOGRAM INTERACTIVE CONTROLS
+   ======================================================================= */
+
+function syncHistogramControls() {
+    // Contrast limits are controlled via canvas drag handles only
+    if (selectedChannel < 0) return;
+    var ch = channels[selectedChannel];
+    document.getElementById('histMin').textContent = ch.contrastMin.toFixed(3);
+    document.getElementById('histMax').textContent = ch.contrastMax.toFixed(3);
+    renderHistogram();
+}
+
+function editHistLimit(which) {
+    if (selectedChannel < 0) return;
+    var ch = channels[selectedChannel];
+    var span = document.getElementById(which === 'min' ? 'histMin' : 'histMax');
+    var currentVal = which === 'min' ? ch.contrastMin : ch.contrastMax;
+
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentVal.toFixed(4);
+    input.min = 0;
+    input.max = 1;
+    input.step = 0.001;
+    input.style.cssText = 'width:60px;border:1px solid var(--accent-primary);background:var(--bg-tertiary);color:var(--text-primary);font-size:inherit;text-align:center;border-radius:4px;padding:1px 4px;outline:none;';
+
+    span.textContent = '';
+    span.appendChild(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+        var val = parseFloat(input.value);
+        if (isNaN(val)) val = currentVal;
+        val = Math.max(0, Math.min(1, val));
+        if (which === 'min') {
+            ch.contrastMin = Math.min(val, ch.contrastMax - 0.001);
+        } else {
+            ch.contrastMax = Math.max(val, ch.contrastMin + 0.001);
+        }
+        span.textContent = (which === 'min' ? ch.contrastMin : ch.contrastMax).toFixed(3);
+        onSettingsChanged();
+        renderHistogram();
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { input.blur(); }
+        if (e.key === 'Escape') { span.textContent = currentVal.toFixed(3); }
+    });
+}
+
+function updateHistTrackFill(minVal, maxVal) {
+    var fill = document.getElementById('histTrackFill');
+    if (!fill) return;
+    fill.style.left = (minVal * 100) + '%';
+    fill.style.width = ((maxVal - minVal) * 100) + '%';
+}
+
+function onHistSliderMinChanged(val) {
+    if (selectedChannel < 0) return;
+    var minVal = parseFloat(val);
+    var maxVal = channels[selectedChannel].contrastMax;
+
+    // Prevent crossing
+    if (minVal >= maxVal - 0.001) {
+        minVal = maxVal - 0.001;
+        document.getElementById('histSliderMin').value = minVal;
+    }
+
+    channels[selectedChannel].contrastMin = minVal;
+    document.getElementById('histClipMin').value = minVal.toFixed(3);
+    updateHistTrackFill(minVal, maxVal);
+    onSettingsChanged();
+    renderHistogram();
+}
+
+function onHistSliderMaxChanged(val) {
+    if (selectedChannel < 0) return;
+    var maxVal = parseFloat(val);
+    var minVal = channels[selectedChannel].contrastMin;
+
+    // Prevent crossing
+    if (maxVal <= minVal + 0.001) {
+        maxVal = minVal + 0.001;
+        document.getElementById('histSliderMax').value = maxVal;
+    }
+
+    channels[selectedChannel].contrastMax = maxVal;
+    document.getElementById('histClipMax').value = maxVal.toFixed(3);
+    updateHistTrackFill(minVal, maxVal);
+    onSettingsChanged();
+    renderHistogram();
+}
+
+/* --- Histogram canvas drag handles --- */
+(function() {
+    var histDragTarget = null; // 'min', 'max', or null
+    var histCanvas = null;
+
+    function initHistDrag() {
+        histCanvas = document.getElementById('histogramCanvas');
+        if (!histCanvas) return;
+
+        histCanvas.style.cursor = 'default';
+
+        histCanvas.addEventListener('mousedown', function(e) {
+            if (selectedChannel < 0) return;
+            var ch = channels[selectedChannel];
+            var rect = histCanvas.getBoundingClientRect();
+            var mx = (e.clientX - rect.left) / rect.width; // 0..1
+
+            // Hit test: which handle is closer?
+            var distMin = Math.abs(mx - ch.contrastMin);
+            var distMax = Math.abs(mx - ch.contrastMax);
+            var threshold = 0.04; // ~4% of width
+
+            if (distMin < threshold && distMin <= distMax) {
+                histDragTarget = 'min';
+            } else if (distMax < threshold) {
+                histDragTarget = 'max';
+            } else if (mx < (ch.contrastMin + ch.contrastMax) / 2) {
+                histDragTarget = 'min';
+            } else {
+                histDragTarget = 'max';
+            }
+            histCanvas.style.cursor = 'ew-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!histDragTarget || selectedChannel < 0) return;
+            var rect = histCanvas.getBoundingClientRect();
+            var mx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            var ch = channels[selectedChannel];
+
+            if (histDragTarget === 'min') {
+                ch.contrastMin = Math.min(mx, ch.contrastMax - 0.001);
+            } else {
+                ch.contrastMax = Math.max(mx, ch.contrastMin + 0.001);
+            }
+
+            syncHistogramControls();
+            onSettingsChanged();
+            renderHistogram();
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (histDragTarget) {
+                histDragTarget = null;
+                if (histCanvas) histCanvas.style.cursor = 'default';
+            }
+        });
+
+        // Cursor hint on hover
+        histCanvas.addEventListener('mousemove', function(e) {
+            if (histDragTarget) return;
+            if (selectedChannel < 0) { histCanvas.style.cursor = 'default'; return; }
+
+            var ch = channels[selectedChannel];
+            var rect = histCanvas.getBoundingClientRect();
+            var mx = (e.clientX - rect.left) / rect.width;
+
+            var distMin = Math.abs(mx - ch.contrastMin);
+            var distMax = Math.abs(mx - ch.contrastMax);
+            var threshold = 0.04;
+
+            if (distMin < threshold || distMax < threshold) {
+                histCanvas.style.cursor = 'ew-resize';
+            } else {
+                histCanvas.style.cursor = 'crosshair';
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHistDrag);
+    } else {
+        initHistDrag();
+    }
+})();
+
+function onHistClipInputChanged() {
+    if (selectedChannel < 0) return;
+    var minVal = parseFloat(document.getElementById('histClipMin').value);
+    var maxVal = parseFloat(document.getElementById('histClipMax').value);
+
+    // Validate
+    if (isNaN(minVal)) minVal = 0;
+    if (isNaN(maxVal)) maxVal = 1;
+    minVal = Math.max(0, Math.min(1, minVal));
+    maxVal = Math.max(0, Math.min(1, maxVal));
+
+    if (minVal >= maxVal) {
+        showToast('Min must be less than Max', 'warning');
+        syncHistogramControls();
+        return;
+    }
+
+    channels[selectedChannel].contrastMin = minVal;
+    channels[selectedChannel].contrastMax = maxVal;
+
+    document.getElementById('histSliderMin').value = minVal;
+    document.getElementById('histSliderMax').value = maxVal;
+    updateHistTrackFill(minVal, maxVal);
+    onSettingsChanged();
+    renderHistogram();
+}
+
+/* =======================================================================
+   PIXEL VALUE READOUT
+   ======================================================================= */
+
+(function() {
+    function initPixelReadout() {
+        var wrapper = document.getElementById('compositeWrapper');
+        if (!wrapper) return;
+
+        wrapper.addEventListener('mousemove', function(e) {
+            if (!dataLoaded || isDragging) return;
+
+            var canvas = document.getElementById('compositeCanvas');
+            var rect = canvas.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+            var cw = rect.width;
+            var ch = rect.height;
+
+            // Reverse the canvas rendering transform to get image pixel coords
+            var scaleX = cw / mapWidth;
+            var scaleY = ch / mapHeight;
+            var fitScale = Math.min(scaleX, scaleY) * zoomLevel;
+            var drawW = mapWidth * fitScale;
+            var drawH = mapHeight * fitScale;
+            var drawX = (cw - drawW) / 2 + panX;
+            var drawY = (ch - drawH) / 2 + panY;
+
+            var imgX = Math.floor((mx - drawX) / fitScale);
+            var imgY = Math.floor((my - drawY) / fitScale);
+
+            if (imgX < 0 || imgX >= mapWidth || imgY < 0 || imgY >= mapHeight) {
+                document.getElementById('pixelCoords').textContent = '--';
+                document.getElementById('pixelValues').innerHTML =
+                    '<span style="color:var(--text-tertiary)">Outside image</span>';
+                document.getElementById('pixelSwatch').style.background = 'transparent';
+                return;
+            }
+
+            document.getElementById('pixelCoords').textContent =
+                '(' + imgX + ', ' + imgY + ')';
+
+            // Get raw values from each enabled channel's source map
+            var pixIdx = imgY * mapWidth + imgX;
+            var html = '';
+            var rTotal = 0, gTotal = 0, bTotal = 0;
+
+            for (var c = 0; c < 6; c++) {
+                var ch = channels[c];
+                if (!ch.enabled || ch.mapIndex < 1 || ch.mapIndex > nMaps) continue;
+
+                var rawVal = mapData[ch.mapIndex - 1][pixIdx];
+                html += '<span class="pixel-val">' +
+                    '<span class="pixel-val-dot" style="background:' + CHANNEL_COLORS[c] + '"></span>' +
+                    rawVal.toFixed(3) + '</span>';
+            }
+
+            // Get composite RGB at this pixel from the last render
+            var compCanvas = document.getElementById('compositeCanvas');
+            var ctx = compCanvas.getContext('2d');
+            var dpr = window.devicePixelRatio || 1;
+            var pxData = ctx.getImageData(
+                Math.round(mx * dpr), Math.round(my * dpr), 1, 1
+            ).data;
+
+            document.getElementById('pixelSwatch').style.background =
+                'rgb(' + pxData[0] + ',' + pxData[1] + ',' + pxData[2] + ')';
+
+            html += '<span class="pixel-val" style="margin-left:4px; color:var(--text-tertiary)">' +
+                'RGB(' + pxData[0] + ',' + pxData[1] + ',' + pxData[2] + ')</span>';
+
+            document.getElementById('pixelValues').innerHTML = html;
+        });
+
+        wrapper.addEventListener('mouseleave', function() {
+            document.getElementById('pixelCoords').textContent = '--';
+            document.getElementById('pixelValues').innerHTML =
+                '<span style="color:var(--text-tertiary)">Hover over image for pixel values</span>';
+            document.getElementById('pixelSwatch').style.background = 'transparent';
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPixelReadout);
+    } else {
+        initPixelReadout();
+    }
+})();
+
+/* =======================================================================
+   HELP MODAL PAGINATION
+   ======================================================================= */
+
+var helpPages = [
+    {
+        title: 'Quick Start',
+        html: '<p>ColorLayer creates false-color composite images from multiple 2D maps using additive color blending.</p>' +
+              '<ul>' +
+              '<li><strong>Load Data</strong> &mdash; Select a cell array of 2D maps from your workspace or a .mat file.</li>' +
+              '<li><strong>Enable channels</strong> &mdash; Each color channel displays one of your maps. Only as many channels as maps are shown by default.</li>' +
+              '<li><strong>Adjust sliders</strong> &mdash; Brightness, saturation, and gamma update the composite in real time.</li>' +
+              '<li><strong>Export</strong> &mdash; Save as PNG, EMF (vector), or export the full-resolution composite to the workspace.</li>' +
+              '</ul>' +
+              '<h4>Channel Badges</h4>' +
+              '<p>The colored badges above the composite image are clickable &mdash; click to quickly enable or disable any channel. ' +
+              'If a background image is loaded, a <strong>Bg</strong> badge appears to toggle background blending.</p>'
+    },
+    {
+        title: 'Color Channels',
+        html: '<h4>Default Palette (Additive Blending)</h4>' +
+              '<ul>' +
+              '<li><strong style="color:#EF4444">Red</strong> [1,0,0] &rarr; R channel</li>' +
+              '<li><strong style="color:#22C55E">Green</strong> [0,1,0] &rarr; G channel</li>' +
+              '<li><strong style="color:#3B82F6">Blue</strong> [0,0,1] &rarr; B channel</li>' +
+              '<li><strong style="color:#EAB308">Yellow</strong> [1,1,0] &rarr; R+G channels</li>' +
+              '<li><strong style="color:#06B6D4">Cyan</strong> [0,1,1] &rarr; G+B channels</li>' +
+              '<li><strong style="color:#D946EF">Magenta</strong> [1,0,1] &rarr; R+B channels</li>' +
+              '</ul>' +
+              '<h4>Colorblind-Safe Palette</h4>' +
+              '<p>Enable <strong>Colorblind palette</strong> in the <strong>+</strong> menu to switch to the Okabe-Ito palette, ' +
+              'optimized for color vision deficiencies:</p>' +
+              '<ul>' +
+              '<li><strong style="color:#E69F00">Orange</strong>, <strong style="color:#56B4E9">Sky Blue</strong>, ' +
+              '<strong style="color:#009E73">Blush Green</strong>, <strong style="color:#F0E442">Amber</strong>, ' +
+              '<strong style="color:#0072B2">Deep Blue</strong>, <strong style="color:#D55E00">Vermilion</strong></li>' +
+              '</ul>'
+    },
+    {
+        title: 'Parameters',
+        html: '<h4>Per-Channel Controls</h4>' +
+              '<ul>' +
+              '<li><strong>Brightness</strong> &mdash; Multiplicative intensity scaling.</li>' +
+              '<li><strong>Saturation</strong> &mdash; Maximum clipping value (max position = no clipping).</li>' +
+              '<li><strong>Gamma</strong> &mdash; Nonlinear intensity transform (power law). &lt;1 brightens shadows, &gt;1 darkens them.</li>' +
+              '</ul>' +
+              '<h4>Global Options (in + menu)</h4>' +
+              '<ul>' +
+              '<li><strong>Normalization</strong> &mdash; How the final composite is scaled: None (clamp), Global mat2gray, Per-channel, or Per-map.</li>' +
+              '<li><strong>Per-map pre-norm</strong> &mdash; Normalize each map individually to [0,1] before compositing.</li>' +
+              '<li><strong>Show all channels</strong> &mdash; Show all 6 channel cards even if fewer maps are loaded.</li>' +
+              '</ul>' +
+              '<h4>Background</h4>' +
+              '<ul>' +
+              '<li><strong>Background transparency</strong> &mdash; Blend factor between composite and background image (1 = composite only, 0 = background only).</li>' +
+              '<li>Toggle the <strong>Bg</strong> badge above the image to enable/disable background blending.</li>' +
+              '</ul>'
+    },
+    {
+        title: 'Histogram & Interaction',
+        html: '<h4>Histogram</h4>' +
+              '<ul>' +
+              '<li>Click a channel card (or enable a channel) to see its intensity histogram below the composite.</li>' +
+              '<li><strong>Auto 2-98%</strong> &mdash; Percentile stretch that clips outliers (most useful).</li>' +
+              '<li><strong>1-99%</strong> &mdash; Wider percentile stretch for data with mild outliers.</li>' +
+              '<li><strong>Reset</strong> &mdash; Restore full contrast range [0, 1].</li>' +
+              '<li>Drag the triangle handles or use the dual slider to adjust contrast limits interactively.</li>' +
+              '<li>Type exact values in the Min/Max number inputs for precise control.</li>' +
+              '</ul>' +
+              '<h4>Pixel Inspector</h4>' +
+              '<ul>' +
+              '<li>Hover over the composite image to see per-channel raw values and RGB output.</li>' +
+              '<li>The color swatch shows the exact pixel color under the cursor.</li>' +
+              '</ul>'
+    },
+    {
+        title: 'Shortcuts & Tips',
+        html: '<h4>Keyboard Shortcuts</h4>' +
+              '<ul>' +
+              '<li><strong>Ctrl+D</strong> &mdash; Toggle dark mode</li>' +
+              '<li><strong>Mouse wheel</strong> &mdash; Zoom in/out on composite (toward cursor)</li>' +
+              '<li><strong>Click + drag</strong> &mdash; Pan the composite image</li>' +
+              '<li><strong>Double-click</strong> &mdash; Reset zoom to fit</li>' +
+              '</ul>' +
+              '<h4>Tips</h4>' +
+              '<ul>' +
+              '<li>Click a channel card to select it and view its histogram.</li>' +
+              '<li>Click the colored badges above the image to quickly toggle channels on/off.</li>' +
+              '<li>Use <strong>Slider Limits</strong> (in the + menu) to customize brightness and saturation ranges.</li>' +
+              '<li>Save/Load presets to reuse channel configurations across sessions.</li>' +
+              '<li>Drag the resize handle between panels to adjust the layout.</li>' +
+              '<li>Enable <strong>Colorblind palette</strong> for accessible colors.</li>' +
+              '</ul>'
+    }
+];
+
+var helpCurrentPage = 0;
+
+function renderHelpPage() {
+    var page = helpPages[helpCurrentPage];
+    document.getElementById('helpTitle').textContent = 'Help: ' + page.title;
+    document.getElementById('helpBody').innerHTML = page.html;
+    document.getElementById('helpPageIndicator').textContent =
+        (helpCurrentPage + 1) + ' / ' + helpPages.length;
+
+    var prevBtn = document.getElementById('helpPrev');
+    var nextBtn = document.getElementById('helpNext');
+
+    prevBtn.style.visibility = helpCurrentPage === 0 ? 'hidden' : 'visible';
+
+    if (helpCurrentPage === helpPages.length - 1) {
+        nextBtn.textContent = 'Done';
+        nextBtn.onclick = function() { closeModal('helpModal'); };
+    } else {
+        nextBtn.textContent = 'Next';
+        nextBtn.onclick = function() { helpChangePage(1); };
+    }
+}
+
+function helpChangePage(delta) {
+    helpCurrentPage = Math.max(0, Math.min(helpPages.length - 1, helpCurrentPage + delta));
+    renderHelpPage();
+}
+
+/* =======================================================================
+   RESIZE HANDLE (drag to resize panels)
+   ======================================================================= */
+
+(function() {
+    var handle, panel, isResizing = false, startX = 0, startWidth = 0;
+
+    function initResize() {
+        handle = document.getElementById('resizeHandle');
+        panel = document.querySelector('.controls-panel');
+        if (!handle || !panel) return;
+
+        handle.addEventListener('mousedown', function(e) {
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = panel.offsetWidth;
+            handle.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isResizing) return;
+            var dx = e.clientX - startX;
+            var newWidth = Math.max(280, Math.min(700, startWidth + dx));
+            panel.style.width = newWidth + 'px';
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isResizing) {
+                isResizing = false;
+                handle.classList.remove('active');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                // Re-render canvases after resize
+                if (dataLoaded) {
+                    computeAndRenderComposite();
+                            }
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initResize);
+    } else {
+        initResize();
+    }
+})();
+
+/* =======================================================================
+   INITIALIZATION
+   ======================================================================= */
+
+// Build initial empty channel panels
+buildChannelPanels();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crop Background</title>
+<style>
+/* ====================================================================
+   CSS Variables - Design System
+   ==================================================================== */
+:root {
+    --bg-primary: #E8EBED; --bg-secondary: #F2F4F6; --bg-tertiary: #EBF0F4;
+    --text-primary: #1E293B; --text-secondary: #64748B; --text-tertiary: #94A3B8;
+    --border-color: #E2E8F0;
+    --accent-primary: #42A5F5; --accent-secondary: #90CAF9;
+    --accent-gradient-start: #90CAF9; --accent-gradient-end: #64B5F6;
+    --button-bg: #F1F5F9; --button-border: #E2E8F0; --button-text: #475569;
+    --shadow-color: rgba(0, 0, 0, 0.05); --shadow-accent: rgba(100, 181, 246, 0.3);
+    --status-indicator: #10B981; --error-color: #EF4444; --warning-color: #F59E0B;
+    --canvas-bg: #FFFFFF;
+    --canvas-grid: rgba(0, 0, 0, 0.08);
+    --canvas-axis: #64748B;
+    --canvas-line: rgba(66, 165, 245, 1.0);
+    --canvas-line-alt: rgba(239, 68, 68, 0.9);
+    --grid-color: rgba(0, 0, 0, 0.08);
+    --axis-text: #64748B;
+}
+body.dark-mode {
+    --bg-primary: #0F172A; --bg-secondary: #1E293B; --bg-tertiary: #334155;
+    --text-primary: #F1F5F9; --text-secondary: #CBD5E1; --text-tertiary: #94A3B8;
+    --border-color: #334155;
+    --accent-primary: #60A5FA; --accent-secondary: #93C5FD;
+    --accent-gradient-start: #60A5FA; --accent-gradient-end: #3B82F6;
+    --button-bg: #334155; --button-border: #475569; --button-text: #E2E8F0;
+    --shadow-color: rgba(0, 0, 0, 0.3); --shadow-accent: rgba(59, 130, 246, 0.4);
+    --status-indicator: #34D399; --error-color: #F87171; --warning-color: #FBBF24;
+    --canvas-bg: #1E293B;
+    --canvas-grid: rgba(255, 255, 255, 0.08);
+    --canvas-axis: #94A3B8;
+    --canvas-line: rgba(96, 165, 250, 1.0);
+    --canvas-line-alt: rgba(248, 113, 113, 0.9);
+    --grid-color: rgba(255, 255, 255, 0.08);
+    --axis-text: #94A3B8;
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: var(--bg-primary); color: var(--text-primary);
+    overflow: hidden; height: 100vh; display: flex; flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ---- Main Layout (2-column) ---- */
+.main-content {
+    flex: 1; display: flex; gap: 0; overflow: hidden;
+}
+
+/* ---- Left Panel ---- */
+.controls-panel {
+    width: 416px; min-width: 280px; max-width: 600px;
+    background: var(--bg-secondary); border-right: 1px solid var(--border-color);
+    overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;
+    flex-shrink: 0;
+}
+.controls-panel::-webkit-scrollbar { width: 8px; }
+.controls-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+/* ---- Resize Handle ---- */
+.resize-handle {
+    width: 6px; cursor: col-resize; background: transparent;
+    flex-shrink: 0; position: relative; z-index: 10;
+    transition: background 0.2s ease;
+}
+.resize-handle:hover, .resize-handle.active {
+    background: var(--accent-primary);
+}
+.resize-handle::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px; height: 32px; border-radius: 1px;
+    background: var(--border-color);
+    transition: background 0.2s ease;
+}
+.resize-handle:hover::after, .resize-handle.active::after {
+    background: white;
+}
+
+/* ---- Right Panel ---- */
+.charts-panel {
+    flex: 1; display: flex; flex-direction: column; gap: 0; padding: 8px; overflow: hidden;
+}
+
+/* ---- Section ---- */
+.section {
+    background: var(--bg-tertiary); border-radius: 14px; padding: 14px;
+    border: 1px solid var(--border-color); box-shadow: 0 1px 4px var(--shadow-color);
+}
+.section-title {
+    font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+}
+
+/* ---- Buttons ---- */
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-gradient-start) 0%, var(--accent-gradient-end) 100%);
+    border: none; border-radius: 12px; padding: 12px 18px; color: white;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 3px 10px var(--shadow-accent);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary:hover { box-shadow: 0 5px 16px var(--shadow-accent); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+
+.btn-secondary {
+    background: var(--button-bg); border: 1px solid var(--button-border);
+    border-radius: 12px; padding: 10px 18px; color: var(--button-text);
+    font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-secondary:hover { background: var(--accent-secondary); border-color: var(--accent-primary); color: var(--text-primary); transform: translateY(-1px); }
+.btn-secondary:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.btn-sm { padding: 8px 14px; font-size: 14px; border-radius: 10px; }
+
+/* ---- Slider with nudge buttons ---- */
+.slider-group { margin-bottom: 0; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.slider-label { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+.slider-controls { display: flex; align-items: center; gap: 5px; }
+.slider-value {
+    font-size: 14px; font-weight: 600; color: var(--accent-primary);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 6px; padding: 3px 8px; width: 100px; text-align: right;
+}
+.slider-value:focus { outline: none; border-color: var(--accent-primary); }
+.btn-nudge {
+    width: 24px; height: 18px; background: var(--button-bg); border: 1px solid var(--border-color);
+    border-radius: 4px; font-size: 10px; line-height: 1; cursor: pointer;
+    color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+    padding: 0; transition: all 0.15s ease;
+}
+.btn-nudge:hover { background: var(--accent-secondary); border-color: var(--accent-primary); }
+.nudge-pair { display: flex; flex-direction: column; gap: 3px; }
+
+input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 8px;
+    background: var(--slider-track, #CBD5E1); border-radius: 4px; outline: none;
+}
+body.dark-mode input[type="range"] { background: #475569; }
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px;
+    background: var(--accent-primary); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(66, 165, 245, 0.4); transition: all 0.2s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; background: var(--accent-primary);
+    border-radius: 50%; cursor: pointer; border: none;
+}
+
+/* ---- Data Info ---- */
+.data-info-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; color: var(--text-secondary); padding: 3px 0;
+}
+.data-info-label { font-weight: 500; }
+.data-info-value {
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    color: var(--text-primary); font-weight: 600;
+}
+
+/* ---- Chart Container ---- */
+.chart-container {
+    flex: 1; background: var(--bg-secondary); border-radius: 12px; padding: 8px 10px;
+    border: 1px solid var(--border-color); box-shadow: 0 1px 4px var(--shadow-color);
+    display: flex; flex-direction: column; min-height: 0; margin-bottom: 6px;
+}
+.chart-container:last-child { margin-bottom: 0; }
+.chart-header {
+    display: flex; align-items: center;
+    margin-bottom: 4px; flex-shrink: 0; position: relative;
+}
+.chart-title { font-size: 16px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
+.chart-header-right { display: flex; align-items: center; gap: 8px; justify-content: center; flex: 1; min-width: 0; }
+.chart-wrapper { flex: 1; position: relative; min-height: 0; }
+.chart-wrapper canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.chart-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: var(--text-tertiary); font-size: 16px; font-style: italic; gap: 12px;
+}
+.chart-empty-icon { font-size: 48px; opacity: 0.4; }
+
+/* ---- Heatmap-specific ---- */
+.heatmap-row {
+    display: flex; align-items: stretch;
+    flex: 1; min-height: 0;
+}
+.heatmap-wrap {
+    flex: 1; position: relative; min-height: 0;
+    overflow: hidden;
+}
+#heatmap-canvas {
+    display: none; position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    image-rendering: pixelated; border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+#heatmap-canvas.visible { display: block; }
+#draw-overlay {
+    display: none; position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; z-index: 5;
+    pointer-events: none; border-radius: 4px;
+}
+#draw-overlay.active { pointer-events: auto; cursor: crosshair; }
+.colorbar-container {
+    display: flex; flex-direction: column; align-items: center;
+    margin-left: 12px; justify-content: center; flex-shrink: 0;
+    align-self: center;
+}
+#colorbarCanvas { border: 1px solid var(--border-color); border-radius: 2px; }
+.colorbar-label {
+    font-size: 10px; color: var(--text-tertiary); margin: 2px 0;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+/* ---- Burger Menu ---- */
+.dropdown { position: relative; display: inline-block; }
+.burger-menu {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 12px; padding: 5px 0; min-width: 260px; z-index: 1000;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+.burger-menu.show { display: block; }
+.burger-toggle {
+    padding: 10px 18px; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.15s ease;
+}
+.burger-toggle:hover { background: var(--bg-tertiary); }
+.burger-toggle .check { color: var(--accent-primary); font-weight: 700; width: 22px; text-align: center; }
+.dropdown-item {
+    padding: 10px 18px; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; transition: background 0.15s ease;
+}
+.dropdown-item:hover { background: var(--bg-tertiary); }
+.dropdown-sep { height: 1px; background: var(--border-color); margin: 5px 0; }
+
+/* ---- Circular Chart Badges ---- */
+.chart-header-badges {
+    display: flex; gap: 10px; align-items: center; justify-content: center;
+    flex: 1; min-width: 0;
+}
+.badge-group { display: flex; gap: 8px; align-items: center; }
+.chart-badge {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg-secondary); border: 2px solid var(--border-color);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow-color); font-size: 18px;
+    color: var(--text-secondary);
+}
+.chart-badge:hover {
+    background: var(--accent-secondary); border-color: var(--accent-primary);
+    transform: scale(1.1);
+}
+.chart-badge.active {
+    background: var(--accent-primary); border-color: var(--accent-primary); color: white;
+}
+.chart-badge svg { width: 20px; height: 20px; fill: currentColor; display: block; }
+.chart-badge-small { width: 34px; height: 34px; font-size: 14px; }
+
+/* ---- Status Bar ---- */
+.status-bar {
+    background: var(--bg-secondary); padding: 4px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+}
+.status-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.status-indicator {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--status-indicator); animation: pulse 2s infinite;
+}
+.status-indicator.error { background: var(--error-color); animation: none; }
+.status-indicator.processing { background: var(--warning-color); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ---- Modal Overlay ---- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+}
+.modal {
+    background: var(--bg-secondary); border-radius: 18px; padding: 24px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    min-width: 380px; max-width: 540px;
+}
+.modal-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+/* ---- Toast Container ---- */
+.toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 200;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.toast {
+    background: var(--bg-secondary); border-radius: 14px; padding: 16px 20px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    display: flex; align-items: center; gap: 14px; min-width: 300px; max-width: 420px;
+    animation: toastSlideIn 0.3s ease;
+}
+.toast-success { border-left: 4px solid var(--status-indicator); }
+.toast-error { border-left: 4px solid var(--error-color); }
+.toast-warning { border-left: 4px solid var(--warning-color); }
+.toast-info { border-left: 4px solid var(--accent-primary); }
+.toast-icon {
+    width: 40px; height: 40px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.toast-success .toast-icon { background: rgba(16, 185, 129, 0.15); }
+.toast-error .toast-icon { background: rgba(239, 68, 68, 0.15); }
+.toast-warning .toast-icon { background: rgba(245, 158, 11, 0.15); }
+.toast-info .toast-icon { background: rgba(66, 165, 245, 0.15); }
+.toast-content { flex: 1; }
+.toast-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+.toast-message { font-size: 13px; color: var(--text-secondary); }
+.toast-close {
+    background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+    font-size: 18px; padding: 4px; line-height: 1;
+}
+.toast-close:hover { color: var(--text-primary); }
+@keyframes toastSlideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toastSlideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* ---- Progress Overlay ---- */
+.progress-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
+    z-index: 150;
+}
+.progress-box {
+    background: var(--bg-secondary); border-radius: 18px; padding: 32px 40px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    min-width: 340px; text-align: center;
+}
+.progress-title {
+    font-size: 17px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;
+}
+.progress-track {
+    width: 100%; height: 10px; background: var(--border-color);
+    border-radius: 5px; overflow: hidden; margin-bottom: 10px;
+}
+.progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent-gradient-start), var(--accent-gradient-end));
+    border-radius: 5px; transition: width 0.15s ease; width: 0%;
+}
+.progress-text {
+    font-size: 14px; color: var(--text-secondary);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+/* ---- Help Modal Pagination ---- */
+.help-page { display: none; }
+.help-page.active { display: block; }
+.help-dots { display: flex; gap: 8px; justify-content: center; margin: 16px 0 8px; }
+.help-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border-color); cursor: pointer;
+    transition: all 0.2s ease;
+}
+.help-dot.active { background: var(--accent-primary); width: 28px; border-radius: 5px; }
+
+/* ---- Divider ---- */
+.divider { height: 1px; background: var(--border-color); margin: 3px 0; }
+
+/* ---- Spinner ---- */
+.spinner {
+    width: 40px; height: 40px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Param Box ---- */
+.param-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+.param-box:last-child { margin-bottom: 0; }
+
+/* ---- Variable Selection Table ---- */
+.var-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.var-table th {
+    background: var(--bg-secondary); color: var(--text-secondary);
+    font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;
+    padding: 8px; text-align: center; position: sticky; top: 0; z-index: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+.var-table td {
+    padding: 6px 8px; border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary); text-align: center;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+.var-table tr:last-child td { border-bottom: none; }
+.var-table tr:hover { background: rgba(66, 165, 245, 0.05); }
+.var-table tr.selected { background: rgba(66, 165, 245, 0.12); }
+
+/* ---- Demo Data Link ---- */
+.demo-link {
+    color: var(--accent-primary); cursor: pointer; font-style: normal;
+    font-size: 13px; text-decoration: underline;
+    transition: color 0.2s ease;
+}
+.demo-link:hover { color: var(--accent-secondary); }
+
+/* ====================================================================
+   MODE TABS
+   ==================================================================== */
+.mode-tabs {
+    display: flex; gap: 3px; background: var(--bg-primary);
+    border-radius: 12px; padding: 3px;
+    border: 1px solid var(--border-color);
+}
+.mode-tab {
+    flex: 1; padding: 9px 8px; text-align: center; font-size: 13px;
+    font-weight: 600; color: var(--text-secondary); border-radius: 9px;
+    cursor: pointer; transition: all 0.2s ease; border: none; background: none;
+    white-space: nowrap;
+}
+.mode-tab:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.mode-tab.active {
+    color: white;
+    background: linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end));
+    box-shadow: 0 2px 8px var(--shadow-accent);
+}
+.mode-content { display: none; flex-direction: column; gap: 12px; }
+.mode-content.active { display: flex; }
+
+/* ---- Preprocessing ---- */
+.preprocess-row { display: flex; align-items: center; gap: 8px; }
+.preprocess-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); white-space: nowrap; }
+.preprocess-select {
+    flex: 1; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border-color); background: var(--bg-secondary);
+    color: var(--text-primary); font-size: 13px; cursor: pointer;
+}
+body.dark-mode .preprocess-select { background: var(--bg-tertiary); }
+
+/* ---- Drawing Tools ---- */
+.tool-bar { display: flex; gap: 6px; }
+.tool-btn {
+    flex: 1; padding: 10px 6px; text-align: center; font-size: 12px;
+    font-weight: 500; color: var(--text-secondary);
+    border: 1px solid var(--border-color); border-radius: 10px;
+    cursor: pointer; transition: all 0.2s ease; background: var(--bg-secondary);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.tool-btn:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+.tool-btn.active {
+    border-color: var(--accent-primary); background: rgba(66,165,245,0.1);
+    color: var(--accent-primary); box-shadow: 0 0 0 1px var(--accent-primary);
+}
+.tool-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tool-instructions {
+    font-size: 12px; color: var(--text-tertiary); font-style: italic;
+    padding: 8px 10px; background: var(--bg-secondary); border-radius: 8px;
+    line-height: 1.5; border: 1px solid var(--border-color);
+}
+
+/* Drawing overlay canvas — styles in .heatmap-wrap section above */
+
+/* ---- Auto-detect controls ---- */
+.detect-param { margin-bottom: 8px; }
+.detect-param:last-child { margin-bottom: 0; }
+.detect-param label {
+    display: block; font-size: 13px; font-weight: 500;
+    color: var(--text-secondary); margin-bottom: 4px;
+}
+.detect-param select, .detect-param input[type="number"] {
+    width: 100%; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border-color); background: var(--bg-secondary);
+    color: var(--text-primary); font-size: 14px;
+}
+body.dark-mode .detect-param select,
+body.dark-mode .detect-param input[type="number"] { background: var(--bg-tertiary); }
+.detect-range-row { display: flex; align-items: center; gap: 8px; }
+.detect-range-row input[type="range"] { flex: 1; }
+.detect-range-val {
+    font-size: 13px; font-weight: 600; color: var(--accent-primary);
+    font-family: 'SF Mono', monospace; min-width: 40px; text-align: right;
+}
+.toggle-row {
+    display: flex; justify-content: space-between; align-items: center; padding: 4px 0;
+}
+.toggle-row span { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.toggle-switch { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--border-color); border-radius: 11px; transition: 0.3s;
+}
+.toggle-slider:before {
+    position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent-primary); }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+</style>
+</head>
+<body>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+    <!-- LEFT PANEL -->
+    <div class="controls-panel" id="controls-panel">
+
+        <!-- Action Buttons -->
+        <div class="section">
+            <div class="section-title">Actions</div>
+            <div class="btn-row-3">
+                <button class="btn-primary btn-sm" id="btn-load" onclick="sendAction('load_data')">Load Data</button>
+                <button class="btn-primary btn-sm" id="btn-apply" onclick="doApply()" disabled>Apply</button>
+                <button class="btn-secondary btn-sm" id="btn-export" onclick="doExport()" disabled>Export</button>
+            </div>
+        </div>
+
+        <!-- Spectral Band Selection -->
+        <div class="section" id="section-bands">
+            <div class="section-title">Spectral Selection</div>
+            <div class="btn-row-3">
+                <button class="btn-secondary btn-sm" id="btn-spectrum" onclick="toggleSpectrumView()" disabled>Select Bands</button>
+                <button class="btn-secondary btn-sm" id="btn-clear-ranges" onclick="clearBandRanges()" disabled>Clear Ranges</button>
+                <button class="btn-secondary btn-sm" id="btn-reset-bands" onclick="resetBands()" disabled>All Bands</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-top:6px;" id="band-info">Using all bands</div>
+        </div>
+
+        <!-- Preprocessing -->
+        <div class="section">
+            <div class="preprocess-row">
+                <span class="preprocess-label">Preprocessing:</span>
+                <select class="preprocess-select" id="preprocess-select" onchange="onPreprocessChange(this.value)">
+                    <option value="none">None (raw sum)</option>
+                    <option value="square">Square (x&sup2;)</option>
+                    <option value="log">Log (log(1+x))</option>
+                    <option value="sqrt">Square root (&radic;x)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="threshold" onclick="switchMode('threshold')">Threshold</button>
+            <button class="mode-tab" data-mode="selection" onclick="switchMode('selection')">Selection</button>
+            <button class="mode-tab" data-mode="autodetect" onclick="switchMode('autodetect')">Auto-Detect</button>
+        </div>
+
+        <!-- ========== THRESHOLD MODE ========== -->
+        <div class="mode-content active" id="mode-threshold">
+            <!-- Min Threshold -->
+            <div class="section">
+                <div class="section-title">Min Threshold</div>
+                <div class="param-box">
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">Lower bound</span>
+                            <div class="slider-controls">
+                                <input type="text" class="slider-value" id="val-min" value="0">
+                                <div class="nudge-pair">
+                                    <button class="btn-nudge" onclick="nudgeThreshold('min', 1)">&#9650;</button>
+                                    <button class="btn-nudge" onclick="nudgeThreshold('min', -1)">&#9660;</button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="range" id="slider-min" min="0" max="1" step="0.001" value="0" oninput="onMinSlider(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Max Threshold -->
+            <div class="section">
+                <div class="section-title">Max Threshold</div>
+                <div class="param-box">
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">Upper bound</span>
+                            <div class="slider-controls">
+                                <input type="text" class="slider-value" id="val-max" value="0">
+                                <div class="nudge-pair">
+                                    <button class="btn-nudge" onclick="nudgeThreshold('max', 1)">&#9650;</button>
+                                    <button class="btn-nudge" onclick="nudgeThreshold('max', -1)">&#9660;</button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="range" id="slider-max" min="0" max="1" step="0.001" value="1" oninput="onMaxSlider(this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SELECTION MODE ========== -->
+        <div class="mode-content" id="mode-selection">
+            <div class="section">
+                <div class="section-title">Drawing Tool</div>
+                <div class="tool-bar">
+                    <button class="tool-btn active" data-tool="rectangle" onclick="switchTool('rectangle')">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+                        Rectangle
+                    </button>
+                    <button class="tool-btn" data-tool="polygon" onclick="switchTool('polygon')">
+                        <svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 19,20 5,20 2,8.5"/></svg>
+                        Polygon
+                    </button>
+                    <button class="tool-btn" data-tool="freehand" onclick="switchTool('freehand')">
+                        <svg viewBox="0 0 24 24"><path d="M3 17c3-4 6 2 9-2s3-6 6-4 3 6 3 6"/></svg>
+                        Freehand
+                    </button>
+                </div>
+            </div>
+            <div class="tool-instructions" id="tool-instructions">
+                Click and drag on the heatmap to draw a rectangle. The area inside will be retained.
+            </div>
+            <div class="btn-row">
+                <button class="btn-secondary btn-sm" onclick="clearDrawing()">Clear All</button>
+                <button class="btn-secondary btn-sm" onclick="invertDrawing()">Invert</button>
+            </div>
+        </div>
+
+        <!-- ========== AUTO-DETECT MODE ========== -->
+        <div class="mode-content" id="mode-autodetect">
+            <div class="section">
+                <div class="section-title">Detection Parameters</div>
+                <div class="detect-param">
+                    <label>Method</label>
+                    <select id="detect-method">
+                        <option value="otsu">Otsu (global threshold)</option>
+                        <option value="adaptive">Adaptive (local threshold)</option>
+                    </select>
+                </div>
+                <div class="detect-param" id="detect-sensitivity-group">
+                    <label>Sensitivity</label>
+                    <div class="detect-range-row">
+                        <input type="range" id="detect-sensitivity" min="0" max="1" step="0.05" value="0.5"
+                               oninput="document.getElementById('detect-sensitivity-val').textContent=parseFloat(this.value).toFixed(2)">
+                        <span class="detect-range-val" id="detect-sensitivity-val">0.50</span>
+                    </div>
+                </div>
+                <div class="detect-param">
+                    <label>Smoothing (sigma)</label>
+                    <div class="detect-range-row">
+                        <input type="range" id="detect-smooth" min="0" max="5" step="0.5" value="1.0"
+                               oninput="document.getElementById('detect-smooth-val').textContent=parseFloat(this.value).toFixed(1)">
+                        <span class="detect-range-val" id="detect-smooth-val">1.0</span>
+                    </div>
+                </div>
+                <div class="detect-param">
+                    <label>Min particle size (pixels)</label>
+                    <div class="detect-range-row">
+                        <input type="range" id="detect-minarea" min="5" max="500" step="5" value="50"
+                               oninput="document.getElementById('detect-minarea-val').textContent=this.value">
+                        <span class="detect-range-val" id="detect-minarea-val">50</span>
+                    </div>
+                </div>
+                <div class="toggle-row">
+                    <span>Watershed (separate touching)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="detect-watershed">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <button class="btn-primary btn-sm" onclick="runAutoDetect()" id="btn-detect" disabled>Detect Objects</button>
+        </div>
+
+        <!-- Data Info (always visible) -->
+        <div class="section" id="data-info-section">
+            <div class="section-title">Data Info</div>
+            <div class="data-info-row">
+                <span class="data-info-label">Cube size</span>
+                <span class="data-info-value" id="info-size">-- x -- x --</span>
+            </div>
+            <div class="data-info-row">
+                <span class="data-info-label">Total pixels</span>
+                <span class="data-info-value" id="info-pixels">--</span>
+            </div>
+            <div class="data-info-row">
+                <span class="data-info-label">Intensity range</span>
+                <span class="data-info-value" id="info-range">--</span>
+            </div>
+            <div class="data-info-row">
+                <span class="data-info-label">Retained</span>
+                <span class="data-info-value" id="info-retained">--</span>
+            </div>
+            <div class="data-info-row">
+                <span class="data-info-label">Discarded</span>
+                <span class="data-info-value" id="info-discarded">--</span>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- RESIZE HANDLE -->
+    <div class="resize-handle" id="resize-handle"></div>
+
+    <!-- RIGHT PANEL -->
+    <div class="charts-panel" id="charts-panel">
+
+        <!-- Heatmap Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="chart-title">Heatmap</span>
+                <div class="chart-header-badges">
+                    <div class="badge-group">
+                        <div class="chart-badge chart-badge-small" onclick="resetHeatmapZoom()" title="Reset view">
+                            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- + Menu (right-aligned) -->
+                <div class="dropdown" style="position:relative;flex-shrink:0;">
+                    <div class="chart-badge chart-badge-small" id="burger-btn" onclick="toggleBurgerMenu()" title="More options">
+                        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    </div>
+                    <div class="burger-menu" id="burger-menu">
+                        <div class="burger-toggle" onclick="toggleDarkMode()">
+                            <span>Dark mode</span><span class="check" id="chk-darkMode"></span>
+                        </div>
+                        <div class="dropdown-sep"></div>
+                        <div class="dropdown-item" onclick="showHelp(); closeBurger();">Help</div>
+                    </div>
+                </div>
+            </div>
+            <div class="heatmap-row">
+                <div class="heatmap-wrap" id="heatmap-wrapper">
+                    <canvas id="heatmap-canvas"></canvas>
+                    <canvas id="draw-overlay"></canvas>
+                    <div class="chart-empty" id="heatmap-empty">
+                        <div class="chart-empty-icon">&#128506;</div>
+                        <div>Load a 3-D image cube to begin</div>
+                    </div>
+                </div>
+                <div class="colorbar-container">
+                    <span class="colorbar-label" id="cb-max-label">--</span>
+                    <canvas id="colorbar-canvas" width="20" height="200"></canvas>
+                    <span class="colorbar-label" id="cb-min-label">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="chart-title">Distribution</span>
+                <div class="chart-header-right">
+                    <div class="badge-group">
+                        <div class="chart-badge chart-badge-small" onclick="resetDistZoom()" title="Reset view">
+                            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-wrapper" id="dist-wrapper">
+                <canvas id="dist-canvas"></canvas>
+                <div class="chart-empty" id="dist-empty">
+                    <div class="chart-empty-icon">&#128200;</div>
+                    <div>Sorted intensity distribution will appear here</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+    <div class="status-left">
+        <div class="status-indicator" id="status-indicator"></div>
+        <span id="status-message">Ready</span>
+    </div>
+</div>
+
+<script>
+/* ====================================================================
+   STATE
+   ==================================================================== */
+var htmlComponent = null;
+var lastTimestamp = -1;
+
+/* Data */
+var imgRows = 0;
+var imgCols = 0;
+var imgChannels = 0;
+var totalPixels = 0;
+var intensityNorm = null;   /* Float64Array, 0..1 normalised */
+var retainedMask = null;    /* boolean array: true=retained */
+var sortedDist = null;      /* Float64Array: sorted intensity values */
+var realMin = 0;
+var realMax = 1;
+var dataLoaded = false;
+var currentMinT = 0;
+var currentMaxT = 0;
+var retainedCount = 0;
+var discardedCount = 0;
+
+/* Threshold nudge step: 1% of range */
+var NUDGE_FRACTION = 0.01;
+
+/* Debounce */
+var threshDebounce = null;
+
+/* Chart margins */
+var MARGIN = { top: 10, right: 16, bottom: 48, left: 72 };
+
+/* Zoom/pan state for distribution chart */
+var distView = null;
+var panState = null;
+
+/* Mode & drawing state */
+var currentMode = 'threshold';   /* 'threshold' | 'selection' | 'autodetect' */
+var currentTool = 'rectangle';   /* 'rectangle' | 'polygon' | 'freehand' */
+var drawState = null;            /* active drawing state object */
+var drawPoints = [];             /* current/latest shape points [{x,y},...] */
+var allShapes = [];              /* array of completed shapes: [{points:[...], view:{...}}] */
+var drawInverted = false;        /* invert the selection mask */
+var heatmapScale = 1;            /* legacy compat — use heatmapView for accurate mapping */
+
+/* Heatmap view: what region of the image is visible [x0,y0]-[x1,y1] in image coords */
+var heatmapView = null;          /* null = fit entire image */
+var heatmapPanState = null;      /* for drag-to-pan on heatmap */
+
+/* Spectral band selection */
+var showSpectrum = false;        /* true = bottom chart shows mean spectrum */
+var meanSpectrum = null;         /* Float64Array: mean spectrum across all pixels */
+var selectedBandRanges = [];     /* [{start:idx, end:idx}, ...] selected band ranges */
+var bandDragState = null;        /* {startX: px} for drawing band selection */
+var dragThreshold = null;        /* null | 'min' | 'max' — threshold line drag state */
+
+/* ====================================================================
+   THEME (dark mode)
+   ==================================================================== */
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    var isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('cropbg_darkMode', isDark);
+    var chk = document.getElementById('chk-darkMode');
+    if (chk) chk.textContent = isDark ? '\u2713' : '';
+    if (dataLoaded) { drawHeatmap(); drawBottomChart(); }
+}
+
+function restoreDarkMode() {
+    if (localStorage.getItem('cropbg_darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+    var chk = document.getElementById('chk-darkMode');
+    if (chk) chk.textContent = document.body.classList.contains('dark-mode') ? '\u2713' : '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        toggleDarkMode();
+    }
+    /* Escape cancels drawing in polygon mode */
+    if (e.key === 'Escape' && currentMode === 'selection') {
+        clearDrawing();
+    }
+});
+
+/* ====================================================================
+   BURGER MENU
+   ==================================================================== */
+function toggleBurgerMenu() {
+    var bm = document.getElementById('burger-menu');
+    var wasOpen = bm.classList.contains('show');
+    closeAllMenus();
+    if (!wasOpen) bm.classList.add('show');
+}
+
+function closeBurger() {
+    document.getElementById('burger-menu').classList.remove('show');
+}
+
+function closeAllMenus() {
+    var menus = document.querySelectorAll('.burger-menu');
+    for (var i = 0; i < menus.length; i++) menus[i].classList.remove('show');
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#burger-btn') && !e.target.closest('.burger-menu')) {
+        closeAllMenus();
+    }
+});
+
+/* ====================================================================
+   TOAST NOTIFICATIONS
+   ==================================================================== */
+function showToast(type, title, message, duration) {
+    duration = duration || 4000;
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+
+    var icons = { success: '&#10003;', error: '&#10007;', info: '&#8505;', warning: '&#9888;' };
+    toast.innerHTML =
+        '<div class="toast-icon">' + (icons[type] || '&#8226;') + '</div>' +
+        '<div class="toast-content">' +
+            '<div class="toast-title">' + title + '</div>' +
+            '<div class="toast-message">' + message + '</div>' +
+        '</div>' +
+        '<button class="toast-close" onclick="this.parentElement.remove()">&#215;</button>';
+
+    container.appendChild(toast);
+
+    setTimeout(function() {
+        toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+        setTimeout(function() { if (toast.parentElement) toast.remove(); }, 300);
+    }, duration);
+}
+
+/* ====================================================================
+   STATUS BAR
+   ==================================================================== */
+function setStatus(type, message) {
+    var ind = document.getElementById('status-indicator');
+    document.getElementById('status-message').textContent = message || '';
+    ind.className = 'status-indicator';
+    if (type === 'error') ind.classList.add('error');
+    else if (type === 'processing' || type === 'loading') ind.classList.add('processing');
+    /* idle and success use default green */
+}
+
+/* ====================================================================
+   MATLAB COMMUNICATION -- polling at 150ms
+   ==================================================================== */
+function setup(component) {
+    htmlComponent = component;
+    component.addEventListener('DataChanged', function() {
+        handleMatlabResponse(component.Data);
+    });
+    setInterval(function() {
+        if (htmlComponent && htmlComponent.Data) handleMatlabResponse(htmlComponent.Data);
+    }, 150);
+    setStatus('success', 'Interface ready');
+}
+
+function handleMatlabResponse(data) {
+    if (!data) return;
+    if (data.source !== 'matlab') return;
+    if (typeof data.timestamp !== 'number') return;
+    if (data.timestamp <= lastTimestamp) return;
+    lastTimestamp = data.timestamp;
+    processPayload(data);
+}
+
+/* ====================================================================
+   ACTIONS -> MATLAB
+   ==================================================================== */
+function sendAction(action, extra) {
+    if (!htmlComponent) return;
+    var payload = extra || {};
+    payload.action = action;
+    payload.timestamp = Date.now();
+    htmlComponent.Data = payload;
+}
+
+function doApply() {
+    if (!dataLoaded) {
+        showToast('warning', 'No Data', 'Load a 3-D image cube first.');
+        return;
+    }
+    setStatus('processing', 'Applying cropping...');
+    if (threshDebounce) clearTimeout(threshDebounce);
+    /* Single message with mode + thresholds — no race condition */
+    sendAction('apply', {
+        mode: currentMode,
+        minThreshold: currentMinT,
+        maxThreshold: currentMaxT
+    });
+}
+
+function doExport() {
+    if (!dataLoaded) {
+        showToast('warning', 'No Data', 'Load a 3-D image cube first.');
+        return;
+    }
+    setStatus('processing', 'Exporting to workspace...');
+    sendAction('export');
+}
+
+function sendUpdateThreshold() {
+    var minT = parseFloat(document.getElementById('val-min').value);
+    var maxT = parseFloat(document.getElementById('val-max').value);
+    if (isNaN(minT) || isNaN(maxT)) {
+        setStatus('error', 'Invalid threshold values.');
+        return;
+    }
+    sendAction('update_threshold', {
+        minThreshold: minT,
+        maxThreshold: maxT
+    });
+}
+
+/* ====================================================================
+   PROCESS MATLAB MESSAGES (field name is 'kind')
+   ==================================================================== */
+function processPayload(d) {
+    switch (d.kind) {
+
+        case 'status':
+            setStatus('success', d.message);
+            if (d.message) {
+                /* Show toast for export success */
+                if (d.message.indexOf('Exported') >= 0) {
+                    showToast('success', 'Exported to Workspace',
+                        'Variables <b>croppedMatrix</b>, <b>retainedIdx</b>, <b>discardedIdx</b> saved.', 5000);
+                }
+                /* Show toast for auto-detect errors */
+                if (d.message.indexOf('Auto-detect:') >= 0) {
+                    showToast('error', 'Auto-Detect Failed', d.message.replace('Auto-detect: ', ''), 6000);
+                }
+                /* Show toast for errors */
+                if (d.message.indexOf('Error:') >= 0) {
+                    showToast('error', 'Error', d.message.replace('Error: ', ''), 5000);
+                }
+                /* Show toast for detected objects */
+                if (d.message.indexOf('Detected') >= 0 && d.message.indexOf('objects') >= 0) {
+                    showToast('success', 'Detection Complete', d.message, 5000);
+                }
+            }
+            break;
+
+        case 'data_loaded':
+            handleDataLoaded(d);
+            break;
+
+        case 'threshold_result':
+            handleThresholdResult(d);
+            break;
+
+        case 'apply_result':
+            handleApplyResult(d);
+            break;
+
+        case 'mean_spectrum':
+            meanSpectrum = toFloat64Array(d.spectrum);
+            drawBottomChart();
+            setStatus('success', d.statusMessage || 'Mean spectrum computed');
+            break;
+
+        case 'showVarList':
+            showVariableSelectionModal(d);
+            break;
+    }
+}
+
+/* ---- data_loaded ---- */
+function handleDataLoaded(d) {
+    imgRows     = d.rows;
+    imgCols     = d.cols;
+    imgChannels = d.channels;
+    totalPixels = d.totalPixels;
+    realMin     = d.minVal;
+    realMax     = d.maxVal;
+
+    intensityNorm = toFloat64Array(d.intensityNorm);
+    sortedDist    = toFloat64Array(d.sortedDist);
+    retainedMask  = toBoolArray(d.retainedMask, totalPixels);
+
+    currentMinT = realMin;
+    currentMaxT = realMax;
+    retainedCount = totalPixels;
+    discardedCount = 0;
+
+    /* Update slider ranges to match data */
+    document.getElementById('val-min').value = formatNum(realMin);
+    document.getElementById('val-max').value = formatNum(realMax);
+    document.getElementById('slider-min').value = 0;
+    document.getElementById('slider-max').value = 1;
+
+    /* Enable buttons */
+    document.getElementById('btn-apply').disabled = false;
+    document.getElementById('btn-export').disabled = true;
+    document.getElementById('btn-detect').disabled = false;
+    document.getElementById('btn-spectrum').disabled = false;
+    document.getElementById('btn-clear-ranges').disabled = false;
+    document.getElementById('btn-reset-bands').disabled = false;
+
+    /* Only reset spectrum state when loading truly new data (new cube dimensions) */
+    var isNewCube = (d.rows !== imgRows || d.cols !== imgCols || d.channels !== imgChannels);
+    if (isNewCube) {
+        selectedBandRanges = [];
+        meanSpectrum = null;
+        showSpectrum = false;
+        document.getElementById('btn-spectrum').textContent = 'Select Bands';
+        document.getElementById('band-info').textContent = 'Using all bands';
+    }
+
+    /* Hide empty states */
+    document.getElementById('heatmap-empty').style.display = 'none';
+    document.getElementById('dist-empty').style.display = 'none';
+
+    /* Update data info */
+    updateDataInfo();
+
+    dataLoaded = true;
+    distView = null;
+    if (isNewCube) heatmapView = null;
+    clearDrawing();
+
+    /* Delay rendering one frame so the DOM has laid out after hiding the empty state */
+    requestAnimationFrame(function() {
+        drawHeatmap();
+        drawBottomChart();
+    });
+
+    var statusMsg = d.statusMessage || ('Data loaded: ' + imgRows + ' x ' + imgCols + ' x ' + imgChannels);
+    setStatus('success', statusMsg);
+    showToast('success', 'Data Loaded', imgRows + ' x ' + imgCols + ' x ' + imgChannels + ' cube (' + totalPixels + ' pixels)');
+}
+
+/* ---- threshold_result ---- */
+function handleThresholdResult(d) {
+    retainedMask = toBoolArray(d.retainedMask, totalPixels);
+    currentMinT  = d.minThreshold;
+    currentMaxT  = d.maxThreshold;
+    retainedCount  = d.retainedCount;
+    discardedCount = d.discardedCount;
+
+    updateDataInfo();
+    drawHeatmap();
+    drawBottomChart();
+
+    var msg = d.statusMessage || (retainedCount + ' retained, ' + discardedCount + ' discarded');
+    setStatus('success', msg);
+
+    /* Show toast for auto-detect results */
+    if (msg.indexOf('Detected') >= 0) {
+        showToast('success', 'Detection Complete', msg, 5000);
+    }
+}
+
+/* ---- apply_result ---- */
+function handleApplyResult(d) {
+    retainedCount = d.retainedCount;
+
+    document.getElementById('btn-export').disabled = false;
+
+    var msg = d.statusMessage || ('Applied. Cropped matrix: ' + d.croppedRows + ' x ' + d.croppedCols);
+    setStatus('success', msg);
+    showToast('success', 'Cropping Applied',
+        'Retained ' + d.retainedCount + ' pixels.<br>Cropped matrix: ' + d.croppedRows + ' x ' + d.croppedCols +
+        '.<br><b>Click Export to save to workspace.</b>', 6000);
+}
+
+
+/* ====================================================================
+   UPDATE DATA INFO PANEL
+   ==================================================================== */
+function updateDataInfo() {
+    document.getElementById('info-size').textContent = imgRows + ' x ' + imgCols + ' x ' + imgChannels;
+    document.getElementById('info-pixels').textContent = totalPixels;
+    document.getElementById('info-range').textContent = formatNum(realMin) + ' .. ' + formatNum(realMax);
+    document.getElementById('info-retained').textContent = retainedCount;
+    document.getElementById('info-discarded').textContent = discardedCount;
+}
+
+/* ====================================================================
+   MODE SWITCHING
+   ==================================================================== */
+function switchMode(mode) {
+    currentMode = mode;
+
+    /* Update tab buttons */
+    var tabs = document.querySelectorAll('.mode-tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.toggle('active', tabs[i].dataset.mode === mode);
+    }
+
+    /* Show/hide mode content */
+    var contents = document.querySelectorAll('.mode-content');
+    for (var j = 0; j < contents.length; j++) {
+        contents[j].classList.toggle('active', contents[j].id === 'mode-' + mode);
+    }
+
+    /* Enable/disable draw overlay */
+    var overlay = document.getElementById('draw-overlay');
+    if (mode === 'selection') {
+        overlay.classList.add('active');
+    } else {
+        overlay.classList.remove('active');
+        clearDrawOverlay();
+    }
+
+    /* Clear previous mode's selection — only one mode active at a time */
+    if (dataLoaded) {
+        clearDrawing();
+        retainedMask = [];
+        for (var k = 0; k < totalPixels; k++) retainedMask.push(true);
+        retainedCount = totalPixels;
+        discardedCount = 0;
+        updateDataInfo();
+        drawHeatmap();
+        drawBottomChart();
+
+        /* Disable export/next since selection was cleared */
+        document.getElementById('btn-export').disabled = true;
+        }
+
+    /* Toggle sensitivity visibility based on method */
+    if (mode === 'autodetect') {
+        toggleSensitivityVisibility();
+    }
+}
+
+function toggleSensitivityVisibility() {
+    var method = document.getElementById('detect-method').value;
+    var group = document.getElementById('detect-sensitivity-group');
+    group.style.display = (method === 'adaptive') ? 'block' : 'none';
+}
+
+/* ====================================================================
+   PREPROCESSING
+   ==================================================================== */
+function onPreprocessChange(value) {
+    if (!dataLoaded) return;
+    setStatus('processing', 'Applying preprocessing...');
+    sendAction('preprocess', { transform: value });
+}
+
+/* ====================================================================
+   THRESHOLD SLIDERS
+   ==================================================================== */
+function onMinSlider(pos) {
+    var val = realMin + parseFloat(pos) * (realMax - realMin);
+    currentMinT = val;
+    document.getElementById('val-min').value = formatNum(val);
+    scheduleThresholdUpdate();
+}
+
+function onMaxSlider(pos) {
+    var val = realMin + parseFloat(pos) * (realMax - realMin);
+    currentMaxT = val;
+    document.getElementById('val-max').value = formatNum(val);
+    scheduleThresholdUpdate();
+}
+
+function nudgeThreshold(which, dir) {
+    var range = realMax - realMin;
+    var step = range * NUDGE_FRACTION;
+    if (which === 'min') {
+        currentMinT = Math.max(realMin, Math.min(realMax, currentMinT + dir * step));
+        document.getElementById('val-min').value = formatNum(currentMinT);
+        document.getElementById('slider-min').value = (currentMinT - realMin) / (realMax - realMin);
+    } else {
+        currentMaxT = Math.max(realMin, Math.min(realMax, currentMaxT + dir * step));
+        document.getElementById('val-max').value = formatNum(currentMaxT);
+        document.getElementById('slider-max').value = (currentMaxT - realMin) / (realMax - realMin);
+    }
+    scheduleThresholdUpdate();
+}
+
+function syncMinFromInput() {
+    var val = parseFloat(document.getElementById('val-min').value);
+    if (isNaN(val)) return;
+    val = Math.max(realMin, Math.min(realMax, val));
+    currentMinT = val;
+    document.getElementById('val-min').value = formatNum(val);
+    document.getElementById('slider-min').value = (val - realMin) / (realMax - realMin);
+    scheduleThresholdUpdate();
+}
+
+function syncMaxFromInput() {
+    var val = parseFloat(document.getElementById('val-max').value);
+    if (isNaN(val)) return;
+    val = Math.max(realMin, Math.min(realMax, val));
+    currentMaxT = val;
+    document.getElementById('val-max').value = formatNum(val);
+    document.getElementById('slider-max').value = (val - realMin) / (realMax - realMin);
+    scheduleThresholdUpdate();
+}
+
+function scheduleThresholdUpdate() {
+    if (!dataLoaded) return;
+    localThresholdPreview();
+    drawBottomChart();
+    if (threshDebounce) clearTimeout(threshDebounce);
+    threshDebounce = setTimeout(function() {
+        sendUpdateThreshold();
+    }, 500);
+}
+
+/* ====================================================================
+   DRAWING TOOLS — Selection Mode
+   ==================================================================== */
+function switchTool(tool) {
+    currentTool = tool;
+    var btns = document.querySelectorAll('.tool-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('active', btns[i].dataset.tool === tool);
+    }
+    clearDrawing();
+    updateToolInstructions();
+}
+
+function updateToolInstructions() {
+    var el = document.getElementById('tool-instructions');
+    switch (currentTool) {
+        case 'rectangle':
+            el.textContent = 'Click and drag on the heatmap to draw a rectangle. The area inside will be retained.';
+            break;
+        case 'polygon':
+            el.textContent = 'Click on the heatmap to add vertices. Double-click to close the polygon. Press Escape to cancel.';
+            break;
+        case 'freehand':
+            el.textContent = 'Click and drag to draw a freehand region. Release to close the shape.';
+            break;
+    }
+}
+
+function addNewShape() {
+    /* Allow drawing a new shape (keeps existing shapes) */
+    drawState = null;
+    drawPoints = [];
+    clearDrawOverlay();
+    /* Re-render existing shapes */
+    renderAllShapes();
+    showToast('info', 'Draw', 'Draw another region to add to the selection.');
+}
+
+function clearDrawing() {
+    drawState = null;
+    drawPoints = [];
+    allShapes = [];
+    drawInverted = false;
+    clearDrawOverlay();
+
+    /* Reset heatmap to show all pixels as retained */
+    if (dataLoaded) {
+        retainedMask = [];
+        for (var i = 0; i < totalPixels; i++) retainedMask.push(true);
+        retainedCount = totalPixels;
+        discardedCount = 0;
+        updateDataInfo();
+        drawHeatmap();
+        drawBottomChart();
+    }
+}
+
+function clearDrawOverlay() {
+    var overlay = document.getElementById('draw-overlay');
+    var ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+}
+
+function invertDrawing() {
+    if (allShapes.length === 0 && drawPoints.length < 3) {
+        showToast('warning', 'No Shape', 'Draw a shape first before inverting.');
+        return;
+    }
+    drawInverted = !drawInverted;
+    sendMaskFromAllShapes();
+    showToast('info', 'Inverted', drawInverted ? 'Selection inverted (keeping outside).' : 'Selection restored (keeping inside).');
+}
+
+/* Convert canvas coordinates to image pixel coordinates using current view */
+function canvasToImage(cx, cy) {
+    var canvas = document.getElementById('heatmap-canvas');
+    var view = getHeatmapView();
+    var ix = view.x0 + (cx / canvas.width)  * (view.x1 - view.x0);
+    var iy = view.y0 + (cy / canvas.height) * (view.y1 - view.y0);
+    return {
+        x: Math.min(imgCols - 1, Math.max(0, Math.floor(ix))),
+        y: Math.min(imgRows - 1, Math.max(0, Math.floor(iy)))
+    };
+}
+
+/* Save current shape to allShapes and convert canvas coords to image coords */
+function commitCurrentShape() {
+    if (drawPoints.length < 3) return;
+    var imgPts = [];
+    for (var i = 0; i < drawPoints.length; i++) {
+        imgPts.push(canvasToImage(drawPoints[i].x, drawPoints[i].y));
+    }
+    allShapes.push(imgPts);
+}
+
+/* Called after a shape is completed — saves it and sends combined mask */
+function sendMaskFromShape() {
+    if (drawPoints.length < 3 || !dataLoaded) return;
+    commitCurrentShape();
+    sendMaskFromAllShapes();
+}
+
+/* Compute a binary mask from ALL shapes using offscreen canvas */
+function sendMaskFromAllShapes() {
+    if (allShapes.length === 0 || !dataLoaded) return;
+
+    var off = document.createElement('canvas');
+    off.width = imgCols;
+    off.height = imgRows;
+    var ctx = off.getContext('2d');
+
+    /* Draw all shapes (union) */
+    ctx.fillStyle = '#FF0000';
+    for (var s = 0; s < allShapes.length; s++) {
+        var pts = allShapes[s];
+        ctx.beginPath();
+        for (var i = 0; i < pts.length; i++) {
+            if (i === 0) ctx.moveTo(pts[i].x + 0.5, pts[i].y + 0.5);
+            else ctx.lineTo(pts[i].x + 0.5, pts[i].y + 0.5);
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    /* Read back as mask (row-major) */
+    var imgData = ctx.getImageData(0, 0, imgCols, imgRows);
+    var mask = [];
+    for (var r = 0; r < imgRows; r++) {
+        for (var c = 0; c < imgCols; c++) {
+            var idx = (r * imgCols + c) * 4;
+            var inside = imgData.data[idx + 3] > 0;
+            mask.push(drawInverted ? !inside : inside);
+        }
+    }
+
+    /* Convert to 0/1 for MATLAB */
+    var maskNum = [];
+    for (var k = 0; k < mask.length; k++) maskNum.push(mask[k] ? 1 : 0);
+
+    setStatus('processing', 'Applying selection...');
+    sendAction('apply_mask', { mask: maskNum });
+}
+
+/* Sync overlay canvas size to heatmap canvas (both fill the container) */
+function syncOverlaySize() {
+    var heatmap = document.getElementById('heatmap-canvas');
+    var overlay = document.getElementById('draw-overlay');
+    overlay.style.display = 'block';
+    overlay.width = heatmap.width;
+    overlay.height = heatmap.height;
+}
+
+/* Render all completed shapes on the overlay (in image coords → canvas coords) */
+function renderAllShapes() {
+    var overlay = document.getElementById('draw-overlay');
+    var ctx = overlay.getContext('2d');
+    if (allShapes.length === 0) return;
+
+    var canvas = document.getElementById('heatmap-canvas');
+    var view = getHeatmapView();
+    var vw = view.x1 - view.x0, vh = view.y1 - view.y0;
+
+    ctx.fillStyle = 'rgba(66, 165, 245, 0.15)';
+    ctx.strokeStyle = 'rgba(66, 165, 245, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+
+    for (var s = 0; s < allShapes.length; s++) {
+        var pts = allShapes[s];
+        ctx.beginPath();
+        for (var i = 0; i < pts.length; i++) {
+            /* image coords → canvas coords */
+            var cx = ((pts[i].x - view.x0) / vw) * canvas.width;
+            var cy = ((pts[i].y - view.y0) / vh) * canvas.height;
+            if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+}
+
+/* Render the current in-progress drawing + all completed shapes */
+function renderDrawOverlay() {
+    var overlay = document.getElementById('draw-overlay');
+    var ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    /* Draw completed shapes first (dimmer) */
+    renderAllShapes();
+
+    /* Draw current shape (brighter) */
+    var pts = drawState ? drawState.points : drawPoints;
+    if (!pts || pts.length === 0) return;
+
+    ctx.fillStyle = 'rgba(66, 165, 245, 0.2)';
+    ctx.strokeStyle = 'rgba(66, 165, 245, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    for (var i = 0; i < pts.length; i++) {
+        if (i === 0) ctx.moveTo(pts[i].x, pts[i].y);
+        else ctx.lineTo(pts[i].x, pts[i].y);
+    }
+
+    if (drawState && drawState.cursorPos && currentTool === 'polygon') {
+        ctx.lineTo(drawState.cursorPos.x, drawState.cursorPos.y);
+    }
+
+    if (!drawState || currentTool !== 'polygon') {
+        ctx.closePath();
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    /* Draw vertex dots for polygon */
+    if (currentTool === 'polygon' && drawState) {
+        ctx.fillStyle = 'rgba(66, 165, 245, 1.0)';
+        for (var j = 0; j < pts.length; j++) {
+            ctx.beginPath();
+            ctx.arc(pts[j].x, pts[j].y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+/* ---- Draw event handlers ---- */
+function onDrawMouseDown(e) {
+    if (!dataLoaded || currentMode !== 'selection') return;
+    /* If current shape is completed, auto-start a new one (keep previous in allShapes) */
+    if (drawPoints.length > 0) {
+        drawPoints = [];
+        clearDrawOverlay();
+        renderAllShapes();
+    }
+
+    var overlay = document.getElementById('draw-overlay');
+    var rect = overlay.getBoundingClientRect();
+    var x = (e.clientX - rect.left) * (overlay.width / rect.width);
+    var y = (e.clientY - rect.top) * (overlay.height / rect.height);
+
+    switch (currentTool) {
+        case 'rectangle':
+            drawState = { tool: 'rectangle', startX: x, startY: y, points: [{ x: x, y: y }] };
+            break;
+
+        case 'polygon':
+            if (!drawState) {
+                drawState = { tool: 'polygon', points: [{ x: x, y: y }], cursorPos: null };
+            } else {
+                drawState.points.push({ x: x, y: y });
+            }
+            renderDrawOverlay();
+            break;
+
+        case 'freehand':
+            drawState = { tool: 'freehand', points: [{ x: x, y: y }] };
+            break;
+    }
+}
+
+function onDrawMouseMove(e) {
+    if (!drawState || !dataLoaded || currentMode !== 'selection') return;
+
+    var overlay = document.getElementById('draw-overlay');
+    var rect = overlay.getBoundingClientRect();
+    var x = (e.clientX - rect.left) * (overlay.width / rect.width);
+    var y = (e.clientY - rect.top) * (overlay.height / rect.height);
+
+    switch (currentTool) {
+        case 'rectangle':
+            /* Build 4-corner rectangle from start to current */
+            var sx = drawState.startX, sy = drawState.startY;
+            drawState.points = [
+                { x: sx, y: sy }, { x: x, y: sy },
+                { x: x, y: y }, { x: sx, y: y }
+            ];
+            renderDrawOverlay();
+            break;
+
+        case 'polygon':
+            drawState.cursorPos = { x: x, y: y };
+            renderDrawOverlay();
+            break;
+
+        case 'freehand':
+            drawState.points.push({ x: x, y: y });
+            renderDrawOverlay();
+            break;
+    }
+}
+
+function onDrawMouseUp(e) {
+    if (!drawState || !dataLoaded || currentMode !== 'selection') return;
+
+    switch (currentTool) {
+        case 'rectangle':
+            if (drawState.points.length >= 4) {
+                drawPoints = drawState.points.slice();
+                drawState = null;
+                renderDrawOverlay();
+                sendMaskFromShape();
+            }
+            break;
+
+        case 'freehand':
+            if (drawState.points.length >= 5) {
+                drawPoints = drawState.points.slice();
+                drawState = null;
+                renderDrawOverlay();
+                sendMaskFromShape();
+            } else {
+                drawState = null;
+                clearDrawOverlay();
+            }
+            break;
+
+        /* polygon: mouseUp doesn't finalize; dblclick does */
+    }
+}
+
+function onDrawDblClick(e) {
+    if (!drawState || currentTool !== 'polygon' || currentMode !== 'selection') return;
+
+    if (drawState.points.length >= 3) {
+        drawPoints = drawState.points.slice();
+        drawState = null;
+        renderDrawOverlay();
+        sendMaskFromShape();
+    }
+}
+
+/* ====================================================================
+   AUTO-DETECT
+   ==================================================================== */
+function runAutoDetect() {
+    if (!dataLoaded) {
+        showToast('warning', 'No Data', 'Load a 3-D image cube first.');
+        return;
+    }
+
+    var method = document.getElementById('detect-method').value;
+    var sensitivity = parseFloat(document.getElementById('detect-sensitivity').value);
+    var smoothSigma = parseFloat(document.getElementById('detect-smooth').value);
+    var minArea = parseInt(document.getElementById('detect-minarea').value);
+    var watershed = document.getElementById('detect-watershed').checked;
+
+    setStatus('processing', 'Running auto-detection...');
+    sendAction('auto_detect', {
+        method: method,
+        sensitivity: sensitivity,
+        smoothSigma: smoothSigma,
+        minArea: minArea,
+        watershed: watershed
+    });
+}
+
+/* ====================================================================
+   JET COLORMAP
+   ==================================================================== */
+function jetColor(t) {
+    if (t < 0) t = 0;
+    if (t > 1) t = 1;
+    var r, g, b;
+    if (t < 0.125) {
+        r = 0; g = 0; b = 0.5 + t / 0.125 * 0.5;
+    } else if (t < 0.375) {
+        r = 0; g = (t - 0.125) / 0.25; b = 1;
+    } else if (t < 0.625) {
+        r = (t - 0.375) / 0.25; g = 1; b = 1 - (t - 0.375) / 0.25;
+    } else if (t < 0.875) {
+        r = 1; g = 1 - (t - 0.625) / 0.25; b = 0;
+    } else {
+        r = 1 - (t - 0.875) / 0.125 * 0.5; g = 0; b = 0;
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+/* ====================================================================
+   HEATMAP RENDERING
+   ==================================================================== */
+function getHeatmapView() {
+    if (heatmapView) return heatmapView;
+    return { x0: 0, y0: 0, x1: imgCols, y1: imgRows };
+}
+
+function drawHeatmap() {
+    if (!dataLoaded || !intensityNorm) return;
+
+    var canvas = document.getElementById('heatmap-canvas');
+    var wrap   = document.getElementById('heatmap-wrapper');
+
+    canvas.classList.add('visible');
+
+    var cw = wrap.clientWidth;
+    var ch = wrap.clientHeight;
+    if (cw < 2 || ch < 2) return;
+
+    canvas.width  = cw;
+    canvas.height = ch;
+
+    var view = getHeatmapView();
+    var vw = view.x1 - view.x0;
+    var vh = view.y1 - view.y0;
+
+    var ctx = canvas.getContext('2d');
+    var imgData = ctx.createImageData(cw, ch);
+    var pixels  = imgData.data;
+
+    for (var cy = 0; cy < ch; cy++) {
+        var iy = Math.floor(view.y0 + (cy / ch) * vh);
+        if (iy < 0) iy = 0; if (iy >= imgRows) iy = imgRows - 1;
+        for (var cx = 0; cx < cw; cx++) {
+            var ix = Math.floor(view.x0 + (cx / cw) * vw);
+            if (ix < 0) ix = 0; if (ix >= imgCols) ix = imgCols - 1;
+
+            var idx = iy * imgCols + ix;
+            var t   = intensityNorm[idx];
+            var retained = retainedMask ? retainedMask[idx] : true;
+
+            var r, g, b;
+            if (retained) {
+                var c = jetColor(t);
+                r = c[0]; g = c[1]; b = c[2];
+            } else {
+                var gray = Math.round(t * 80 + 40);
+                r = Math.min(255, gray + 80);
+                g = Math.round(gray * 0.4);
+                b = Math.round(gray * 0.4);
+            }
+
+            var pi = (cy * cw + cx) * 4;
+            pixels[pi]     = r;
+            pixels[pi + 1] = g;
+            pixels[pi + 2] = b;
+            pixels[pi + 3] = 255;
+        }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    renderColorbar();
+    syncOverlaySize();
+
+    /* Re-render drawing overlay if any shapes exist */
+    if (drawPoints.length > 0 || allShapes.length > 0) renderDrawOverlay();
+}
+
+function resetHeatmapZoom() {
+    heatmapView = null;
+    if (dataLoaded) drawHeatmap();
+}
+
+/* ====================================================================
+   COLORBAR
+   ==================================================================== */
+function renderColorbar() {
+    var cbCanvas = document.getElementById('colorbar-canvas');
+    var cbCtx    = cbCanvas.getContext('2d');
+    var h = cbCanvas.height;
+    var w = cbCanvas.width;
+
+    var imgData = cbCtx.createImageData(w, h);
+    var pixels  = imgData.data;
+
+    for (var y = 0; y < h; y++) {
+        var t = 1.0 - y / (h - 1);
+        var c = jetColor(t);
+        for (var x = 0; x < w; x++) {
+            var pi = (y * w + x) * 4;
+            pixels[pi]     = c[0];
+            pixels[pi + 1] = c[1];
+            pixels[pi + 2] = c[2];
+            pixels[pi + 3] = 255;
+        }
+    }
+
+    cbCtx.putImageData(imgData, 0, 0);
+
+    document.getElementById('cb-max-label').textContent = formatNum(realMax);
+    document.getElementById('cb-min-label').textContent = formatNum(realMin);
+}
+
+/* ====================================================================
+   THRESHOLD DRAG HELPERS
+   ==================================================================== */
+function hitTestThresholdLine(e) {
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var view = distView || getAutoDistView();
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+    var mouseY = e.clientY - rect.top;
+
+    var minLineY = MARGIN.top + ph - ((currentMinT - view.yMin) / (view.yMax - view.yMin)) * ph;
+    var maxLineY = MARGIN.top + ph - ((currentMaxT - view.yMin) / (view.yMax - view.yMin)) * ph;
+
+    var tolerance = 8; /* pixels */
+    if (Math.abs(mouseY - minLineY) < tolerance) return 'min';
+    if (Math.abs(mouseY - maxLineY) < tolerance) return 'max';
+    return null;
+}
+
+function yPosToIntensity(e) {
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var view = distView || getAutoDistView();
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+    var mouseY = e.clientY - rect.top - MARGIN.top;
+    var frac = 1 - (mouseY / ph);
+    return view.yMin + frac * (view.yMax - view.yMin);
+}
+
+function localThresholdPreview() {
+    /* Recompute retained mask locally from normalized intensity */
+    if (!intensityNorm || !dataLoaded) return;
+    var normMin = (currentMinT - realMin) / (realMax - realMin);
+    var normMax = (currentMaxT - realMin) / (realMax - realMin);
+    retainedMask = [];
+    retainedCount = 0;
+    discardedCount = 0;
+    for (var i = 0; i < totalPixels; i++) {
+        var keep = intensityNorm[i] >= normMin && intensityNorm[i] <= normMax;
+        retainedMask.push(keep);
+        if (keep) retainedCount++; else discardedCount++;
+    }
+    updateDataInfo();
+    drawHeatmap();
+}
+
+/* ====================================================================
+   SPECTRAL BAND SELECTION
+   ==================================================================== */
+function toggleSpectrumView() {
+    if (!dataLoaded) return;
+    showSpectrum = !showSpectrum;
+    var btn = document.getElementById('btn-spectrum');
+    btn.textContent = showSpectrum ? 'Show Distribution' : 'Select Bands';
+
+    if (showSpectrum && !meanSpectrum) {
+        /* Request mean spectrum from MATLAB */
+        sendAction('get_spectrum');
+    } else {
+        drawBottomChart();
+    }
+}
+
+function clearBandRanges() {
+    if (selectedBandRanges.length === 0) return;
+    selectedBandRanges = [];
+    updateBandInfo();
+    sendSelectedBandsToMatlab();
+    if (showSpectrum) drawBottomChart();
+    showToast('info', 'Cleared', 'All spectral ranges removed. Using all bands.');
+}
+
+function resetBands() {
+    selectedBandRanges = [];
+    showSpectrum = false;
+    document.getElementById('btn-spectrum').textContent = 'Select Bands';
+    document.getElementById('band-info').textContent = 'Using all bands';
+    sendAction('select_bands', { bands: [] }); /* empty = all bands */
+    drawBottomChart();
+}
+
+function removeRangeAt(e) {
+    /* Right-click on a range to remove it */
+    if (!showSpectrum || !meanSpectrum || selectedBandRanges.length === 0) return;
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var plotW = rect.width - MARGIN.left - MARGIN.right;
+    var n = meanSpectrum.length;
+    var bandAtClick = 1 + ((x - MARGIN.left) / plotW) * (n - 1);
+
+    for (var i = selectedBandRanges.length - 1; i >= 0; i--) {
+        if (bandAtClick >= selectedBandRanges[i].start && bandAtClick <= selectedBandRanges[i].end) {
+            selectedBandRanges.splice(i, 1);
+            updateBandInfo();
+            sendSelectedBandsToMatlab();
+            drawSpectrum();
+            return;
+        }
+    }
+}
+
+function updateBandInfo() {
+    var n = meanSpectrum ? meanSpectrum.length : imgChannels;
+    if (selectedBandRanges.length === 0) {
+        document.getElementById('band-info').textContent = 'Using all bands';
+        return;
+    }
+    var totalSelected = 0;
+    for (var r = 0; r < selectedBandRanges.length; r++) {
+        totalSelected += selectedBandRanges[r].end - selectedBandRanges[r].start + 1;
+    }
+    document.getElementById('band-info').textContent =
+        totalSelected + ' of ' + n + ' bands selected (' +
+        selectedBandRanges.length + ' range' + (selectedBandRanges.length > 1 ? 's' : '') + ')';
+}
+
+function sendSelectedBandsToMatlab() {
+    if (selectedBandRanges.length === 0) {
+        sendAction('select_bands', { bands: [] });
+        return;
+    }
+    var allBandIndices = [];
+    for (var i = 0; i < selectedBandRanges.length; i++) {
+        for (var b = selectedBandRanges[i].start; b <= selectedBandRanges[i].end; b++) {
+            if (allBandIndices.indexOf(b) < 0) allBandIndices.push(b);
+        }
+    }
+    allBandIndices.sort(function(a,b) { return a-b; });
+    sendAction('select_bands', { bands: allBandIndices });
+}
+
+function drawBottomChart() {
+    if (showSpectrum && meanSpectrum) {
+        drawSpectrum();
+    } else {
+        drawDistribution();
+    }
+}
+
+function drawSpectrum() {
+    if (!meanSpectrum || !dataLoaded) return;
+
+    var canvas = document.getElementById('dist-canvas');
+    var wrap   = document.getElementById('dist-wrapper');
+    var dpr = window.devicePixelRatio || 1;
+    var w = wrap.clientWidth;
+    var h = wrap.clientHeight;
+    if (w < 1 || h < 1) return;
+
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    var n = meanSpectrum.length;
+    if (n < 2) return;
+
+    var m = MARGIN;
+    var plotX = m.left;
+    var plotY = m.top;
+    var plotW = w - m.left - m.right;
+    var plotH = h - m.top - m.bottom;
+
+    /* Y range from spectrum data */
+    var yMin = meanSpectrum[0], yMax = meanSpectrum[0];
+    for (var i = 1; i < n; i++) {
+        if (meanSpectrum[i] < yMin) yMin = meanSpectrum[i];
+        if (meanSpectrum[i] > yMax) yMax = meanSpectrum[i];
+    }
+    if (yMin === yMax) { yMin -= 1; yMax += 1; }
+    var yPad = (yMax - yMin) * 0.08;
+    yMin -= yPad; yMax += yPad;
+
+    drawAxes(ctx, plotX, plotY, plotW, plotH, 1, n, yMin, yMax, 'Band index', 'Mean intensity');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plotX, plotY, plotW, plotH);
+    ctx.clip();
+
+    /* Draw selected band ranges as shaded regions */
+    ctx.fillStyle = 'rgba(66, 165, 245, 0.2)';
+    for (var r = 0; r < selectedBandRanges.length; r++) {
+        var rng = selectedBandRanges[r];
+        var rx1 = plotX + ((rng.start - 1) / (n - 1)) * plotW;
+        var rx2 = plotX + ((rng.end - 1) / (n - 1)) * plotW;
+        ctx.fillRect(rx1, plotY, rx2 - rx1, plotH);
+        /* Border lines */
+        ctx.strokeStyle = 'rgba(66, 165, 245, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(rx1, plotY); ctx.lineTo(rx1, plotY + plotH); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rx2, plotY); ctx.lineTo(rx2, plotY + plotH); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    /* Draw in-progress selection */
+    if (bandDragState && bandDragState.endX !== undefined) {
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+        ctx.fillRect(bandDragState.startX, plotY, bandDragState.endX - bandDragState.startX, plotH);
+    }
+
+    /* Spectrum line */
+    var cs = getComputedStyle(document.documentElement);
+    var lineColor = cs.getPropertyValue('--canvas-line').trim();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (var j = 0; j < n; j++) {
+        var sx = plotX + (j / (n - 1)) * plotW;
+        var sy = plotY + plotH - ((meanSpectrum[j] - yMin) / (yMax - yMin)) * plotH;
+        if (j === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/* Mouse handlers for band selection on spectrum chart */
+function onSpectrumMouseDown(e) {
+    if (!showSpectrum || !meanSpectrum || !dataLoaded) return;
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    if (x < MARGIN.left || x > rect.width - MARGIN.right) return;
+    bandDragState = { startX: x };
+}
+
+function onSpectrumMouseMove(e) {
+    if (!bandDragState) return;
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var x = Math.max(MARGIN.left, Math.min(rect.width - MARGIN.right, e.clientX - rect.left));
+    bandDragState.endX = x;
+    drawSpectrum();
+}
+
+function onSpectrumMouseUp(e) {
+    if (!bandDragState || bandDragState.endX === undefined) {
+        bandDragState = null;
+        return;
+    }
+
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var plotW = rect.width - MARGIN.left - MARGIN.right;
+    var n = meanSpectrum.length;
+
+    /* Convert pixel positions to band indices */
+    var x1 = Math.min(bandDragState.startX, bandDragState.endX) - MARGIN.left;
+    var x2 = Math.max(bandDragState.startX, bandDragState.endX) - MARGIN.left;
+    var b1 = Math.max(1, Math.round(1 + (x1 / plotW) * (n - 1)));
+    var b2 = Math.min(n, Math.round(1 + (x2 / plotW) * (n - 1)));
+
+    bandDragState = null;
+
+    if (b2 - b1 < 1) return; /* too small */
+
+    selectedBandRanges.push({ start: b1, end: b2 });
+    updateBandInfo();
+    sendSelectedBandsToMatlab();
+    drawSpectrum();
+}
+
+/* ====================================================================
+   DISTRIBUTION CHART (canvas line plot with threshold markers)
+   ==================================================================== */
+function drawDistribution() {
+    if (!dataLoaded || !sortedDist) return;
+
+    var canvas = document.getElementById('dist-canvas');
+    var wrap   = document.getElementById('dist-wrapper');
+    var dpr = window.devicePixelRatio || 1;
+    var w = wrap.clientWidth;
+    var h = wrap.clientHeight;
+    if (w < 1 || h < 1) return;
+
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    var n = sortedDist.length;
+    if (n < 2) return;
+
+    var m = MARGIN;
+    var plotX = m.left;
+    var plotY = m.top;
+    var plotW = w - m.left - m.right;
+    var plotH = h - m.top - m.bottom;
+
+    /* Compute y range from data or zoom state */
+    var view = distView;
+    if (!view) {
+        var yMin = sortedDist[0];
+        var yMax = sortedDist[n - 1];
+        if (yMin === yMax) { yMin -= 1; yMax += 1; }
+        var yPad = (yMax - yMin) * 0.05;
+        view = { xMin: 0, xMax: 100, yMin: yMin - yPad, yMax: yMax + yPad };
+    }
+
+    /* Draw grid and axes */
+    drawAxes(ctx, plotX, plotY, plotW, plotH, view.xMin, view.xMax, view.yMin, view.yMax, 'Pixel percentile (%)', 'Intensity');
+
+    /* Clip to plot area */
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plotX, plotY, plotW, plotH);
+    ctx.clip();
+
+    /* Distribution line */
+    var cs = getComputedStyle(document.documentElement);
+    var lineColor = cs.getPropertyValue('--canvas-line').trim();
+
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth   = 2;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+
+    for (var i = 0; i < n; i++) {
+        var xPct = (i / (n - 1)) * 100;
+        var sx = plotX + ((xPct - view.xMin) / (view.xMax - view.xMin)) * plotW;
+        var sy = plotY + plotH - ((sortedDist[i] - view.yMin) / (view.yMax - view.yMin)) * plotH;
+        if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+
+    /* Min threshold line (only in threshold mode) */
+    if (currentMode === 'threshold') {
+        var yRange = view.yMax - view.yMin;
+        if (currentMinT >= view.yMin && currentMinT <= view.yMax) {
+            var minY = plotY + plotH - ((currentMinT - view.yMin) / yRange) * plotH;
+            ctx.strokeStyle = '#E53935';
+            ctx.lineWidth   = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(plotX, minY);
+            ctx.lineTo(plotX + plotW, minY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#E53935';
+            ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('Min: ' + formatNum(currentMinT), plotX + 4, minY - 3);
+        }
+
+        /* Max threshold line */
+        if (currentMaxT >= view.yMin && currentMaxT <= view.yMax) {
+            var maxY = plotY + plotH - ((currentMaxT - view.yMin) / yRange) * plotH;
+            ctx.strokeStyle = '#E53935';
+            ctx.lineWidth   = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(plotX, maxY);
+            ctx.lineTo(plotX + plotW, maxY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#E53935';
+            ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Max: ' + formatNum(currentMaxT), plotX + plotW - 4, maxY + 3);
+        }
+    }
+
+    ctx.restore();
+}
+
+/* ====================================================================
+   CANVAS AXIS DRAWING
+   ==================================================================== */
+function drawAxes(ctx, px, py, pw, ph, xMin, xMax, yMin, yMax, xLabel, yLabel) {
+    var cs = getComputedStyle(document.documentElement);
+    var gridColor = cs.getPropertyValue('--grid-color').trim();
+    var axisColor = cs.getPropertyValue('--axis-text').trim();
+
+    ctx.save();
+
+    /* Grid lines */
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    var nTicksX = 6;
+    var nTicksY = 5;
+
+    for (var i = 0; i <= nTicksX; i++) {
+        var x = px + (pw * i / nTicksX);
+        ctx.beginPath();
+        ctx.moveTo(x, py);
+        ctx.lineTo(x, py + ph);
+        ctx.stroke();
+    }
+    for (var j = 0; j <= nTicksY; j++) {
+        var y = py + (ph * j / nTicksY);
+        ctx.beginPath();
+        ctx.moveTo(px, y);
+        ctx.lineTo(px + pw, y);
+        ctx.stroke();
+    }
+
+    /* Axis border */
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, pw, ph);
+
+    /* Tick labels */
+    ctx.fillStyle    = axisColor;
+    ctx.font         = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    for (var tx = 0; tx <= nTicksX; tx++) {
+        var xPos = px + (pw * tx / nTicksX);
+        var xVal = xMin + (xMax - xMin) * tx / nTicksX;
+        ctx.fillText(formatTickLabel(xVal), xPos, py + ph + 4);
+    }
+
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    for (var ty = 0; ty <= nTicksY; ty++) {
+        var yPos = py + ph - (ph * ty / nTicksY);
+        var yVal = yMin + (yMax - yMin) * ty / nTicksY;
+        ctx.fillText(formatTickLabel(yVal), px - 4, yPos);
+    }
+
+    /* Axis labels */
+    ctx.fillStyle = axisColor;
+    ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    if (xLabel) {
+        ctx.fillText(xLabel, px + pw / 2, py + ph + 20);
+    }
+    if (yLabel) {
+        ctx.save();
+        ctx.translate(12, py + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+    }
+
+    ctx.restore();
+}
+
+/* ====================================================================
+   ZOOM / PAN on Distribution Chart
+   ==================================================================== */
+function handleDistWheel(e) {
+    e.preventDefault();
+    if (!dataLoaded || !sortedDist) return;
+
+    var view = distView;
+    if (!view) view = getAutoDistView();
+
+    var factor = e.deltaY > 0 ? 1.15 : 0.87;
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var pw = rect.width - MARGIN.left - MARGIN.right;
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+    var fracX = Math.max(0, Math.min(1, (e.clientX - rect.left - MARGIN.left) / pw));
+    var fracY = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top - MARGIN.top) / ph));
+
+    var xAt = view.xMin + (view.xMax - view.xMin) * fracX;
+    var yAt = view.yMin + (view.yMax - view.yMin) * fracY;
+    var nxr = (view.xMax - view.xMin) * factor;
+    var nyr = (view.yMax - view.yMin) * factor;
+
+    distView = {
+        xMin: xAt - nxr * fracX,
+        xMax: xAt + nxr * (1 - fracX),
+        yMin: yAt - nyr * fracY,
+        yMax: yAt + nyr * (1 - fracY)
+    };
+    drawBottomChart();
+}
+
+function handleDistMouseDown(e) {
+    if (e.button !== 0) return;
+
+    /* Check if near a threshold line first */
+    if (currentMode === 'threshold' && dataLoaded) {
+        var hit = hitTestThresholdLine(e);
+        if (hit) {
+            dragThreshold = hit;
+            return;
+        }
+    }
+
+    /* Otherwise: pan */
+    var view = distView;
+    if (!view) view = getAutoDistView();
+    panState = {
+        startX: e.clientX,
+        startY: e.clientY,
+        origView: JSON.parse(JSON.stringify(view))
+    };
+}
+
+function handleDistMouseMove(e) {
+    /* Threshold line dragging */
+    if (dragThreshold) {
+        var val = yPosToIntensity(e);
+        if (dragThreshold === 'min') {
+            currentMinT = Math.max(realMin, Math.min(realMax, val));
+            document.getElementById('val-min').value = formatNum(currentMinT);
+            document.getElementById('slider-min').value = (currentMinT - realMin) / (realMax - realMin);
+        } else {
+            currentMaxT = Math.max(realMin, Math.min(realMax, val));
+            document.getElementById('val-max').value = formatNum(currentMaxT);
+            document.getElementById('slider-max').value = (currentMaxT - realMin) / (realMax - realMin);
+        }
+        localThresholdPreview();
+        drawBottomChart();
+        return;
+    }
+
+    if (!panState) {
+        /* Hover: change cursor if near a threshold line */
+        if (currentMode === 'threshold' && dataLoaded) {
+            var canvas = document.getElementById('dist-canvas');
+            var hit = hitTestThresholdLine(e);
+            canvas.style.cursor = hit ? 'ns-resize' : '';
+        }
+        return;
+    }
+
+    /* Pan logic */
+    var canvas = document.getElementById('dist-canvas');
+    var rect = canvas.getBoundingClientRect();
+    var pw = rect.width - MARGIN.left - MARGIN.right;
+    var ph = rect.height - MARGIN.top - MARGIN.bottom;
+
+    var ov = panState.origView;
+    var dx = e.clientX - panState.startX;
+    var dy = e.clientY - panState.startY;
+    var xShift = -(dx / pw) * (ov.xMax - ov.xMin);
+    var yShift = (dy / ph) * (ov.yMax - ov.yMin);
+
+    distView = {
+        xMin: ov.xMin + xShift,
+        xMax: ov.xMax + xShift,
+        yMin: ov.yMin + yShift,
+        yMax: ov.yMax + yShift
+    };
+    drawBottomChart();
+}
+
+function handleDistMouseUp() {
+    if (dragThreshold) {
+        dragThreshold = null;
+        sendUpdateThreshold(); /* Send final value to MATLAB */
+        return;
+    }
+    panState = null;
+}
+
+function getAutoDistView() {
+    if (!sortedDist || sortedDist.length < 2) return { xMin: 0, xMax: 100, yMin: 0, yMax: 1 };
+    var yMin = sortedDist[0];
+    var yMax = sortedDist[sortedDist.length - 1];
+    if (yMin === yMax) { yMin -= 1; yMax += 1; }
+    var yPad = (yMax - yMin) * 0.05;
+    return { xMin: 0, xMax: 100, yMin: yMin - yPad, yMax: yMax + yPad };
+}
+
+function resetDistZoom() {
+    distView = null;
+    if (dataLoaded) drawBottomChart();
+}
+
+/* ====================================================================
+   NUMBER FORMATTING
+   ==================================================================== */
+function formatNum(v) {
+    if (Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0)) {
+        return v.toExponential(2);
+    }
+    return v.toPrecision(4);
+}
+
+function formatTickLabel(v) {
+    if (Math.abs(v) >= 10000 || (Math.abs(v) < 0.01 && v !== 0)) {
+        return v.toExponential(1);
+    }
+    if (Math.abs(v) < 1) return v.toFixed(3);
+    if (Math.abs(v) < 100) return v.toFixed(1);
+    return Math.round(v).toString();
+}
+
+/* ====================================================================
+   DATA CONVERSION HELPERS
+   ==================================================================== */
+function toFloat64Array(v) {
+    if (!v) return null;
+    if (v instanceof Float64Array) return v;
+    if (Array.isArray(v)) return new Float64Array(v);
+    var arr = Object.values(v);
+    return new Float64Array(arr);
+}
+
+function toBoolArray(v, expectedLen) {
+    if (!v) return null;
+    var result = [];
+    if (Array.isArray(v)) {
+        for (var i = 0; i < v.length; i++) result.push(!!v[i]);
+    } else {
+        var vals = Object.values(v);
+        for (var j = 0; j < vals.length; j++) result.push(!!vals[j]);
+    }
+    return result;
+}
+
+/* ====================================================================
+   VARIABLE SELECTION MODAL
+   ==================================================================== */
+function showVariableSelectionModal(payload) {
+    var vars = payload.variables || [];
+    /* MATLAB wraps cell arrays in an extra array layer; unwrap if needed */
+    if (vars.length === 1 && Array.isArray(vars[0])) vars = vars[0];
+    var isEmpty = (vars.length === 0);
+
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+
+    var md = document.createElement('div');
+    md.className = 'modal';
+    md.style.minWidth = '400px';
+    md.style.maxWidth = '500px';
+    md.style.maxHeight = '85vh';
+    md.style.display = 'flex';
+    md.style.flexDirection = 'column';
+
+    var html = '<div class="modal-title">Load Data from Workspace</div>';
+
+    if (isEmpty) {
+        html += '<div style="padding:40px 20px;text-align:center;color:var(--text-secondary);">';
+        html += '<div style="font-size:48px;margin-bottom:16px;">&#128202;</div>';
+        html += '<div style="font-size:16px;font-weight:500;margin-bottom:8px;">No 3-D numeric arrays found</div>';
+        html += '<div style="font-size:14px;">Load an image cube into the MATLAB workspace first.</div>';
+        html += '</div>';
+        html += '<div class="modal-btns">';
+        html += '<button class="btn-secondary btn-sm" id="var-modal-cancel">Close</button>';
+        html += '</div>';
+    } else {
+        html += '<div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">Select a 3-D image cube:</div>';
+        html += '<div style="flex:1;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;margin-bottom:12px;">';
+        html += '<table class="var-table"><thead><tr>';
+        html += '<th style="width:40px;"></th><th>Variable</th><th>Class</th><th>Size</th>';
+        html += '</tr></thead><tbody>';
+
+        for (var i = 0; i < vars.length; i++) {
+            var v = vars[i];
+            html += '<tr class="var-row" data-varname="' + v.name + '" style="cursor:pointer;">';
+            html += '<td><input type="radio" name="var-select" value="' + v.name + '"' + (i === 0 ? ' checked' : '') + '></td>';
+            html += '<td style="font-weight:600;text-align:left;padding-left:12px;">' + v.name + '</td>';
+            html += '<td>' + v.class + '</td>';
+            html += '<td>' + v.size + '</td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody></table></div>';
+        html += '<div class="modal-btns">';
+        html += '<button class="btn-secondary btn-sm" id="var-modal-cancel">Cancel</button>';
+        html += '<button class="btn-primary btn-sm" id="var-modal-load">Load</button>';
+        html += '</div>';
+    }
+
+    md.innerHTML = html;
+    ov.appendChild(md);
+    document.body.appendChild(ov);
+
+    /* Row click selects radio */
+    if (!isEmpty) {
+        var rows = md.querySelectorAll('.var-row');
+        for (var j = 0; j < rows.length; j++) {
+            rows[j].onclick = function() {
+                var radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                var allRows = md.querySelectorAll('.var-row');
+                for (var k = 0; k < allRows.length; k++) allRows[k].classList.remove('selected');
+                this.classList.add('selected');
+            };
+            rows[j].ondblclick = function() {
+                var vn = this.dataset.varname;
+                document.body.removeChild(ov);
+                setStatus('processing', 'Loading ' + vn + '...');
+                sendAction('load_variable', { varName: vn });
+            };
+        }
+        if (rows.length > 0) rows[0].classList.add('selected');
+
+        document.getElementById('var-modal-load').onclick = function() {
+            var selected = md.querySelector('input[name="var-select"]:checked');
+            if (selected) {
+                var vn = selected.value;
+                document.body.removeChild(ov);
+                setStatus('processing', 'Loading ' + vn + '...');
+                sendAction('load_variable', { varName: vn });
+            }
+        };
+    }
+
+    document.getElementById('var-modal-cancel').onclick = function() {
+        document.body.removeChild(ov);
+        setStatus('idle', '');
+    };
+
+    ov.onclick = function(e) {
+        if (e.target === ov) {
+            document.body.removeChild(ov);
+            setStatus('idle', '');
+        }
+    };
+
+    var escHandler = function(e) {
+        if (e.key === 'Escape') {
+            if (ov.parentElement) document.body.removeChild(ov);
+            setStatus('idle', '');
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+/* ====================================================================
+   HELP MODAL (3 pages)
+   ==================================================================== */
+function showHelp() {
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+
+    var md = document.createElement('div');
+    md.className = 'modal';
+    md.style.maxWidth = '520px';
+
+    var currentPage = 0;
+    var totalPages = 3;
+
+    var stepStyle = 'display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;';
+    var stepBadge = 'width:28px;height:28px;border-radius:50%;background:var(--accent-primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;';
+    var trBorder = 'padding:6px 0;border-top:1px solid var(--border-color);';
+
+    var pages = [
+        /* Page 1: Quick Start */
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Quick Start</div>' +
+        '<div style="' + stepStyle + '">' +
+            '<div style="' + stepBadge + '">1</div>' +
+            '<div><b>Load Data</b> - Click "Load Data" to select a 3-D image cube from the MATLAB workspace.</div>' +
+        '</div>' +
+        '<div style="' + stepStyle + '">' +
+            '<div style="' + stepBadge + '">2</div>' +
+            '<div><b>Choose Method</b> - Use the tabs to switch between Threshold, Selection, or Auto-Detect modes.</div>' +
+        '</div>' +
+        '<div style="' + stepStyle + '">' +
+            '<div style="' + stepBadge + '">3</div>' +
+            '<div><b>Apply</b> - Click "Apply" to finalise the cropping. The cropped matrix is stored internally.</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:12px;align-items:flex-start;">' +
+            '<div style="' + stepBadge + '">4</div>' +
+            '<div><b>Export</b> - Export the results to the MATLAB workspace.</div>' +
+        '</div>' +
+        '</div>',
+
+        /* Page 2: Modes */
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Cropping Modes</div>' +
+        '<div style="margin-bottom:10px;"><b style="color:var(--text-primary);">Threshold</b> - Set min/max intensity values. Pixels outside the range are discarded. Best for images with distinct background intensity.</div>' +
+        '<div style="margin-bottom:10px;"><b style="color:var(--text-primary);">Selection</b> - Draw directly on the heatmap (rectangle, polygon, or freehand). The area inside the shape is retained. Use "Invert" to keep the outside instead.</div>' +
+        '<div><b style="color:var(--text-primary);">Auto-Detect</b> - Automatic particle/cell detection using Otsu or adaptive thresholding with morphological cleanup. Requires the Image Processing Toolbox. Adjust sensitivity, smoothing, and min particle size.</div>' +
+        '</div>',
+
+        /* Page 3: Shortcuts & Tips */
+        '<div style="font-size:15px;color:var(--text-secondary);line-height:1.7;">' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Shortcuts &amp; Tips</div>' +
+        '<table style="width:100%;font-size:14px;border-collapse:collapse;">' +
+        '<tr><td style="padding:6px 0;font-weight:600;color:var(--text-primary);width:40%;">Ctrl + D</td><td style="padding:6px 0;">Toggle dark mode</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Escape</td><td style="' + trBorder + '">Cancel current drawing</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Mouse wheel (heatmap)</td><td style="' + trBorder + '">Zoom in/out on the image</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Click + drag (heatmap)</td><td style="' + trBorder + '">Pan when zoomed in</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Mouse wheel (distribution)</td><td style="' + trBorder + '">Zoom distribution chart</td></tr>' +
+        '<tr><td style="' + trBorder + 'font-weight:600;color:var(--text-primary);">Drag red lines</td><td style="' + trBorder + '">Drag min/max threshold lines on distribution chart</td></tr>' +
+        '</table>' +
+        '<div style="margin-top:14px;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;font-size:13px;color:var(--text-secondary);line-height:1.6;">' +
+            '<b style="color:var(--text-primary);">Tip:</b> Preprocessing transforms the intensity before any method is applied. Square enhances bright-vs-dim contrast. Log compresses large dynamic ranges. Square root provides a milder compression. Switching modes clears the previous selection.' +
+        '</div>' +
+        '</div>'
+    ];
+
+    function buildHTML() {
+        var h = '<div class="modal-title">Crop Background - Help</div>';
+        for (var i = 0; i < totalPages; i++) {
+            h += '<div class="help-page' + (i === currentPage ? ' active' : '') + '" id="help-page-' + i + '">' + pages[i] + '</div>';
+        }
+        h += '<div class="help-dots">';
+        for (var i = 0; i < totalPages; i++) {
+            h += '<div class="help-dot' + (i === currentPage ? ' active' : '') + '" data-page="' + i + '"></div>';
+        }
+        h += '</div>';
+        h += '<div class="modal-btns">';
+        if (currentPage > 0) {
+            h += '<button class="btn-secondary btn-sm" id="help-prev">Previous</button>';
+        }
+        if (currentPage < totalPages - 1) {
+            h += '<button class="btn-primary btn-sm" id="help-next">Next</button>';
+        } else {
+            h += '<button class="btn-primary btn-sm" id="help-close">Close</button>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function render() {
+        md.innerHTML = buildHTML();
+        var dots = md.querySelectorAll('.help-dot');
+        for (var i = 0; i < dots.length; i++) {
+            dots[i].onclick = function() {
+                currentPage = parseInt(this.dataset.page);
+                render();
+            };
+        }
+        var prevBtn = document.getElementById('help-prev');
+        var nextBtn = document.getElementById('help-next');
+        var closeBtn = document.getElementById('help-close');
+        if (prevBtn) prevBtn.onclick = function() { currentPage--; render(); };
+        if (nextBtn) nextBtn.onclick = function() { currentPage++; render(); };
+        if (closeBtn) closeBtn.onclick = function() { ov.remove(); };
+    }
+
+    md.innerHTML = '';
+    ov.appendChild(md);
+    document.body.appendChild(ov);
+    render();
+
+    ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+}
+
+/* ====================================================================
+   RESIZE HANDLE (panel divider)
+   ==================================================================== */
+var isResizing = false;
+
+function initResizeHandle() {
+    var handle = document.getElementById('resize-handle');
+    var panel = document.getElementById('controls-panel');
+
+    handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        isResizing = true;
+        handle.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        var newWidth = e.clientX;
+        if (newWidth < 220) newWidth = 220;
+        if (newWidth > 600) newWidth = 600;
+        panel.style.width = newWidth + 'px';
+        if (dataLoaded) { drawHeatmap(); drawBottomChart(); }
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (isResizing) {
+            isResizing = false;
+            var h = document.getElementById('resize-handle');
+            if (h) h.classList.remove('active');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            if (dataLoaded) { drawHeatmap(); drawBottomChart(); }
+        }
+    });
+}
+
+/* ====================================================================
+   INITIALIZATION
+   ==================================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    /* Restore dark mode */
+    restoreDarkMode();
+
+    /* Sync typed values to sliders */
+    document.getElementById('val-min').addEventListener('change', function() { syncMinFromInput(); });
+    document.getElementById('val-max').addEventListener('change', function() { syncMaxFromInput(); });
+
+    /* Bind distribution/spectrum chart events */
+    var distWrapper = document.getElementById('dist-wrapper');
+    distWrapper.addEventListener('wheel', function(e) {
+        if (showSpectrum) { e.preventDefault(); return; }
+        handleDistWheel(e);
+    }, { passive: false });
+    distWrapper.addEventListener('mousedown', function(e) {
+        if (showSpectrum) { onSpectrumMouseDown(e); return; }
+        handleDistMouseDown(e);
+    });
+    distWrapper.addEventListener('contextmenu', function(e) {
+        if (showSpectrum) { e.preventDefault(); removeRangeAt(e); }
+    });
+    distWrapper.addEventListener('dblclick', function() {
+        if (!showSpectrum) resetDistZoom();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (bandDragState) { onSpectrumMouseMove(e); return; }
+        handleDistMouseMove(e);
+    });
+    document.addEventListener('mouseup', function() {
+        if (bandDragState) { onSpectrumMouseUp(); return; }
+        handleDistMouseUp();
+    });
+
+    /* Init resize handle */
+    initResizeHandle();
+
+    /* Responsive resize */
+    var resizeTimeout = null;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (dataLoaded) { drawHeatmap(); drawBottomChart(); }
+        }, 150);
+    });
+
+    /* Heatmap zoom (wheel) and pan (drag) — on the wrapper so it works regardless of mode */
+    var heatmapWrap = document.getElementById('heatmap-wrapper');
+    heatmapWrap.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        if (!dataLoaded) return;
+        /* Don't zoom while actively drawing */
+        if (drawState) return;
+
+        /* Clear in-progress drawing on zoom (canvas coords become invalid) */
+        /* allShapes are in image coords so they survive zoom */
+        if (drawState && currentMode === 'selection') {
+            drawState = null;
+            drawPoints = [];
+            clearDrawOverlay();
+        }
+
+        var view = getHeatmapView();
+        var rect = heatmapWrap.getBoundingClientRect();
+        var fracX = (e.clientX - rect.left) / rect.width;
+        var fracY = (e.clientY - rect.top)  / rect.height;
+
+        var factor = e.deltaY > 0 ? 1.15 : 0.87;
+        var vw = (view.x1 - view.x0) * factor;
+        var vh = (view.y1 - view.y0) * factor;
+
+        /* Clamp: cannot zoom out beyond full image */
+        if (vw >= imgCols && vh >= imgRows) {
+            heatmapView = null;
+            drawHeatmap();
+            return;
+        }
+
+        var cx = view.x0 + fracX * (view.x1 - view.x0);
+        var cy = view.y0 + fracY * (view.y1 - view.y0);
+        var nx0 = cx - fracX * vw;
+        var ny0 = cy - fracY * vh;
+
+        /* Clamp pan to image bounds */
+        if (nx0 < 0) nx0 = 0;
+        if (ny0 < 0) ny0 = 0;
+        if (nx0 + vw > imgCols) nx0 = imgCols - vw;
+        if (ny0 + vh > imgRows) ny0 = imgRows - vh;
+
+        heatmapView = { x0: nx0, y0: ny0, x1: nx0 + vw, y1: ny0 + vh };
+        drawHeatmap();
+    }, { passive: false });
+
+    /* Heatmap pan (only when NOT in selection mode, or use middle-button) */
+    heatmapWrap.addEventListener('mousedown', function(e) {
+        if (!dataLoaded) return;
+        if (currentMode === 'selection' && e.button === 0) return; /* left-click reserved for drawing */
+        if (e.button === 0 || e.button === 1) {
+            e.preventDefault();
+            heatmapPanState = {
+                startX: e.clientX, startY: e.clientY,
+                origView: JSON.parse(JSON.stringify(getHeatmapView()))
+            };
+        }
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!heatmapPanState) return;
+        var rect = heatmapWrap.getBoundingClientRect();
+        var ov = heatmapPanState.origView;
+        var vw = ov.x1 - ov.x0, vh = ov.y1 - ov.y0;
+        var dx = -(e.clientX - heatmapPanState.startX) / rect.width  * vw;
+        var dy = -(e.clientY - heatmapPanState.startY) / rect.height * vh;
+        var nx0 = ov.x0 + dx, ny0 = ov.y0 + dy;
+        if (nx0 < 0) nx0 = 0;
+        if (ny0 < 0) ny0 = 0;
+        if (nx0 + vw > imgCols) nx0 = imgCols - vw;
+        if (ny0 + vh > imgRows) ny0 = imgRows - vh;
+        heatmapView = { x0: nx0, y0: ny0, x1: nx0 + vw, y1: ny0 + vh };
+        drawHeatmap();
+    });
+    document.addEventListener('mouseup', function() {
+        heatmapPanState = null;
+    });
+
+    /* Drawing overlay events */
+    var overlay = document.getElementById('draw-overlay');
+    overlay.addEventListener('mousedown', function(e) { onDrawMouseDown(e); });
+    overlay.addEventListener('mousemove', function(e) { onDrawMouseMove(e); });
+    overlay.addEventListener('mouseup', function(e) { onDrawMouseUp(e); });
+    overlay.addEventListener('dblclick', function(e) { onDrawDblClick(e); });
+
+    /* Auto-detect: toggle sensitivity visibility on method change */
+    document.getElementById('detect-method').addEventListener('change', function() {
+        toggleSensitivityVisibility();
+    });
+    toggleSensitivityVisibility();
+});
+</script>
+</body>
+</html>

@@ -1,102 +1,178 @@
-# cropBackground: Background Pixel Removal via Intensity Thresholding (MATLAB)
+# CropBackground
 
-Crops background pixels from a 3D image cube by intensity thresholding and returns retained and discarded pixel indices.
+Crop background pixels from a 3D image cube using multiple selection methods.
 
-**Reference**:  
-Gómez-Sánchez, Adrián. (2024). *cropBackground function*. Lovelace’s Square.  
-https://lovelacesquare.org/
+Uses the **AppBase + uihtml** architecture.
 
----
+## Features
 
-## Overview
-
-The `cropBackground` function processes hyperspectral or multi-channel image data stored as a 3D array (`rows × cols × channels`) by summing intensities across all channels to form a global intensity map.
-
-Processing steps:
-- Computes a per-pixel total intensity by summing along the third dimension.
-- Thresholds the resulting intensity map using user-defined `minThresh` and `maxThresh`.
-- Discards pixels outside this range (typically background or saturated regions).
-- Converts spatial indices to linear indices for tracking.
-- Outputs a cropped 2D matrix of size `(N_retained × channels)` containing only retained pixels.
-
-This facilitates downstream analysis by focusing on meaningful spectral data, removing artifacts from low- or high-intensity background regions.
-
----
-
-## Inputs
-
-- `imageCube` (3D array): Hyperspectral or multi-channel image (`rows × cols × channels`)  
-- `minThresh` (scalar): Minimum total intensity to retain a pixel  
-- `maxThresh` (scalar): Maximum total intensity to retain a pixel  
-
-## Outputs
-
-- `croppedMatrix`: 2D matrix of retained pixels (`N_retained × channels`)  
-- `keptIdx`: Linear indices of retained pixels  
-- `removedIdx`: Linear indices of discarded pixels  
-
----
-
-## Usage Example
-
-(Insert into MATLAB script or command window)
-
-    % Define thresholds to cut out dark background
-    minT = 0.2 * max(grayImg(:));   % discard pixels darker than 20% of max
-    maxT = max(grayImg(:));         % keep up to the brightest
-
-    % Apply the cropBackground function
-    [croppedMatrix, keptIdx, removedIdx] = cropBackground(imageCube, minT, maxT);
-
----
+- **Threshold mode** — min/max intensity sliders with real-time local preview; drag threshold lines directly on the distribution chart
+- **Selection mode** — draw rectangle, polygon, or freehand regions on the heatmap to select pixels
+- **Auto-Detect mode** — automatic particle/cell detection using Otsu or adaptive thresholding with morphological cleanup and optional watershed separation
+- **Spectral band selection** — view the mean spectrum, draw ranges to select which wavelengths to use; right-click to remove a range
+- **Preprocessing** — apply intensity transforms (square, log, square root) before any method
+- Full-resolution heatmap with zoom (mouse wheel) and pan (click+drag)
+- Sorted intensity distribution chart with zoom/pan and draggable threshold markers
+- Jet colormap with colorbar
+- Dark mode toggle (Ctrl+D)
+- Export cropped matrix and pixel indices to workspace
+- Toast notifications for all operations
 
 ## Installation
 
-### Prerequisites
-- MATLAB R2016b or newer  
-- No additional toolboxes required beyond core MATLAB
+```matlab
+addpath('path/to/CropBackground');
+addpath(genpath('path/to/CropBackground/business_logic'));
+```
 
-### Setup
+## Quick Start
 
-1. Save `cropBackground.m` in a directory on your MATLAB path.
-2. Add the folder if needed:
+```matlab
+% Generate test data (20 particles, 4 spectral types)
+CropBackground_demo
 
-        addpath('path/to/your/functions');
+% Launch the GUI
+app = CropBackground(cube);
 
-3. Verify installation:
+% Or launch empty and load from workspace
+app = CropBackground();
+```
 
-        which cropBackground
+## Input Data
 
----
+| Field  | Size                       | Description                      |
+|--------|----------------------------|----------------------------------|
+| `cube` | `[rows x cols x channels]` | 3D numeric image cube (required) |
+
+## Cropping Methods
+
+### Threshold
+
+1. Compute global intensity: `sum(imageCube, 3)`.
+2. Optionally preprocess: square (x²), log(1+x), or sqrt(x).
+3. Set min/max thresholds via sliders, text input, or by dragging the red lines on the distribution chart.
+4. Pixels with intensity in `[min, max]` are retained; the rest are discarded.
+
+### Selection (Drawing Tools)
+
+| Tool      | Usage                                           |
+|-----------|-------------------------------------------------|
+| Rectangle | Click + drag to draw a bounding box              |
+| Polygon   | Click to add vertices, double-click to close     |
+| Freehand  | Click + drag to draw a free-form region          |
+
+Pixels inside the shape are retained. Click **Invert** to keep the outside instead.
+
+### Auto-Detect
+
+Automatic object detection using the Image Processing Toolbox:
+
+| Parameter      | Description                              | Default |
+|---------------|------------------------------------------|---------|
+| Method         | `otsu` (global) or `adaptive` (local)   | otsu    |
+| Sensitivity    | Adaptive threshold sensitivity (0–1)     | 0.5     |
+| Smoothing      | Gaussian sigma before thresholding       | 1.0     |
+| Min area       | Minimum object size in pixels            | 50      |
+| Watershed      | Separate touching particles              | off     |
+
+Pipeline: normalize → smooth → threshold → morphological open/close → fill holes → remove small objects → clear border → (optional) watershed.
+
+## Spectral Band Selection
+
+Before applying any method, you can select which spectral bands to use for the intensity image:
+
+1. Click **Select Bands** — the bottom chart switches to the mean spectrum
+2. **Click + drag** on the spectrum to select a wavelength range (shaded blue)
+3. Draw more ranges — they accumulate (union)
+4. **Right-click** on a range to remove it
+5. Click **Clear Ranges** to remove all selections
+6. Click **All Bands** to reset and use the full spectrum
+
+The intensity image is recomputed using only the selected bands: `sum(cube(:,:,selectedBands), 3)`. This is applied before preprocessing.
+
+## Preprocessing Transforms
+
+| Transform   | Formula       | Use case                              |
+|-------------|---------------|---------------------------------------|
+| None        | raw sum       | Default                               |
+| Square      | x²            | Enhance contrast between bright/dim   |
+| Log         | log(1+x)      | Compress large dynamic range          |
+| Square root | sqrt(x)       | Mild compression                      |
+
+## Architecture
+
+```
+CropBackground/
+  CropBackground.m              Main GUI class (controller)
+  CropBackground_demo.m         Test script (generates realistic demo data)
+  ui/
+    crop_background_ui.html     HTML/CSS/JS frontend (view)
+  business_logic/
+    @BackgroundCropper/
+      BackgroundCropper.m       Intensity, thresholding, extraction, preprocessing
+    @ParticleDetector/
+      ParticleDetector.m        Automatic detection (Otsu/adaptive + morphology)
+    @DataValidator/
+      DataValidator.m           Input validation
+```
+
+**Three-Layer Separation**
+
+| Layer      | File                        | Responsibility                                      |
+|------------|-----------------------------|-----------------------------------------------------|
+| View       | `crop_background_ui.html`   | HTML/CSS/JS frontend, heatmap, charts, drawing tools |
+| Controller | `CropBackground.m`          | AppBase GUI, routes events between view and logic    |
+| Model      | `BackgroundCropper.m`, `ParticleDetector.m`, `DataValidator.m` | Pure computation, no UI dependency |
+
+## Programmatic Usage
+
+```matlab
+app = CropBackground();
+s.cube = myImageCube;
+app.setInputData(s);
+
+% User interacts with GUI, then:
+result = app.getData();
+croppedMatrix = result.croppedMatrix;   % [nRetainedPixels x nChannels]
+retainedIdx   = result.retainedIdx;     % Linear indices of kept pixels
+discardedIdx  = result.discardedIdx;    % Linear indices of removed pixels
+```
+
+## Keyboard Shortcuts
+
+| Shortcut     | Action                      |
+|--------------|-----------------------------|
+| Ctrl+D       | Toggle dark mode            |
+| Escape       | Cancel current drawing      |
+| Mouse wheel  | Zoom heatmap / distribution |
+| Click+drag   | Pan heatmap / distribution  |
+
+## Requirements
+
+- MATLAB R2022a or later
+- **Image Processing Toolbox** required only for Auto-Detect mode
+
+## Author
+
+Adrian Gomez-Sanchez
 
 ## License
 
-Released under the **MIT License**.
-
----
-
-## Authors
-
-- **Adrián Gómez-Sánchez**  
-- **Created**: December 14, 2024  
-- **Reviewed by**: Lovelace’s Square  
-
----
+MIT
 
 ## Changelog
 
-- **v1.0 (2024-12-14)**: Initial release; implements global intensity threshold cropping and returns pixel indices
+### v1.1 (2026-03-29)
+- Added Selection mode (rectangle, polygon, freehand drawing tools, multi-shape)
+- Added Auto-Detect mode (Otsu/adaptive thresholding + watershed)
+- Added spectral band selection (draw ranges on mean spectrum, right-click to remove)
+- Added preprocessing transforms (square, log, sqrt)
+- Heatmap fills container with zoom/pan support
+- Draggable threshold lines on distribution chart
+- Live local JS preview during threshold adjustment
+- Toast notifications for all operations
+- Demo with real plastic sample image + synthetic NIR spectra
+- Removed orchestrator/Next Module pattern (standalone GUI)
 
----
-
-## Keywords
-
-- Image processing  
-- Hyperspectral  
-- Background removal  
-- Thresholding  
-- MATLAB  
-- 3D image cube  
-- Pixel cropping  
-- Data preprocessing
-
+### v1.0 (2026-03-16)
+- Initial release with threshold-based cropping

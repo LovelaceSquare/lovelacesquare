@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ColorLayer UI — v 1.1 (2026-03-29) -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -455,6 +456,29 @@ input[type="range"]::-moz-range-thumb {
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 /* =======================================================================
+   LOADING OVERLAY
+   ======================================================================= */
+
+.loading-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; opacity: 0; visibility: hidden; transition: all 0.2s ease;
+}
+.loading-overlay.active { opacity: 1; visibility: visible; }
+.loading-box {
+    background: var(--bg-secondary); border-radius: 18px; padding: 32px 40px;
+    border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    text-align: center; min-width: 240px;
+}
+.loading-spinner {
+    width: 36px; height: 36px; margin: 0 auto 14px;
+    border: 4px solid var(--border-color); border-top-color: var(--accent-primary);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+
+/* =======================================================================
    MODALS
    ======================================================================= */
 
@@ -875,6 +899,14 @@ input[type="range"]::-moz-range-thumb {
 </head>
 <body>
 
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Loading data...</div>
+    </div>
+</div>
+
 <div class="main-content">
     <!-- ===== LEFT PANEL ===== -->
     <div class="controls-panel">
@@ -945,24 +977,21 @@ input[type="range"]::-moz-range-thumb {
                                 <span>Dark mode</span><span class="check" id="chk-darkMode"></span>
                             </div>
                             <div class="dropdown-sep"></div>
-                            <div class="burger-section-label">Normalization</div>
-                            <div class="burger-control">
-                                <select id="normMode" onchange="onSettingsChanged()">
-                                    <option value="None">None</option>
-                                    <option value="Global mat2gray" selected>Global mat2gray</option>
-                                    <option value="Per-channel normalize">Per-channel normalize</option>
-                                </select>
+                            <div class="burger-toggle" onclick="toggleNormalize()">
+                                <span>Normalize maps (0-1)</span><span class="check" id="chk-normalize"></span>
                             </div>
-                            <div class="burger-toggle" onclick="document.getElementById('perMapNorm').checked = !document.getElementById('perMapNorm').checked; onSettingsChanged();">
-                                <span>Per-map pre-norm</span><span class="check" id="chk-perMapNorm"></span>
-                            </div>
-                            <input type="checkbox" id="perMapNorm" style="display:none" onchange="onSettingsChanged(); document.getElementById('chk-perMapNorm').textContent = this.checked ? '\u2713' : '';">
+                            <!-- Hidden elements to maintain JS compatibility -->
+                            <select id="normMode" style="display:none"><option value="None" selected>None</option><option value="Global mat2gray">Global mat2gray</option><option value="Per-channel normalize">Per-channel normalize</option></select>
+                            <input type="checkbox" id="perMapNorm" style="display:none">
                             <div class="dropdown-sep"></div>
                             <div class="burger-toggle" onclick="toggleShowAllChannels()">
                                 <span>Show all channels</span><span class="check" id="chk-allChannels"></span>
                             </div>
                             <div class="burger-toggle" onclick="toggleColorblindMode()">
                                 <span>Colorblind palette</span><span class="check" id="chk-colorblind"></span>
+                            </div>
+                            <div class="burger-toggle" onclick="toggleColorBars()">
+                                <span>Color bars</span><span class="check" id="chk-colorBars">&#10003;</span>
                             </div>
                             <div class="dropdown-sep"></div>
                             <div class="dropdown-item" onclick="openHelpModal(); closeBurger()">Help</div>
@@ -1137,6 +1166,11 @@ var lastResponseCounter = -1;
 
 // Data state
 var mapData = [];        // Array of Float64Arrays, one per map
+var mapMinVals = [];     // Per-map raw min values
+var mapMaxVals = [];     // Per-map raw max values
+var lastCompositeR = null;  // Last computed composite R channel
+var lastCompositeG = null;
+var lastCompositeB = null;
 var mapWidth = 0;
 var mapHeight = 0;
 var nMaps = 0;
@@ -1162,6 +1196,14 @@ var CHANNEL_COLORS = DEFAULT_COLORS.slice();
 var CHANNEL_RGB = DEFAULT_RGB.map(function(a) { return a.slice(); });
 var colorblindMode = false;
 var showAllChannels = false;
+var showColorBars = true;  // Overlay per-channel color bars on the composite
+var colorBarX = 10;        // Legend position (CSS pixels)
+var colorBarY = -1;        // -1 = auto bottom-left
+var colorBarScale = 1.0;   // Size scale (0.5 .. 2.5)
+var colorBarDragging = false;
+var cbDragOffX = 0;
+var cbDragOffY = 0;
+var channelRanges = [{min:0,max:1},{min:0,max:1},{min:0,max:1},{min:0,max:1},{min:0,max:1},{min:0,max:1}];
 var visibleChannels = 6;  // Set to Math.min(nMaps, 6) on data load
 
 var channels = [];
@@ -1237,10 +1279,12 @@ function handleMatlabResponse(data) {
             onPresetLoaded(data);
             break;
         case 'exportCompleted':
+            hideLoading();
             showToast(data.message, 'success');
             setStatus(data.message, 'success');
             break;
         case 'statusUpdate':
+            hideLoading();
             showToast(data.message, 'info');
             setStatus(data.message, 'info');
             break;
@@ -1253,6 +1297,7 @@ function handleMatlabResponse(data) {
             showToast('Slider limits updated', 'success');
             break;
         case 'error':
+            hideLoading();
             showToast(data.message, 'error');
             setStatus(data.message, 'error');
             break;
@@ -1299,7 +1344,28 @@ function onDataLoaded(data) {
         bgData = null;
     }
 
-    // Update channel settings from MATLAB
+    // Compute per-map min/max from raw data (stored globally for color bars)
+    mapMinVals = [];
+    mapMaxVals = [];
+    var globalMax = -Infinity;
+    for (var mi = 0; mi < nMaps; mi++) {
+        var mArr = mapData[mi];
+        var mMin = Infinity, mMax = -Infinity;
+        for (var p = 0; p < mArr.length; p++) {
+            if (mArr[p] < mMin) mMin = mArr[p];
+            if (mArr[p] > mMax) mMax = mArr[p];
+        }
+        mapMinVals.push(mMin);
+        mapMaxVals.push(mMax);
+        if (mMax > globalMax) globalMax = mMax;
+    }
+
+    // Set saturationMax to the global max of the original data
+    if (globalMax > 0) {
+        saturationMax = Math.ceil(globalMax * 100) / 100;  // round up slightly
+    }
+
+    // Update channel settings from MATLAB, set saturation to each map's max
     if (data.channels) {
         for (var i = 0; i < 6; i++) {
             var ch = data.channels[i];
@@ -1307,13 +1373,19 @@ function onDataLoaded(data) {
                 channels[i].enabled = !!ch.enabled;
                 channels[i].mapIndex = ch.mapIndex || 1;
                 channels[i].brightness = ch.brightness || 1.0;
-                channels[i].saturation = (ch.saturation < 0) ? saturationMax : (ch.saturation || saturationMax);
+                var mIdx = (channels[i].mapIndex || 1) - 1;
+                if (ch.saturation < 0 || ch.saturation === undefined) {
+                    channels[i].saturation = (mIdx < mapMaxVals.length) ? mapMaxVals[mIdx] : saturationMax;
+                } else {
+                    channels[i].saturation = ch.saturation;
+                }
             }
         }
     }
 
     dataLoaded = true;
     backgroundEnabled = true;
+    hideLoading();
     if (!showAllChannels) {
         visibleChannels = Math.min(nMaps, 6);
     }
@@ -1479,12 +1551,14 @@ function buildChannelPanels() {
         var sVal = document.createElement('span');
         sVal.className = 'slider-value';
         sVal.id = 'chSatVal' + i;
-        sVal.textContent = ch.saturation >= saturationMax ? 'Inf' : ch.saturation.toFixed(2);
+        sVal.textContent = (ch.saturation >= saturationMax) ? 'Inf' : ch.saturation.toFixed(2);
 
         sSlider.oninput = (function(idx, valSpan) {
             return function() {
-                channels[idx].saturation = parseFloat(this.value);
-                valSpan.textContent = parseFloat(this.value) >= saturationMax ? 'Inf' : parseFloat(this.value).toFixed(2);
+                var v = parseFloat(this.value);
+                channels[idx].saturation = v;
+                var sMax = parseFloat(this.max);
+                valSpan.textContent = (v >= sMax) ? 'Inf' : v.toFixed(2);
                 onSettingsChanged();
             };
         })(i, sVal);
@@ -1721,7 +1795,7 @@ function computeComposite() {
         // Apply brightness
         var brightness = ch.brightness;
 
-        // Add to RGB channels based on channel color
+        // Add to RGB channels
         var rgb = CHANNEL_RGB[c];
         for (var p = 0; p < totalPixels; p++) {
             var val = M[p] * brightness;
@@ -1729,6 +1803,33 @@ function computeComposite() {
             G[p] += val * rgb[1];
             B[p] += val * rgb[2];
         }
+    }
+
+    // Compute per-channel effective DATA ranges for color bars
+    // (what original data values map to the visual 0..1 gradient)
+    for (var c = 0; c < 6; c++) {
+        var ch = channels[c];
+        if (!ch.enabled || ch.mapIndex < 1 || ch.mapIndex > nMaps) continue;
+        var mIdx = ch.mapIndex - 1;
+        var rMin = (mIdx < mapMinVals.length) ? mapMinVals[mIdx] : 0;
+        var rMax = (mIdx < mapMaxVals.length) ? mapMaxVals[mIdx] : 1;
+        var cMin = ch.contrastMin;
+        var cMax = ch.contrastMax;
+
+        if (perMapNorm) {
+            // Data is normalized to [0,1] — show in normalized units
+            var satNorm = (ch.saturation < saturationMax) ? ch.saturation : 1.0;
+            var dataLow  = cMin * satNorm;
+            var dataHigh = cMax * satNorm;
+        } else {
+            // Saturation in raw data units, then mat2gray
+            var satRaw = (ch.saturation < saturationMax) ? ch.saturation : rMax;
+            var effMax = Math.min(rMax, satRaw);
+            var dataLow  = rMin + cMin * (effMax - rMin);
+            var dataHigh = rMin + cMax * (effMax - rMin);
+        }
+        if (dataHigh <= dataLow) dataHigh = dataLow + 1e-6;
+        channelRanges[c] = { min: dataLow, max: dataHigh };
     }
 
     // Final normalization
@@ -1778,6 +1879,11 @@ function computeComposite() {
             B[p] = Math.max(0, Math.min(1, alpha * B[p] + oneMinusAlpha * bgData[bgIdx + 2]));
         }
     }
+
+    // Store for pixel readout
+    lastCompositeR = R;
+    lastCompositeG = G;
+    lastCompositeB = B;
 
     return { R: R, G: G, B: B };
 }
@@ -1854,11 +1960,159 @@ function renderImageToCanvas(canvasId, rgbData, w, h, zoom, px, py) {
     }
 }
 
+/* Reusable color bar renderer — used by preview and export */
+function paintColorBars(ctx, canvasW, canvasH, scale, posX, posY) {
+    var active = [];
+    for (var i = 0; i < 6; i++) {
+        if (!channels[i].enabled) continue;
+        if (channels[i].mapIndex < 1 || channels[i].mapIndex > nMaps) continue;
+        var eff = channelRanges[i] || { min: 0, max: 1 };
+        active.push({ idx: i, effMin: eff.min, effMax: eff.max });
+    }
+    if (active.length === 0) return null;
+
+    var s = scale;
+    var barW = Math.round(90 * s);
+    var barH = Math.round(8 * s);
+    var nameW = Math.round(54 * s);
+    var rowH = barH + Math.round(14 * s);
+    var pad = Math.round(6 * s);
+    var fontSize = Math.max(8, Math.round(10 * s));
+    var labelSize = Math.max(7, Math.round(9 * s));
+
+    var panelW = nameW + barW + pad * 2;
+    var panelH = active.length * rowH + pad;
+
+    var ox = posX;
+    var oy = (posY < 0) ? canvasH - panelH - 10 : posY;
+
+    function outlineText(text, x, y, align) {
+        ctx.textAlign = align;
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 2 * s;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+    }
+
+    for (var j = 0; j < active.length; j++) {
+        var a = active[j];
+        var chRgb = CHANNEL_RGB[a.idx];
+        var name = CHANNEL_NAMES[a.idx];
+        var y = oy + pad + j * rowH;
+
+        /* Electric / neon color: scale proportionally to max=255, add luminance floor.
+           Preserves hue ratios for any color (primary, secondary, colorblind palette). */
+        var maxC = Math.max(chRgb[0], chRgb[1], chRgb[2], 0.001);
+        var eR = Math.min(255, Math.round(chRgb[0] / maxC * 215 + 40));
+        var eG = Math.min(255, Math.round(chRgb[1] / maxC * 215 + 40));
+        var eB = Math.min(255, Math.round(chRgb[2] / maxC * 215 + 40));
+        ctx.fillStyle = 'rgb(' + eR + ',' + eG + ',' + eB + ')';
+        ctx.font = '600 ' + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.textBaseline = 'middle';
+        outlineText(name, ox + pad, y + barH / 2, 'left');
+
+        var bx = ox + pad + nameW;
+        var grad = ctx.createLinearGradient(bx, 0, bx + barW, 0);
+        grad.addColorStop(0, 'rgb(0,0,0)');
+        grad.addColorStop(1, 'rgb(' +
+            Math.round(chRgb[0] * 255) + ',' +
+            Math.round(chRgb[1] * 255) + ',' +
+            Math.round(chRgb[2] * 255) + ')');
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(bx, y - barH / 2 + 1, barW, barH, Math.round(2 * s));
+            ctx.fill(); ctx.stroke();
+        } else {
+            ctx.fillRect(bx, y - barH / 2 + 1, barW, barH);
+            ctx.strokeRect(bx, y - barH / 2 + 1, barW, barH);
+        }
+
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = labelSize + 'px "SF Mono", Consolas, Monaco, monospace';
+        ctx.textBaseline = 'top';
+        var labelY = y + barH / 2 + 2;
+        outlineText(formatBarVal(a.effMin), bx, labelY, 'left');
+        outlineText(formatBarVal(a.effMax), bx + barW, labelY, 'right');
+    }
+
+    return { x: ox, y: oy, w: panelW, h: panelH };
+}
+
+function drawColorBarsOverlay() {
+    if (!showColorBars || !dataLoaded) return;
+
+    var canvas = document.getElementById('compositeCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var cw = canvas.clientWidth;
+    var ch = canvas.clientHeight;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    var bounds = paintColorBars(ctx, cw, ch, colorBarScale, colorBarX, colorBarY);
+    ctx.restore();
+
+    drawColorBarsOverlay._bounds = bounds;
+}
+
+drawColorBarsOverlay._bounds = null;
+
+/* Render composite + color bars to an offscreen canvas for export */
+function renderExportCanvas() {
+    var rgb = computeComposite();
+    if (!rgb) return null;
+
+    var w = mapWidth;
+    var h = mapHeight;
+    var off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    var ctx = off.getContext('2d');
+
+    /* Draw composite pixels */
+    var imgData = ctx.createImageData(w, h);
+    var px = imgData.data;
+    for (var p = 0; p < w * h; p++) {
+        var i = p * 4;
+        px[i]   = Math.round(Math.max(0, Math.min(1, rgb.R[p])) * 255);
+        px[i+1] = Math.round(Math.max(0, Math.min(1, rgb.G[p])) * 255);
+        px[i+2] = Math.round(Math.max(0, Math.min(1, rgb.B[p])) * 255);
+        px[i+3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    /* Draw color bars scaled proportionally to image size */
+    if (showColorBars) {
+        var previewCanvas = document.getElementById('compositeCanvas');
+        var previewW = previewCanvas ? previewCanvas.clientWidth : w;
+        var previewH = previewCanvas ? previewCanvas.clientHeight : h;
+        var exportScale = Math.min(w, h) / Math.min(previewW, previewH) * colorBarScale;
+        var exportX = Math.round(colorBarX * (w / previewW));
+        var exportY = colorBarY < 0 ? -1 : Math.round(colorBarY * (h / previewH));
+        paintColorBars(ctx, w, h, exportScale, exportX, exportY);
+    }
+
+    return off.toDataURL('image/png').split(',')[1];
+}
+
+function formatBarVal(v) {
+    if (Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0)) return v.toExponential(1);
+    if (Math.abs(v) < 1) return v.toFixed(3);
+    if (Math.abs(v) < 100) return v.toFixed(1);
+    return Math.round(v).toString();
+}
+
 function computeAndRenderComposite() {
     if (!dataLoaded) return;
     var rgb = computeComposite();
     if (rgb) {
         renderImageToCanvas('compositeCanvas', rgb, mapWidth, mapHeight, zoomLevel, panX, panY);
+        drawColorBarsOverlay();
     }
     updateChannelBadges();
 }
@@ -1875,6 +2129,42 @@ function onSettingsChanged() {
     }, 16);  // ~60fps cap
 }
 
+function updateSaturationLimits() {
+    if (!dataLoaded || nMaps === 0) return;
+    var perMapNorm = document.getElementById('perMapNorm').checked;
+
+    if (perMapNorm) {
+        saturationMax = 1.0;
+        saturationMin = 0.01;
+    } else {
+        var gMax = -Infinity;
+        for (var mi = 0; mi < nMaps; mi++) {
+            var mArr = mapData[mi];
+            for (var p = 0; p < mArr.length; p++) {
+                if (mArr[p] > gMax) gMax = mArr[p];
+            }
+        }
+        saturationMax = (gMax > 0) ? Math.ceil(gMax * 100) / 100 : 2.0;
+        saturationMin = 0.1;
+    }
+
+    // Update sliders: set all channels to max (no clipping) on toggle
+    for (var i = 0; i < 6; i++) {
+        channels[i].saturation = saturationMax;
+        var sSlider = document.getElementById('chSat' + i);
+        var sVal = document.getElementById('chSatVal' + i);
+        if (sSlider) {
+            sSlider.min = saturationMin;
+            sSlider.max = saturationMax;
+            sSlider.step = perMapNorm ? 0.01 : (saturationMax > 10 ? 1 : 0.01);
+            sSlider.value = saturationMax;
+        }
+        if (sVal) {
+            sVal.textContent = 'Inf';
+        }
+    }
+}
+
 /* =======================================================================
    ZOOM / PAN (Composite Canvas)
    ======================================================================= */
@@ -1886,16 +2176,32 @@ function onSettingsChanged() {
         wrapper = document.getElementById('compositeWrapper');
         if (!wrapper) return;
 
+        /* Helper: is point inside color bar legend? */
+        function hitTestColorBar(mx, my) {
+            if (!showColorBars || !drawColorBarsOverlay._bounds) return false;
+            var b = drawColorBarsOverlay._bounds;
+            return mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h;
+        }
+
         wrapper.addEventListener('wheel', function(e) {
             e.preventDefault();
+            var rect = wrapper.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+
+            /* Resize color bar legend if hovering over it */
+            if (hitTestColorBar(mx, my)) {
+                var factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+                colorBarScale = Math.max(0.4, Math.min(3.0, colorBarScale * factor));
+                computeAndRenderComposite();
+                return;
+            }
+
             var zoomFactor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
             var oldZoom = zoomLevel;
             zoomLevel = Math.max(0.1, Math.min(50, zoomLevel * zoomFactor));
 
             // Zoom toward cursor: adjust pan so point under cursor stays fixed
-            var rect = wrapper.getBoundingClientRect();
-            var mx = e.clientX - rect.left;
-            var my = e.clientY - rect.top;
             var cx = rect.width / 2;
             var cy = rect.height / 2;
 
@@ -1908,6 +2214,20 @@ function onSettingsChanged() {
 
         wrapper.addEventListener('mousedown', function(e) {
             if (e.button !== 0) return;
+            var rect = wrapper.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+
+            /* Start color bar drag if clicking on the legend */
+            if (hitTestColorBar(mx, my)) {
+                colorBarDragging = true;
+                cbDragOffX = mx - colorBarX;
+                cbDragOffY = my - (colorBarY < 0 ? drawColorBarsOverlay._bounds.y : colorBarY);
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
             isDragging = true;
             dragStartX = e.clientX;
             dragStartY = e.clientY;
@@ -1917,6 +2237,13 @@ function onSettingsChanged() {
         });
 
         document.addEventListener('mousemove', function(e) {
+            if (colorBarDragging) {
+                var rect = wrapper.getBoundingClientRect();
+                colorBarX = (e.clientX - rect.left) - cbDragOffX;
+                colorBarY = (e.clientY - rect.top) - cbDragOffY;
+                computeAndRenderComposite();
+                return;
+            }
             if (!isDragging) return;
             panX = panStartX + (e.clientX - dragStartX);
             panY = panStartY + (e.clientY - dragStartY);
@@ -1924,10 +2251,30 @@ function onSettingsChanged() {
         });
 
         document.addEventListener('mouseup', function() {
+            colorBarDragging = false;
             isDragging = false;
         });
 
-        wrapper.addEventListener('dblclick', function() {
+        /* Cursor: show move cursor over color bar */
+        wrapper.addEventListener('mousemove', function(e) {
+            var rect = wrapper.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+            wrapper.style.cursor = hitTestColorBar(mx, my) ? 'move' : '';
+        });
+
+        wrapper.addEventListener('dblclick', function(e) {
+            /* Double-click on color bar: reset position */
+            var rect = wrapper.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+            if (hitTestColorBar(mx, my)) {
+                colorBarX = 10;
+                colorBarY = -1;
+                colorBarScale = 1.0;
+                computeAndRenderComposite();
+                return;
+            }
             zoomLevel = 1.0;
             panX = 0;
             panY = 0;
@@ -2014,11 +2361,21 @@ function createVarItem(v, listType) {
     return item;
 }
 
+function showLoading(msg) {
+    document.getElementById('loadingText').textContent = msg || 'Loading data...';
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
 function confirmLoadVariable() {
     if (!selectedMdisVar) {
         showToast('Please select a maps variable', 'warning');
         return;
     }
+    closeModal('loadModal');
+    showLoading('Loading ' + selectedMdisVar + '...');
     sendAction('loadVariable', {
         mdisVar: selectedMdisVar,
         bgVar: selectedBgVar
@@ -2027,18 +2384,24 @@ function confirmLoadVariable() {
 
 function onLoadFromFile() {
     closeModal('loadModal');
+    showLoading('Loading file...');
     sendAction('loadFromFile');
 }
 
 function onExportPng() {
     if (!dataLoaded) { showToast('No data loaded', 'warning'); return; }
+    showLoading('Exporting PNG...');
     var payload = getExportPayload();
     payload.format = 'png';
+    if (showColorBars) {
+        payload.canvasData = renderExportCanvas();
+    }
     sendAction('exportImage', payload);
 }
 
 function onExportEmf() {
     if (!dataLoaded) { showToast('No data loaded', 'warning'); return; }
+    showLoading('Exporting EMF...');
     var payload = getExportPayload();
     payload.format = 'emf';
     sendAction('exportImage', payload);
@@ -2320,6 +2683,22 @@ function toggleColorblindMode() {
     updateChannelBadges();
     onSettingsChanged();
     showToast(colorblindMode ? 'Colorblind palette enabled' : 'Default palette restored', 'info');
+}
+
+function toggleNormalize() {
+    var cb = document.getElementById('perMapNorm');
+    cb.checked = !cb.checked;
+    var chk = document.getElementById('chk-normalize');
+    if (chk) chk.textContent = cb.checked ? '\u2713' : '';
+    updateSaturationLimits();
+    onSettingsChanged();
+}
+
+function toggleColorBars() {
+    showColorBars = !showColorBars;
+    var chk = document.getElementById('chk-colorBars');
+    if (chk) chk.textContent = showColorBars ? '\u2713' : '';
+    computeAndRenderComposite();
 }
 
 // Keyboard shortcut
@@ -2814,31 +3193,26 @@ function onHistClipInputChanged() {
             // Get raw values from each enabled channel's source map
             var pixIdx = imgY * mapWidth + imgX;
             var html = '';
-            var rTotal = 0, gTotal = 0, bTotal = 0;
-
+            // Per-channel raw data values
             for (var c = 0; c < 6; c++) {
-                var ch = channels[c];
-                if (!ch.enabled || ch.mapIndex < 1 || ch.mapIndex > nMaps) continue;
-
-                var rawVal = mapData[ch.mapIndex - 1][pixIdx];
+                var chObj = channels[c];
+                if (!chObj.enabled || chObj.mapIndex < 1 || chObj.mapIndex > nMaps) continue;
+                var rawVal = mapData[chObj.mapIndex - 1][pixIdx];
                 html += '<span class="pixel-val">' +
                     '<span class="pixel-val-dot" style="background:' + CHANNEL_COLORS[c] + '"></span>' +
-                    rawVal.toFixed(3) + '</span>';
+                    formatBarVal(rawVal) + '</span>';
             }
 
-            // Get composite RGB at this pixel from the last render
-            var compCanvas = document.getElementById('compositeCanvas');
-            var ctx = compCanvas.getContext('2d');
-            var dpr = window.devicePixelRatio || 1;
-            var pxData = ctx.getImageData(
-                Math.round(mx * dpr), Math.round(my * dpr), 1, 1
-            ).data;
-
-            document.getElementById('pixelSwatch').style.background =
-                'rgb(' + pxData[0] + ',' + pxData[1] + ',' + pxData[2] + ')';
-
-            html += '<span class="pixel-val" style="margin-left:4px; color:var(--text-tertiary)">' +
-                'RGB(' + pxData[0] + ',' + pxData[1] + ',' + pxData[2] + ')</span>';
+            // Composite RGB from processed arrays
+            if (lastCompositeR && lastCompositeG && lastCompositeB) {
+                var rV = Math.round(Math.max(0, Math.min(1, lastCompositeR[pixIdx])) * 255);
+                var gV = Math.round(Math.max(0, Math.min(1, lastCompositeG[pixIdx])) * 255);
+                var bV = Math.round(Math.max(0, Math.min(1, lastCompositeB[pixIdx])) * 255);
+                document.getElementById('pixelSwatch').style.background =
+                    'rgb(' + rV + ',' + gV + ',' + bV + ')';
+                html += '<span class="pixel-val" style="margin-left:4px;color:var(--text-tertiary)">' +
+                    'RGB(' + rV + ',' + gV + ',' + bV + ')</span>';
+            }
 
             document.getElementById('pixelValues').innerHTML = html;
         });

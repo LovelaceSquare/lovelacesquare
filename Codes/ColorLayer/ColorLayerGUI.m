@@ -21,9 +21,10 @@ classdef ColorLayerGUI < matlab.apps.AppBase
     %
     % Author: Adrian Gomez-Sanchez
     % Date Created: 2026-03-08
+    % Last Modified: 2026-03-29
     % License: MIT
     % Reviewed by Lovelace's Square: Yes
-    % Version: v 1.0
+    % Version: v 1.1
 
     properties (Access = public)
         UIFigure        matlab.ui.Figure
@@ -347,6 +348,29 @@ classdef ColorLayerGUI < matlab.apps.AppBase
                 return;
             end
 
+            % If JS sent a canvas with color bars, save it directly
+            if isfield(data, 'canvasData') && ~isempty(data.canvasData)
+                [file, filepath] = uiputfile( ...
+                    {'*.png', 'PNG Image'}, 'Export Image (with color bars)');
+                if file == 0
+                    sendResponse(app, struct('type', 'statusUpdate', ...
+                        'message', 'Export cancelled'));
+                    return;
+                end
+                try
+                    pngBytes = matlab.net.base64decode(data.canvasData);
+                    fid = fopen(fullfile(filepath, file), 'wb');
+                    fwrite(fid, pngBytes, 'uint8');
+                    fclose(fid);
+                    sendResponse(app, struct('type', 'exportCompleted', ...
+                        'message', sprintf('Saved %s (with color bars)', file)));
+                catch ME
+                    sendResponse(app, struct('type', 'error', ...
+                        'message', ME.message));
+                end
+                return;
+            end
+
             % Get channel settings from JS
             if isfield(data, 'channels')
                 app.Channels = parseChannelsFromJS(app, data.channels);
@@ -356,7 +380,7 @@ classdef ColorLayerGUI < matlab.apps.AppBase
             if isfield(data, 'normMode')
                 options.normalizationMode = data.normMode;
             else
-                options.normalizationMode = 'Global mat2gray';
+                options.normalizationMode = 'None';
             end
             if isfield(data, 'perMapNorm')
                 options.perMapNormalize = logical(data.perMapNorm);
@@ -370,7 +394,11 @@ classdef ColorLayerGUI < matlab.apps.AppBase
             contrastMaxs = ones(1, 6);
             if isfield(data, 'channels')
                 for ci = 1:min(length(data.channels), 6)
-                    chJS = data.channels{ci};
+                    if iscell(data.channels)
+                        chJS = data.channels{ci};
+                    else
+                        chJS = data.channels(ci);
+                    end
                     if isstruct(chJS)
                         if isfield(chJS, 'gamma'), gammaVals(ci) = chJS.gamma; end
                         if isfield(chJS, 'contrastMin'), contrastMins(ci) = chJS.contrastMin; end
@@ -428,7 +456,7 @@ classdef ColorLayerGUI < matlab.apps.AppBase
                 [H, W, ~] = size(composite);
                 fig = figure('Visible', 'off', 'Color', 'w');
                 ax = axes(fig, 'Position', [0 0 1 1]);
-                image(ax, im2uint8(composite));
+                image(ax, uint8(composite * 255));
                 axis(ax, 'image', 'off');
                 fig.PaperPositionMode = 'auto';
                 fig.Units = 'pixels';
@@ -445,7 +473,7 @@ classdef ColorLayerGUI < matlab.apps.AppBase
                         'message', 'Export cancelled'));
                     return;
                 end
-                imwrite(composite, fullfile(filepath, file));
+                imwrite(max(0, min(1, composite)), fullfile(filepath, file));
             end
 
             sendResponse(app, struct('type', 'exportCompleted', ...
@@ -469,7 +497,7 @@ classdef ColorLayerGUI < matlab.apps.AppBase
                 if isfield(data, 'normMode')
                     options.normalizationMode = data.normMode;
                 else
-                    options.normalizationMode = 'Global mat2gray';
+                    options.normalizationMode = 'None';
                 end
                 if isfield(data, 'perMapNorm')
                     options.perMapNormalize = logical(data.perMapNorm);
@@ -535,7 +563,7 @@ classdef ColorLayerGUI < matlab.apps.AppBase
             if isfield(data, 'normMode')
                 options.normalizationMode = data.normMode;
             else
-                options.normalizationMode = 'Global mat2gray';
+                options.normalizationMode = 'None';
             end
             if isfield(data, 'perMapNorm')
                 options.perMapNormalize = logical(data.perMapNorm);
@@ -681,16 +709,9 @@ classdef ColorLayerGUI < matlab.apps.AppBase
                     bg = repmat(bg, [1, 1, 3]);
                 end
                 bg = utils.mat2gray(bg);
-                % Flatten row-major: [R1,G1,B1, R2,G2,B2, ...] per row
-                bgFlat = zeros(1, H * W * 3);
-                for r = 1:H
-                    for c = 1:W
-                        idx = ((r-1)*W + (c-1)) * 3;
-                        bgFlat(idx+1) = bg(r, c, 1);
-                        bgFlat(idx+2) = bg(r, c, 2);
-                        bgFlat(idx+3) = bg(r, c, 3);
-                    end
-                end
+                % Flatten row-major interleaved: [R1,G1,B1, R2,G2,B2, ...]
+                bgPerm = permute(bg, [3 2 1]);   % [3 x W x H]
+                bgFlat = reshape(bgPerm, 1, []);  % interleaved RGB, row-major
                 payload.hasBackground = true;
                 payload.background = bgFlat;
             else
@@ -792,7 +813,11 @@ classdef ColorLayerGUI < matlab.apps.AppBase
             channelRGB = {[1 0 0], [0 1 0], [0 0 1], [1 1 0], [0 1 1], [1 0 1]};
 
             for i = 1:min(length(jsChannels), 6)
-                ch = jsChannels{i};
+                if iscell(jsChannels)
+                    ch = jsChannels{i};
+                else
+                    ch = jsChannels(i);
+                end
                 if isstruct(ch)
                     if isfield(ch, 'enabled'),    channels(i).enabled    = logical(ch.enabled); end
                     if isfield(ch, 'mapIndex'),   channels(i).mapIndex   = ch.mapIndex; end
@@ -834,7 +859,7 @@ classdef ColorLayerGUI < matlab.apps.AppBase
 
         function composite = getComposite(app, options)
             if nargin < 2
-                options = struct('normalizationMode', 'Global mat2gray', ...
+                options = struct('normalizationMode', 'None', ...
                                  'perMapNormalize', false);
             end
             composite = core.createCompositeImage(app.MapsData, app.Channels, options);

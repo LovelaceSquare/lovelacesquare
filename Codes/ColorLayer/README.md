@@ -11,16 +11,17 @@ Uses the **AppBase + uihtml** architecture: HTML/CSS/JS frontend with MATLAB bac
 - **6 Color Channels**: Red, Green, Blue, Yellow, Cyan, Magenta (3x2 grid)
 - **Per-Channel Controls**: Brightness, saturation, gamma, contrast min/max
 - **Real-Time Preview**: JS-side compositing for instant slider feedback
+- **Per-Channel Color Bars**: Draggable, resizable overlay on the composite showing effective data range per channel (included in PNG exports)
 - **Interactive Histogram**: Per-channel with draggable contrast handles and auto-stretch
 - **Zoom/Pan**: Mouse wheel zoom + drag pan on composite image
-- **Pixel Inspector**: Hover to see per-channel raw values and RGB output
-- **3 Normalization Modes**: None, Global mat2gray, Per-channel (plus per-map pre-normalization toggle)
+- **Pixel Inspector**: Hover to see per-channel raw values and composite RGB output
+- **Normalize Maps Toggle**: Per-map normalization to [0,1] with automatic saturation slider adjustment
 - **Background Blending**: Optional alpha blending with background image
 - **Preset Management**: Save/load channel configurations
 - **Flexible Input**: Load from MAT files, images (PNG, JPG, TIFF, BMP), or workspace variables (cell arrays, 2D/3D matrices)
-- **Image Export**: PNG/EMF file or workspace variable
+- **Image Export**: PNG (with color bars) / EMF file or workspace variable
 - **Dark Mode**: Toggle via Ctrl+D or burger menu
-- **Resizable Panels**: Drag handle between controls and image
+- **Colorblind Palette**: Wong/Okabe-Ito accessible colors
 
 ## Installation
 
@@ -114,6 +115,25 @@ ColorLayer/
 
 - MATLAB R2020b or newer (for uihtml)
 - No toolbox dependencies
+
+## Changelog
+
+### v 1.1 (2026-03-29)
+- **Per-channel color bars**: Draggable, resizable overlay on the composite image showing the effective data range for each enabled channel. Addresses quantitative interpretation concerns when adjusting brightness/contrast independently per channel
+  - Drag to reposition, mouse wheel to resize, double-click to reset
+  - Toggle via burger menu ("Color bars")
+  - Included in PNG exports
+  - Electric/neon text colors for readability on any background
+- **Simplified normalization**: Replaced the dual "Normalization mode" dropdown + "Per-map pre-norm" checkbox with a single "Normalize maps (0-1)" toggle
+- **Loading overlay**: Spinner shown during data loading, file loading, and image exports
+- **Pixel readout fix**: Shows per-channel raw data values + composite RGB (previously showed only raw values with no composite feedback)
+- **Saturation slider fix**: Saturation now properly updates when toggling normalization; slider IDs corrected
+- **Data-driven saturation range**: Saturation slider max is set to the actual data max (not a fixed 2.0); auto-adjusts to [0, 1] when normalization is enabled
+- **Export fixes**: Resolved "Brace indexing" errors when exporting/saving presets (struct array vs cell array handling); removed `im2uint8` IPT dependency; clamped composite to [0, 1] before `imwrite`
+- **Performance**: Vectorized background flattening in `sendMapsToJS` (replaced double-nested loop with `permute` + `reshape`)
+
+### v 1.0 (2026-03-08)
+- Initial release
 
 ## Author
 

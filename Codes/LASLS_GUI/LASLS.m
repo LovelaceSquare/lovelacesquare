@@ -537,27 +537,16 @@ classdef LASLS < matlab.apps.AppBase
             hasBaseline = ~isempty(app.BaselineData);
             hasWeights = ~isempty(app.WeightsData);
 
-            % Check which default variable names already exist in workspace
-            existingVars = {};
-            if evalin('base', 'exist(''correctedData'', ''var'')')
-                existingVars{end+1} = 'correctedData';
-            end
-            if evalin('base', 'exist(''baselineData'', ''var'')')
-                existingVars{end+1} = 'baselineData';
-            end
-            if evalin('base', 'exist(''weightsData'', ''var'')')
-                existingVars{end+1} = 'weightsData';
-            end
-            if evalin('base', 'exist(''laslsParams'', ''var'')')
-                existingVars{end+1} = 'laslsParams';
-            end
+            % Send current workspace variable names so the UI can check
+            % the names the user actually types, not only the defaults.
+            workspaceVars = evalin('base', 'who');
 
             % Send info to JS to show export dialog
             sendResponse(app, 'showExportDialog', struct(...
                 'hasCorrected', hasCorrected, ...
                 'hasBaseline', hasBaseline, ...
                 'hasWeights', hasWeights, ...
-                'existingVars', {existingVars}));
+                'workspaceVars', {workspaceVars}));
         end
 
         % ---- Do the actual export with user-specified names ----------------
@@ -568,80 +557,120 @@ classdef LASLS < matlab.apps.AppBase
                 return;
             end
 
-            exported = {};
-
-            % Export corrected data
+            % Resolve requested export names first so we can validate them
+            % before writing anything to the workspace.
             correctedName = 'correctedData';
             if isfield(data, 'correctedName') && ~isempty(data.correctedName)
                 correctedName = data.correctedName;
             end
-            if isvarname(correctedName)
-                assignin('base', correctedName, app.CorrectedData);
-                exported{end+1} = correctedName;
-            end
 
-            % Export baseline if available
+            requestedNames = {correctedName};
+
+            baselineName = '';
             if ~isempty(app.BaselineData)
                 baselineName = 'baselineData';
                 if isfield(data, 'baselineName') && ~isempty(data.baselineName)
                     baselineName = data.baselineName;
                 end
-                if isvarname(baselineName)
-                    assignin('base', baselineName, app.BaselineData);
-                    exported{end+1} = baselineName;
-                end
+                requestedNames{end+1} = baselineName; %#ok<AGROW>
             end
 
-            % Export weights if available
+            weightsName = '';
             if ~isempty(app.WeightsData)
                 weightsName = 'weightsData';
                 if isfield(data, 'weightsName') && ~isempty(data.weightsName)
                     weightsName = data.weightsName;
                 end
-                if isvarname(weightsName)
-                    assignin('base', weightsName, app.WeightsData);
-                    exported{end+1} = weightsName;
+                requestedNames{end+1} = weightsName; %#ok<AGROW>
+            end
+
+            paramsName = '';
+            if isfield(data, 'paramsName') && ~isempty(data.paramsName) && isfield(data, 'params')
+                paramsName = data.paramsName;
+                requestedNames{end+1} = paramsName; %#ok<AGROW>
+            end
+
+            invalidNames = requestedNames(~cellfun(@isvarname, requestedNames));
+            if ~isempty(invalidNames)
+                sendResponse(app, 'statusUpdate', ...
+                    struct('type', 'error', ...
+                           'message', ['Invalid variable name(s): ' strjoin(unique(invalidNames), ', ')]));
+                return;
+            end
+
+            if numel(unique(requestedNames)) ~= numel(requestedNames)
+                sendResponse(app, 'statusUpdate', ...
+                    struct('type', 'error', ...
+                           'message', 'Export names must be different from each other.'));
+                return;
+            end
+
+            existingNames = {};
+            for i = 1:numel(requestedNames)
+                if evalin('base', ['exist(''' requestedNames{i} ''', ''var'')'])
+                    existingNames{end+1} = requestedNames{i}; %#ok<AGROW>
                 end
+            end
+
+            overwriteConfirmed = isfield(data, 'overwriteConfirmed') && ...
+                ~isempty(data.overwriteConfirmed) && logical(data.overwriteConfirmed);
+            if ~isempty(existingNames) && ~overwriteConfirmed
+                sendResponse(app, 'statusUpdate', ...
+                    struct('type', 'error', ...
+                           'message', ['Variables already exist in the workspace: ' ...
+                                       strjoin(unique(existingNames), ', ') ...
+                                       '. Confirm overwrite to export.']));
+                return;
+            end
+
+            exported = {};
+
+            % Export corrected data
+            assignin('base', correctedName, app.CorrectedData);
+            exported{end+1} = correctedName;
+
+            % Export baseline if available
+            if ~isempty(app.BaselineData)
+                assignin('base', baselineName, app.BaselineData);
+                exported{end+1} = baselineName;
+            end
+
+            % Export weights if available
+            if ~isempty(app.WeightsData)
+                assignin('base', weightsName, app.WeightsData);
+                exported{end+1} = weightsName;
             end
 
             % Export parameters struct for reproducibility
-            if isfield(data, 'paramsName') && ~isempty(data.paramsName) && isfield(data, 'params')
-                paramsName = data.paramsName;
-                if isvarname(paramsName)
-                    % Convert JS params to MATLAB struct
-                    params = struct();
-                    jsParams = data.params;
-                    if isfield(jsParams, 'lambda'), params.lambda = jsParams.lambda; end
-                    if isfield(jsParams, 'p'), params.p = jsParams.p; end
-                    if isfield(jsParams, 'mu'), params.mu = jsParams.mu; end
-                    if isfield(jsParams, 'maxIter'), params.maxIter = jsParams.maxIter; end
-                    if isfield(jsParams, 'tolerance'), params.tolerance = jsParams.tolerance; end
-                    if isfield(jsParams, 'perSignalMode'), params.perSignalMode = jsParams.perSignalMode; end
+            if ~isempty(paramsName)
+                % Convert JS params to MATLAB struct
+                params = struct();
+                jsParams = data.params;
+                if isfield(jsParams, 'lambda'), params.lambda = jsParams.lambda; end
+                if isfield(jsParams, 'p'), params.p = jsParams.p; end
+                if isfield(jsParams, 'mu'), params.mu = jsParams.mu; end
+                if isfield(jsParams, 'maxIter'), params.maxIter = jsParams.maxIter; end
+                if isfield(jsParams, 'tolerance'), params.tolerance = jsParams.tolerance; end
+                if isfield(jsParams, 'perSignalMode'), params.perSignalMode = jsParams.perSignalMode; end
 
-                    % Convert intervals
-                    if isfield(jsParams, 'intervals')
-                        params.intervals = jsParams.intervals;
-                    end
-
-                    % Per-signal data
-                    if isfield(jsParams, 'perSignalIntervals')
-                        params.perSignalIntervals = jsParams.perSignalIntervals;
-                    end
-                    if isfield(jsParams, 'perSignalGlobalParams')
-                        params.perSignalGlobalParams = jsParams.perSignalGlobalParams;
-                    end
-
-                    assignin('base', paramsName, params);
-                    exported{end+1} = paramsName;
+                % Convert intervals
+                if isfield(jsParams, 'intervals')
+                    params.intervals = jsParams.intervals;
                 end
+
+                % Per-signal data
+                if isfield(jsParams, 'perSignalIntervals')
+                    params.perSignalIntervals = jsParams.perSignalIntervals;
+                end
+                if isfield(jsParams, 'perSignalGlobalParams')
+                    params.perSignalGlobalParams = jsParams.perSignalGlobalParams;
+                end
+
+                assignin('base', paramsName, params);
+                exported{end+1} = paramsName;
             end
 
-            if isempty(exported)
-                sendResponse(app, 'statusUpdate', ...
-                    struct('type', 'error', 'message', 'No valid variable names'));
-            else
-                sendResponse(app, 'exportCompleted', struct('exportedNames', {exported}));
-            end
+            sendResponse(app, 'exportCompleted', struct('exportedNames', {exported}));
         end
 
         % ---- Prepare import (list param structs in workspace) --------------
@@ -1094,3 +1123,7 @@ classdef LASLS < matlab.apps.AppBase
     end
 
 end
+
+
+
+

@@ -2067,7 +2067,9 @@ function showExportModal(info) {
     var hasData = info.hasCorrected;
     var hasBaseline = info.hasBaseline;
     var hasWeights = info.hasWeights;
-    var existingVars = info.existingVars || [];
+    var workspaceVars = info.workspaceVars || [];
+    var workspaceLookup = {};
+    workspaceVars.forEach(function(name) { workspaceLookup[name] = true; });
 
     if (!hasData) {
         showToast('warning', 'No Data', 'Apply correction first before exporting.');
@@ -2085,44 +2087,36 @@ function showExportModal(info) {
     html += '<div style="margin-bottom:16px;color:var(--text-secondary);font-size:14px;">Choose variable names for export:</div>';
 
     // Corrected data (always available)
-    var correctedExists = existingVars.indexOf('correctedData') >= 0;
     html += '<div class="form-group">';
-    html += '<label class="form-label">Corrected Data' + (correctedExists ? ' <span style="color:#ff9800;">(exists)</span>' : '') + '</label>';
+    html += '<label class="form-label">Corrected Data <span id="export-corrected-exists" style="color:#ff9800;"></span></label>';
     html += '<input type="text" class="form-input" id="export-corrected-name" value="correctedData">';
     html += '</div>';
 
     // Baseline (optional)
     if (hasBaseline) {
-        var baselineExists = existingVars.indexOf('baselineData') >= 0;
         html += '<div class="form-group">';
-        html += '<label class="form-label">Baseline Data' + (baselineExists ? ' <span style="color:#ff9800;">(exists)</span>' : '') + '</label>';
+        html += '<label class="form-label">Baseline Data <span id="export-baseline-exists" style="color:#ff9800;"></span></label>';
         html += '<input type="text" class="form-input" id="export-baseline-name" value="baselineData">';
         html += '</div>';
     }
 
     // Weights (optional)
     if (hasWeights) {
-        var weightsExists = existingVars.indexOf('weightsData') >= 0;
         html += '<div class="form-group">';
-        html += '<label class="form-label">Weights Data' + (weightsExists ? ' <span style="color:#ff9800;">(exists)</span>' : '') + '</label>';
+        html += '<label class="form-label">Weights Data <span id="export-weights-exists" style="color:#ff9800;"></span></label>';
         html += '<input type="text" class="form-input" id="export-weights-name" value="weightsData">';
         html += '</div>';
     }
 
     // Parameters (for reproducibility)
     html += '<div class="divider" style="margin:16px 0;"></div>';
-    var paramsExists = existingVars.indexOf('laslsParams') >= 0;
     html += '<div class="form-group">';
-    html += '<label class="form-label">Parameters (for reproducibility)' + (paramsExists ? ' <span style="color:#ff9800;">(exists)</span>' : '') + '</label>';
+    html += '<label class="form-label">Parameters (for reproducibility) <span id="export-params-exists" style="color:#ff9800;"></span></label>';
     html += '<input type="text" class="form-input" id="export-params-name" value="laslsParams">';
     html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">Contains: lambda, p, mu, intervals, per-signal settings</div>';
     html += '</div>';
 
-    if (existingVars.length > 0) {
-        html += '<div style="margin-top:12px;padding:10px;background:rgba(255,152,0,0.1);border-radius:8px;font-size:13px;color:#ff9800;">';
-        html += '<strong>&#9888; Variables marked "(exists)" will be overwritten. Change names to avoid.</strong>';
-        html += '</div>';
-    }
+    html += '<div id="export-overwrite-warning" style="display:none;margin-top:12px;padding:10px;background:rgba(255,152,0,0.1);border-radius:8px;font-size:13px;color:#ff9800;"></div>';
 
     html += '<div class="modal-btns">';
     html += '<button class="btn-secondary btn-sm" id="export-modal-cancel">Cancel</button>';
@@ -2133,18 +2127,84 @@ function showExportModal(info) {
     ov.appendChild(md);
     document.body.appendChild(ov);
 
-    document.getElementById('export-modal-cancel').onclick = function() {
-        ov.remove();
-        setStatus('idle', '');
-    };
-
-    document.getElementById('export-modal-confirm').onclick = function() {
+    function getExportNames() {
         var names = {
             correctedName: document.getElementById('export-corrected-name').value.trim(),
             paramsName: document.getElementById('export-params-name').value.trim()
         };
         if (hasBaseline) names.baselineName = document.getElementById('export-baseline-name').value.trim();
         if (hasWeights) names.weightsName = document.getElementById('export-weights-name').value.trim();
+        return names;
+    }
+
+    function markExisting(inputName, badgeId, conflicts) {
+        var badge = document.getElementById(badgeId);
+        var exists = !!inputName && !!workspaceLookup[inputName];
+        badge.textContent = exists ? '(exists)' : '';
+        if (exists && conflicts.indexOf(inputName) < 0) conflicts.push(inputName);
+    }
+
+    function updateExportWarnings() {
+        var names = getExportNames();
+        var conflicts = [];
+
+        markExisting(names.correctedName, 'export-corrected-exists', conflicts);
+        if (hasBaseline) markExisting(names.baselineName, 'export-baseline-exists', conflicts);
+        if (hasWeights) markExisting(names.weightsName, 'export-weights-exists', conflicts);
+        markExisting(names.paramsName, 'export-params-exists', conflicts);
+
+        var warning = document.getElementById('export-overwrite-warning');
+        if (conflicts.length > 0) {
+            warning.style.display = 'block';
+            warning.innerHTML = '<strong>&#9888; Existing workspace variable(s):</strong> ' + conflicts.join(', ') + '<br>Exporting will overwrite them.';
+        } else {
+            warning.style.display = 'none';
+            warning.innerHTML = '';
+        }
+
+        return conflicts;
+    }
+
+    function findDuplicateNames(names) {
+        var seen = {};
+        var duplicates = [];
+        Object.keys(names).forEach(function(key) {
+            var value = names[key];
+            if (!value) return;
+            if (seen[value] && duplicates.indexOf(value) < 0) {
+                duplicates.push(value);
+            }
+            seen[value] = true;
+        });
+        return duplicates;
+    }
+
+    ['export-corrected-name', 'export-params-name'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', updateExportWarnings);
+    });
+    if (hasBaseline) document.getElementById('export-baseline-name').addEventListener('input', updateExportWarnings);
+    if (hasWeights) document.getElementById('export-weights-name').addEventListener('input', updateExportWarnings);
+    updateExportWarnings();
+
+    document.getElementById('export-modal-cancel').onclick = function() {
+        ov.remove();
+        setStatus('idle', '');
+    };
+
+    document.getElementById('export-modal-confirm').onclick = function() {
+        var names = getExportNames();
+        var duplicates = findDuplicateNames(names);
+        if (duplicates.length > 0) {
+            showToast('error', 'Duplicate Names', 'Each export must use a different variable name: ' + duplicates.join(', '));
+            return;
+        }
+
+        var conflicts = updateExportWarnings();
+        if (conflicts.length > 0) {
+            var confirmed = confirm('The following workspace variable(s) already exist and will be overwritten:\n\n' + conflicts.join('\n') + '\n\nContinue?');
+            if (!confirmed) return;
+            names.overwriteConfirmed = true;
+        }
 
         // Collect current parameters to export
         names.params = collectExportParams();
@@ -5191,3 +5251,4 @@ document.addEventListener('keydown', function(e) {
 </script>
 </body>
 </html>
+

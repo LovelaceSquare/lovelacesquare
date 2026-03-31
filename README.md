@@ -1,112 +1,114 @@
-# Lovelace Square's – Chemometric Codes
+# Lovelace Square Chemometric Codes
 
-This repository collects the **chemometric algorithms and utilities** written by our team.
-It is part of the contribution effort to [Lovelace's Square](https://lovelacesquare.org), an open and collaborative hub for code,
-data, and learning resources in chemometrics.
+This repository collects the chemometric algorithms and utilities developed by the Lovelace Square team.
+It complements the material published at [Lovelace Square](https://lovelacesquare.org), an open hub for code, data, and learning resources in chemometrics.
 
-## 📂 Structure
+## Structure
 
-The repository is organized by algorithms, each under its own subfolder in `Codes/`:
+Algorithms are organized under `Codes/`, usually one folder per method or tool.
 
-```
+Current top-level folders include:
+
+```text
 Codes/
-├── AsLs/                                      # Asymmetric Least Squares baseline correction
-├── Autoscale/                                 # Autoscaling methods
-├── Binning/                                   # Spectral binning
-├── BIRFI LS/                                  # Baseline Iterative Reweighted Fitting
-├── BIRFI LS smoothing/                        # Smoothed Baseline Iterative Reweighted Fitting
-├── Cosmic Peak Correction/                    # Cosmic ray peak correction
-├── Crop Background/                           # Background cropping
-├── EMSC/                                      # Extended Multiplicative Scatter Correction
-├── Fourier filter/                            # Fourier-based spectral filtering
-├── I-SVD/                                     # Iterative SVD
-├── Image registration/                        # Image registration utilities
-├── Kernelize/                                 # Kernel preprocessing
-├── LALS/                                      # Localized ALS
-├── MCR-ALS Lite/                              # MCR-ALS Lite: Lightweight foundational implementation
-├── MSC/                                       # Multiplicative Scatter Correction
-├── NIPALS/                                    # Nonlinear Iterative Partial Least Squares (PCA with missing data)
-├── Normalize Matrix/                          # Normalization utilities
-├── O ALS/                                     # Orthogonal ALS
-├── PARAFAC-ALS Lite/                          # PARAFAC-ALS Lite: Lightweight foundational implementation
-├── PCA ALS-QR/                                # PCA-based ALS with QR decomposition
-├── PCA filter/                                # PCA-based filtering
-├── Pure/                                      # Pure variable selection
-├── Saturation O-ALS/                          # Orthogonal ALS with saturation peak recovery
-├── SavGol/                                    # Savitzky–Golay filtering
-├── UnfoldImage/                               # Image unfolding utilities
-├── Whittaker Smoother/                        # Whittaker smoothing
-├── Whittaker Smoother with missing values/    # Whittaker smoothing with imputation
-└── Wiener Filtering/                          # Wiener filtering
+|-- AsLS_GUI
+|-- AsLs
+|-- Autoscale
+|-- BIRFI LS
+|-- BIRFI LS smoothing
+|-- Binning
+|-- ColorLayer
+|-- Cosmic Peak Correction
+|-- Cosmic Peak Correction GUI
+|-- Crop Background
+|-- Crop Background GUI
+|-- EMSC
+|-- Fourier filter
+|-- I-SVD
+|-- Image registration
+|-- Kernelize
+|-- LASLS_CL
+|-- LASLS_GUI
+|-- MCR-ALS Lite
+|-- MSC
+|-- NIPALS
+|-- Normalize Matrix
+|-- O ALS
+|-- PARAFAC-ALS Lite
+|-- PCA ALS-QR
+|-- PCA filter
+|-- Pure
+|-- Saturation O-ALS
+|-- SavGol
+|-- UnfoldImage
+|-- Whittaker Smoother
+|-- Whittaker Smoother with missing values
+`-- Wiener Filtering
 ```
+
+Many methods are provided in more than one form:
+- plain MATLAB function or script implementations
+- interactive GUI variants for exploratory use
+- command-line or workflow-oriented variants when appropriate
 
 Each folder typically contains:
-- `*.m` — MATLAB implementation(s)
-- `test_*.m` — example/test script
-- `README.md` — short description and usage notes
+- `*.m` MATLAB implementation files
+- test or example scripts
+- a local `README.md` with method-specific notes
 
-## 🌟 Featured: Lite Implementations
-
-The **Lite** series provides lightweight, foundational implementations of core chemometric algorithms:
+## Featured Lite Implementations
 
 ### MCR-ALS Lite
-**Multivariate Curve Resolution - Alternating Least Squares**
-- Bilinear decomposition: `D = C × S + E`
-- Non-negativity constraints on concentration (C) and spectral (S) profiles
+Multivariate Curve Resolution - Alternating Least Squares.
+
+- Bilinear decomposition: `D = C * S + E`
+- Non-negativity constraints on concentration and spectral profiles
 - Real-time convergence visualization
-- Perfect for learning the fundamentals of MCR-ALS
-- [📖 Documentation](Codes/MCR-ALS%20Lite/README.md)
+- Good starting point for learning the MCR-ALS workflow
+- Documentation: [Codes/MCR-ALS Lite/README.md](Codes/MCR-ALS%20Lite/README.md)
 
 ### PARAFAC-ALS Lite
-**Parallel Factor Analysis - Alternating Least Squares**
-- Trilinear decomposition: `X ≈ ∑ aᵣ ⊗ bᵣ ⊗ cᵣ`
-- Three-way tensor decomposition with Khatri-Rao products
+Parallel Factor Analysis - Alternating Least Squares.
+
+- Trilinear decomposition with Khatri-Rao products
 - Non-negativity constraints on all factor matrices
 - Real-time convergence visualization
-- Perfect for learning the fundamentals of PARAFAC
-- [📖 Documentation](Codes/PARAFAC-ALS%20Lite/README.md)
+- Good starting point for learning PARAFAC
+- Documentation: [Codes/PARAFAC-ALS Lite/README.md](Codes/PARAFAC-ALS%20Lite/README.md)
 
-**What makes Lite implementations special:**
-- 🎯 **Consistent structure** across implementations for easy learning
-- 📚 **Educational focus** with detailed comments and documentation
-- 🚀 **No external dependencies** (custom FNNLS solver included)
-- 🔬 **Foundation for advanced variants** that may be added in the future
-- 📊 **Real-time visualization** to understand algorithm behavior
+## Getting Started
 
----
+1. Clone the repository:
 
-## If you want to download all codes:
-
-1. Clone this repository:
    ```bash
    git clone https://github.com/LovelaceSquare/lovelacesquare.git
    cd lovelacesquare
    ```
-2. Open your code interpreter
-3. Add the desired subfolder to your path:
+
+2. Add the folder you want to use to the MATLAB path:
+
    ```matlab
-   addpath('Codes/AsLs');
-   ```
-4. Run the test script (if available):
-   ```matlab
-   test_AsLS
+   addpath(genpath('Codes/LASLS_GUI'))
    ```
 
-## 📖 Documentation
+3. Open the relevant local README and run the example or entry-point file for that tool.
 
-Each algorithm folder includes a `README.md` with:
-- A short explanation of the method
-- Basic usage instructions
-- References to the original publication(s)
+## Documentation
 
-Additional learning resources will be available through [The Library](https://library.lovelacesquare.org).
+Each algorithm folder includes its own `README.md` with:
+- a short explanation of the method
+- usage instructions
+- references when available
 
-To contribute:
+Additional learning resources are published through [The Library](https://library.lovelacesquare.org).
+
+## Contributing
+
 1. Fork this repository.
-2. Create a new branch: `git checkout -b feature/my-algorithm`.
-3. Commit your changes and push: `git push origin feature/my-algorithm`.
-4. Open a Pull Request.
+2. Create a branch.
+3. Commit and push your changes.
+4. Open a pull request.
 
-## 📜 License
+## License
 
 Unless otherwise stated, code in this repository is released under the [MIT License](LICENSE).

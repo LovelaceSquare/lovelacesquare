@@ -1005,6 +1005,8 @@ input[type="range"]::-moz-range-thumb {
    ==================================================================== */
 var htmlComponent = null;
 var lastTimestamp = -1;
+var exportModalState = null;
+var exportModalSessionCounter = 0;
 
 /* Data */
 var wavelength = [];
@@ -2067,7 +2069,7 @@ function showExportModal(info) {
     var hasData = info.hasCorrected;
     var hasBaseline = info.hasBaseline;
     var hasWeights = info.hasWeights;
-    var workspaceVars = info.workspaceVars || [];
+    var workspaceVars = toArray(info.workspaceVars || []);
     var workspaceLookup = {};
     workspaceVars.forEach(function(name) { workspaceLookup[name] = true; });
 
@@ -2075,6 +2077,13 @@ function showExportModal(info) {
         showToast('warning', 'No Data', 'Apply correction first before exporting.');
         return;
     }
+
+    if (exportModalState && exportModalState.close) {
+        exportModalState.close(false);
+    }
+
+    exportModalSessionCounter += 1;
+    var exportModalSessionId = exportModalSessionCounter;
 
     var ov = document.createElement('div');
     ov.className = 'modal-overlay';
@@ -2127,6 +2136,15 @@ function showExportModal(info) {
     ov.appendChild(md);
     document.body.appendChild(ov);
 
+    function closeExportModal(resetStatus) {
+        if (exportModalState && exportModalState.overlay === ov) {
+            clearTimeout(exportModalState.debounceTimer);
+            exportModalState = null;
+        }
+        if (document.body.contains(ov)) ov.remove();
+        if (resetStatus) setStatus('idle', '');
+    }
+
     function getExportNames() {
         var names = {
             correctedName: document.getElementById('export-corrected-name').value.trim(),
@@ -2135,6 +2153,14 @@ function showExportModal(info) {
         if (hasBaseline) names.baselineName = document.getElementById('export-baseline-name').value.trim();
         if (hasWeights) names.weightsName = document.getElementById('export-weights-name').value.trim();
         return names;
+    }
+
+    function setWorkspaceLookup(existingNames) {
+        workspaceLookup = {};
+        existingNames = toArray(existingNames || []);
+        for (var i = 0; i < existingNames.length; i++) {
+            if (existingNames[i]) workspaceLookup[existingNames[i]] = true;
+        }
     }
 
     function markExisting(inputName, badgeId, conflicts) {
@@ -2147,16 +2173,27 @@ function showExportModal(info) {
     function updateExportWarnings() {
         var names = getExportNames();
         var conflicts = [];
+        var warningLines = [];
 
         markExisting(names.correctedName, 'export-corrected-exists', conflicts);
         if (hasBaseline) markExisting(names.baselineName, 'export-baseline-exists', conflicts);
         if (hasWeights) markExisting(names.weightsName, 'export-weights-exists', conflicts);
         markExisting(names.paramsName, 'export-params-exists', conflicts);
 
+        var invalidNames = [];
+        if (exportModalState && exportModalState.overlay === ov) {
+            invalidNames = exportModalState.invalidNames || [];
+        }
+        if (invalidNames.length > 0) {
+            warningLines.push('<strong>Invalid MATLAB variable name(s):</strong> ' + invalidNames.join(', '));
+        }
         var warning = document.getElementById('export-overwrite-warning');
         if (conflicts.length > 0) {
+            warningLines.push('<strong>&#9888; Existing workspace variable(s):</strong> ' + conflicts.join(', ') + '<br>Exporting will overwrite them.');
+        }
+        if (warningLines.length > 0) {
             warning.style.display = 'block';
-            warning.innerHTML = '<strong>&#9888; Existing workspace variable(s):</strong> ' + conflicts.join(', ') + '<br>Exporting will overwrite them.';
+            warning.innerHTML = warningLines.join('<br><br>');
         } else {
             warning.style.display = 'none';
             warning.innerHTML = '';
@@ -2179,16 +2216,62 @@ function showExportModal(info) {
         return duplicates;
     }
 
+    function requestExportNameCheck() {
+        if (!exportModalState || exportModalState.overlay !== ov || !document.body.contains(ov)) return;
+        var names = getExportNames();
+        exportModalState.lastRequestedId += 1;
+        names.sessionId = exportModalState.sessionId;
+        names.requestId = exportModalState.lastRequestedId;
+        sendAction('checkExportNames', names);
+    }
+
+    function scheduleExportNameCheck() {
+        if (!exportModalState || exportModalState.overlay !== ov) return;
+        clearTimeout(exportModalState.debounceTimer);
+        exportModalState.debounceTimer = setTimeout(requestExportNameCheck, 200);
+    }
+
+    exportModalState = {
+        overlay: ov,
+        sessionId: exportModalSessionId,
+        debounceTimer: null,
+        lastRequestedId: 0,
+        invalidNames: [],
+        close: closeExportModal,
+        applyCheckResult: function(payload) {
+            if (!exportModalState || exportModalState.overlay !== ov) return;
+            var sessionId = Number(payload.sessionId) || 0;
+            var requestId = Number(payload.requestId) || 0;
+            if (sessionId !== exportModalState.sessionId) return;
+            if (requestId !== exportModalState.lastRequestedId) return;
+            exportModalState.invalidNames = toArray(payload.invalidNames || []);
+            setWorkspaceLookup(payload.existingNames || []);
+            updateExportWarnings();
+        }
+    };
+
     ['export-corrected-name', 'export-params-name'].forEach(function(id) {
-        document.getElementById(id).addEventListener('input', updateExportWarnings);
+        document.getElementById(id).addEventListener('input', function() {
+            updateExportWarnings();
+            scheduleExportNameCheck();
+        });
     });
-    if (hasBaseline) document.getElementById('export-baseline-name').addEventListener('input', updateExportWarnings);
-    if (hasWeights) document.getElementById('export-weights-name').addEventListener('input', updateExportWarnings);
+    if (hasBaseline) {
+        document.getElementById('export-baseline-name').addEventListener('input', function() {
+            updateExportWarnings();
+            scheduleExportNameCheck();
+        });
+    }
+    if (hasWeights) {
+        document.getElementById('export-weights-name').addEventListener('input', function() {
+            updateExportWarnings();
+            scheduleExportNameCheck();
+        });
+    }
     updateExportWarnings();
 
     document.getElementById('export-modal-cancel').onclick = function() {
-        ov.remove();
-        setStatus('idle', '');
+        closeExportModal(true);
     };
 
     document.getElementById('export-modal-confirm').onclick = function() {
@@ -2209,11 +2292,11 @@ function showExportModal(info) {
         // Collect current parameters to export
         names.params = collectExportParams();
 
-        ov.remove();
+        closeExportModal(false);
         sendAction('doExport', names);
     };
 
-    ov.onclick = function(e) { if (e.target === ov) { ov.remove(); setStatus('idle', ''); } };
+    ov.onclick = function(e) { if (e.target === ov) { closeExportModal(true); } };
 }
 
 function exportIntervalTable() {
@@ -4489,6 +4572,7 @@ function handleMatlabResponse(data) {
         case 'showVarList': showVariableSelectionModal(payload); break;
         case 'showTableList': showTableSelectionModal(payload); break;
         case 'showExportDialog': showExportModal(payload); break;
+        case 'exportNamesChecked': onExportNamesChecked(payload); break;
         case 'exportCompleted': onExportCompleted(payload); break;
         case 'showImportDialog': showImportModal(payload); break;
         case 'paramsImported': applyImportedParams(payload); break;
@@ -4497,6 +4581,11 @@ function handleMatlabResponse(data) {
             setStatus(payload.type, payload.message);
             break;
     }
+}
+
+function onExportNamesChecked(p) {
+    if (!exportModalState || !exportModalState.applyCheckResult) return;
+    exportModalState.applyCheckResult(p || {});
 }
 
 var exportCompleted = false;

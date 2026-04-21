@@ -146,6 +146,7 @@ classdef LASLS < matlab.apps.AppBase
                     case 'previewBaseline',      handlePreviewBaseline(app, data);
                     case 'apply',                handleApply(app, data);
                     case 'prepareExport',        handlePrepareExport(app);
+                    case 'checkExportNames',     handleCheckExportNames(app, data);
                     case 'doExport',             handleDoExport(app, data);
                     case 'prepareImport',        handlePrepareImport(app);
                     case 'doImport',             handleDoImport(app, data);
@@ -547,6 +548,51 @@ classdef LASLS < matlab.apps.AppBase
                 'hasBaseline', hasBaseline, ...
                 'hasWeights', hasWeights, ...
                 'workspaceVars', {workspaceVars}));
+        end
+
+        % ---- Live export-name validation for the open modal --------------
+        function handleCheckExportNames(app, data)
+            requestedNames = {};
+
+            fieldNames = {'correctedName', 'baselineName', 'weightsName', 'paramsName'};
+            for i = 1:numel(fieldNames)
+                fieldName = fieldNames{i};
+                if isfield(data, fieldName) && ~isempty(data.(fieldName))
+                    thisName = data.(fieldName);
+                    if ~ischar(thisName)
+                        try
+                            thisName = char(thisName);
+                        catch
+                            continue;
+                        end
+                    end
+                    requestedNames{end+1} = strtrim(thisName); %#ok<AGROW>
+                end
+            end
+
+            invalidNames = {};
+            existingNames = {};
+
+            if ~isempty(requestedNames)
+                invalidMask = ~cellfun(@isvarname, requestedNames);
+                invalidNames = unique(requestedNames(invalidMask));
+
+                validNames = unique(requestedNames(~invalidMask));
+                for i = 1:numel(validNames)
+                    if evalin('base', ['exist(''' validNames{i} ''', ''var'')'])
+                        existingNames{end+1} = validNames{i}; %#ok<AGROW>
+                    end
+                end
+            end
+
+            requestId = safeDouble(app, data, 'requestId', 0);
+            sessionId = safeDouble(app, data, 'sessionId', 0);
+
+            sendResponse(app, 'exportNamesChecked', struct(...
+                'sessionId', sessionId, ...
+                'requestId', requestId, ...
+                'existingNames', {unique(existingNames)}, ...
+                'invalidNames', {invalidNames}));
         end
 
         % ---- Do the actual export with user-specified names ----------------

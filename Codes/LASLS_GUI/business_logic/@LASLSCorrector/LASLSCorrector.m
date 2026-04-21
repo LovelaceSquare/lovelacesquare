@@ -19,7 +19,7 @@ classdef LASLSCorrector
     % License: MIT
     % Repository: https://github.com/LovelaceSquare/lovelacesquare
 
-    % Version: 1.1
+    % Version: 1.2
 
     methods (Access = public)
         function obj = LASLSCorrector()

@@ -19,7 +19,7 @@ classdef LASLS < matlab.apps.AppBase
     % License: MIT
     % Repository: https://github.com/LovelaceSquare/lovelacesquare
 
-    % Version: 1.1
+    % Version: 1.2
 
     properties (Access = public)
         UIFigure        matlab.ui.Figure

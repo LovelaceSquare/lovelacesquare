@@ -9,7 +9,7 @@ classdef DataValidator
     % License: MIT
     % Repository: https://github.com/LovelaceSquare/lovelacesquare
 
-    % Version: 1.1
+    % Version: 1.2
 
     methods (Static)
         function [isValid, msg] = validateData(data)
